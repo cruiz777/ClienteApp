@@ -1,5 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import {
+  CargaGlobalRubrosFijosResult,
+  DialogCargaGlobalRubrosFijosComponent
+} from './dialog-carga-global-rubros-fijo/dialog-carga-global-rubros-fijo.component';
 
 import {
   CellValueChangedEvent,
@@ -61,6 +68,9 @@ export class RubrosFijosComponent implements OnInit {
   guardando = false;
 
   reemplazarRubro = false;
+  fechaPeriodoOrigen: string | null = null;
+idLocalOrigen: number | null = null;
+origen: string | null = null;
 
   totalValor = 0;
   totalCobrado = 0;
@@ -69,19 +79,31 @@ export class RubrosFijosComponent implements OnInit {
   usuarioActual: any;
 
   constructor(
-    private readonly localesService: LocalesService,
-    private readonly rubrosFijosService: RubrosFijosService,
-    private readonly usuarioService: UsuarioService,
-    private readonly snackBar: MatSnackBar
+  private readonly localesService: LocalesService,
+  private readonly rubrosFijosService: RubrosFijosService,
+  private readonly usuarioService: UsuarioService,
+  private readonly snackBar: MatSnackBar,
+  private readonly dialog: MatDialog,
+  private readonly route: ActivatedRoute,
+  private readonly router: Router
   ) {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
   }
 
-  ngOnInit(): void {
-    this.columnDefs = this.construirColumnasGrid();
+ngOnInit(): void {
+  this.columnDefs = this.construirColumnasGrid();
+
+  this.route.queryParams.subscribe(params => {
+    this.fechaPeriodoOrigen = params['fechaPeriodo'] ?? null;
+    this.idLocalOrigen = params['idLocal']
+      ? Number(params['idLocal'])
+      : null;
+    this.origen = params['origen'] ?? null;
+
     this.cargarLocales();
     this.cargarRubros();
-  }
+  });
+}
 
   onGridReady(params: GridReadyEvent): void {
     this.gridApi = params.api;
@@ -192,54 +214,62 @@ export class RubrosFijosComponent implements OnInit {
     ];
   }
 
-  cargarLocales(): void {
-    this.cargandoLocales = true;
+cargarLocales(): void {
+  this.cargandoLocales = true;
 
-    this.localesService.getAll().subscribe({
-      next: resp => {
-        this.cargandoLocales = false;
+  this.localesService.getAll().subscribe({
+    next: resp => {
+      this.cargandoLocales = false;
 
-        const locales = resp.data ?? [];
+      const locales = resp.data ?? [];
 
-        this.localesTree = [
-          {
-            id: 0,
-            label: 'Listado de Locales',
-            tipo: 'ROOT_LOCAL',
-            expanded: true,
-            checked: false,
-            children: locales.map((x: any) => {
-              const idLocal = Number(
-                x.id ??
-                x.idLocal ??
-                x.id_local ??
-                x.codloc ??
-                x.codLoc
-              );
+      const localesMapeados: TreeNode[] = locales.map((x: any) => {
+        const idLocal = Number(
+          x.id ??
+          x.idLocal ??
+          x.id_local ??
+          x.codloc ??
+          x.codLoc
+        );
 
-              return {
-                id: idLocal,
-                label: (
-                  x.nombre ??
-                  x.nomloc ??
-                  x.nomLoc ??
-                  x.descripcion ??
-                  `Local ${idLocal}`
-                ).toString(),
-                tipo: 'LOCAL',
-                checked: false
-              };
-            })
-          }
-        ];
-      },
-      error: err => {
-        this.cargandoLocales = false;
-        console.error(err);
-        this.mostrarError('No se pudieron cargar los locales.');
-      }
-    });
-  }
+        const nombreLocal = (
+          x.nombre ??
+          x.nomloc ??
+          x.nomLoc ??
+          x.descripcion ??
+          `Local ${idLocal}`
+        ).toString();
+
+        return {
+          id: idLocal,
+          label: nombreLocal,
+          tipo: 'LOCAL',
+          // checked: this.idLocalOrigen
+          //   ? idLocal === this.idLocalOrigen
+          //   : nombreLocal.trim().toUpperCase() === 'ADMINISTRATIVO'
+        };
+      });
+
+      this.localesTree = [
+        {
+          id: 0,
+          label: 'Listado de Locales',
+          tipo: 'ROOT_LOCAL',
+          expanded: true,
+          checked: false,
+          children: localesMapeados
+        }
+      ];
+
+      this.actualizarCheckPadreLocales();
+    },
+    error: err => {
+      this.cargandoLocales = false;
+      console.error(err);
+      this.mostrarError('No se pudieron cargar los locales.');
+    }
+  });
+}
 
   cargarRubros(): void {
     this.cargandoRubros = true;
@@ -277,7 +307,7 @@ export class RubrosFijosComponent implements OnInit {
             id: 200000,
             label: 'Egresos',
             tipo: 'ROOT_RUBRO',
-            expanded: true,
+            expanded: false,
             children: egresos
           }
         ];
@@ -396,41 +426,46 @@ export class RubrosFijosComponent implements OnInit {
     });
   }
 
-  cargarGlobal(): void {
-    if (this.dataSource.length === 0) {
-      this.mostrarAdvertencia('Primero debe cargar empleados.');
+cargarGlobal(): void {
+  if (this.dataSource.length === 0) {
+    this.mostrarAdvertencia('Primero debe cargar empleados.');
+    return;
+  }
+
+const dialogRef = this.dialog.open(DialogCargaGlobalRubrosFijosComponent, {
+  width: '600px',
+  maxWidth: '95vw',
+  disableClose: true,
+  autoFocus: false,
+  panelClass: 'carga-global-panel'
+});
+  dialogRef.afterClosed().subscribe((result: CargaGlobalRubrosFijosResult | null) => {
+    if (!result) {
       return;
     }
 
-    const valorTexto = window.prompt(
-      'Ingrese el valor a aplicar. Deje vacío para no cambiar:',
-      ''
-    );
+    const tieneValor = result.valor !== null && result.valor !== undefined;
+    const tieneNumCuotas = result.numCuotas !== null && result.numCuotas !== undefined;
+    const tieneCuotasPagadas = result.cuotasPagadas !== null && result.cuotasPagadas !== undefined;
 
-    const numCuotasTexto = window.prompt(
-      'Ingrese No. Cuotas. Deje vacío para no cambiar:',
-      ''
-    );
-
-    const cuotasPagadasTexto = window.prompt(
-      'Ingrese Cuotas Pagadas. Deje vacío para no cambiar:',
-      ''
-    );
+    if (!tieneValor && !tieneNumCuotas && !tieneCuotasPagadas) {
+      this.mostrarAdvertencia('No se ingresó ningún valor para aplicar.');
+      return;
+    }
 
     this.dataSource = this.dataSource.map(item => ({
       ...item,
-      valor:
-        valorTexto !== null && valorTexto.trim() !== ''
-          ? this.toNumber(valorTexto)
-          : this.toNumber(item.valor),
-      numCuotas:
-        numCuotasTexto !== null && numCuotasTexto.trim() !== ''
-          ? this.toNumber(numCuotasTexto)
-          : this.toNumber(item.numCuotas),
-      cuotasPagadas:
-        cuotasPagadasTexto !== null && cuotasPagadasTexto.trim() !== ''
-          ? this.toNumber(cuotasPagadasTexto)
-          : this.toNumber(item.cuotasPagadas)
+      valor: tieneValor
+        ? this.toNumber(result.valor)
+        : this.toNumber(item.valor),
+
+      numCuotas: tieneNumCuotas
+        ? this.toNumber(result.numCuotas)
+        : this.toNumber(item.numCuotas),
+
+      cuotasPagadas: tieneCuotasPagadas
+        ? this.toNumber(result.cuotasPagadas)
+        : this.toNumber(item.cuotasPagadas)
     }));
 
     this.reemplazarRubro = true;
@@ -438,8 +473,8 @@ export class RubrosFijosComponent implements OnInit {
     this.actualizarGrid();
 
     this.mostrarExito('Carga global aplicada. Presione Grabar para guardar.');
-  }
-
+  });
+}
   nuevo(): void {
     this.localesTree.forEach(root => {
       root.checked = false;
@@ -673,4 +708,14 @@ export class RubrosFijosComponent implements OnInit {
       panelClass: ['snackbar-error']
     });
   }
+  volverRolMensual(): void {
+  this.router.navigate(['/rol-3000/rol-mensual'], {
+    queryParams: {
+      fechaPeriodo: this.fechaPeriodoOrigen,
+      idLocal: this.idLocalOrigen,
+      autoActualizar: true,
+      origen: 'rubros-fijos'
+    }
+  });
+}
 }

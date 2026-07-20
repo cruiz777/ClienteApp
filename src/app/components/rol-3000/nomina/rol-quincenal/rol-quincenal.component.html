@@ -74,58 +74,106 @@
 
   <!-- ACCIONES -->
   <div class="actions-card">
-    <div class="actions-left">
-      <div class="periodo-inline">
-        <label>Periodo</label>
+   <div class="actions-left">
+  <div class="periodo-inline">
+    <label>Periodo</label>
 
-        <mat-form-field appearance="outline" class="fecha-field">
-          <mat-label>Periodo</mat-label>
+    <mat-form-field appearance="outline" class="fecha-field">
+      <mat-label>Periodo</mat-label>
 
-          <input matInput [matDatepicker]="pickerPeriodo" formControlName="fechaPeriodo"
-            [matDatepickerFilter]="soloFechaQuincena" readonly />
+      <input
+        matInput
+        [matDatepicker]="pickerPeriodo"
+        formControlName="fechaPeriodo"
+        [matDatepickerFilter]="soloFechaQuincena"
+        readonly />
 
-          <mat-datepicker-toggle matSuffix [for]="pickerPeriodo">
-          </mat-datepicker-toggle>
+      <mat-datepicker-toggle matSuffix [for]="pickerPeriodo">
+      </mat-datepicker-toggle>
 
-          <mat-datepicker #pickerPeriodo></mat-datepicker>
+      <mat-datepicker #pickerPeriodo></mat-datepicker>
 
-          <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
-            Solo puede seleccionar el día 15 del mes.
-          </mat-error>
-        </mat-form-field>
-      </div>
+      <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
+        Solo puede seleccionar el día 15 del mes.
+      </mat-error>
+    </mat-form-field>
+  </div>
 
-      <button mat-flat-button color="primary" type="button" class="action-button" [disabled]="
-          generando ||
-          cargando ||
-          validandoCierre ||
-          procesandoModificar ||
-          modificarBloqueado ||
-          (periodoExiste && periodoCerrado)
-        " (click)="accionPrincipalPeriodo()">
-        {{ procesandoModificar ? 'Procesando...' : (periodoExiste ? 'Modificar' : 'Nuevo') }}
-      </button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    class="action-button"
+    [disabled]="
+      generando ||
+      cargando ||
+      validandoCierre ||
+      procesandoModificar ||
+      modificarBloqueado ||
+      (periodoExiste && periodoCerrado)
+    "
+    (click)="accionPrincipalPeriodo()">
 
-      <button mat-stroked-button type="button" class="action-button"
-        [disabled]="actualizando || cargando || generando || validandoCierre" (click)="actualizarQuincena()">
-        {{ actualizando ? 'Actualizando...' : 'Actualizar' }}
-      </button>
+    <mat-icon>
+      {{ procesandoModificar ? 'hourglass_top' : (periodoExiste ? 'edit' : 'add') }}
+    </mat-icon>
 
-      <button mat-stroked-button type="button" class="action-button action-excel"
-        [disabled]="!detalleRol || detalleRol.length === 0 || exportandoExcel" (click)="exportarQuincenaExcel()">
+    <span>
+      {{ procesandoModificar ? 'Procesando...' : (periodoExiste ? 'Modificar' : 'Nuevo') }}
+    </span>
+  </button>
 
-        <mat-icon>description</mat-icon>
-        <span>{{ exportandoExcel ? 'Exportando...' : 'Excel' }}</span>
-      </button>
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button"
+    [disabled]="actualizando || cargando || generando || validandoCierre"
+    (click)="actualizarQuincena()">
 
-      <button mat-stroked-button type="button" class="action-button"
-        [disabled]="!periodoExiste || cargando || generando || actualizando" (click)="abrirModalBanco()">
-        Banco
-      </button>
+    <mat-icon>
+      {{ actualizando ? 'sync' : 'refresh' }}
+    </mat-icon>
 
-      <button mat-stroked-button color="warn" type="button" class="action-button" (click)="cancelar()">
-        Cancelar
-      </button>
-    </div>
+    <span>
+      {{ actualizando ? 'Actualizando...' : 'Actualizar' }}
+    </span>
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button action-excel"
+    [disabled]="!detalleRol || detalleRol.length === 0 || exportandoExcel"
+    (click)="exportarQuincenaExcel()">
+
+    <mat-icon>description</mat-icon>
+
+    <span>
+      {{ exportandoExcel ? 'Exportando...' : 'Excel' }}
+    </span>
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button action-banco"
+    [disabled]="!periodoExiste || cargando || generando || actualizando"
+    (click)="abrirModalBanco()">
+
+    <mat-icon>account_balance</mat-icon>
+    <span>Banco</span>
+  </button>
+
+  <button
+    mat-stroked-button
+    color="warn"
+    type="button"
+    class="action-button action-cancelar"
+    (click)="cancelar()">
+
+    <mat-icon>close</mat-icon>
+    <span>Cancelar</span>
+  </button>
+</div>
   </div>
 </div>

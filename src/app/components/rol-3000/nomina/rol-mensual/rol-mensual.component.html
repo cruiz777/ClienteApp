@@ -87,49 +87,62 @@
           </mat-error>
         </mat-form-field>
       </div>
-      <button mat-flat-button color="primary" type="button" class="action-button" [disabled]="
-    generando ||
-    cargando ||
-    validandoCierre ||
-    procesandoModificar ||
-    modificarBloqueado ||
-    (periodoExiste && periodoCerrado)
-  " (click)="accionPrincipalPeriodo()">
-        {{ procesandoModificar ? 'Procesando...' : (periodoExiste ? 'Modificar' : 'Nuevo') }}
+      <button mat-flat-button color="primary" type="button"
+        [disabled]="generando || cargando || validandoCierre || procesandoModificar || modificarBloqueado"
+        (click)="accionPrincipalPeriodo()">
+
+        <mat-icon>
+          {{ periodoExiste ? 'edit' : 'add' }}
+        </mat-icon>
+
+        {{ periodoExiste ? 'Modificar' : 'Nuevo' }}
       </button>
 
-      <button mat-stroked-button type="button" class="action-button"
-        [disabled]="actualizando || cargando || generando || validandoCierre" (click)="recalcularRolMensual()">
-        {{ actualizando ? 'Recalculando...' : 'Actualizar' }}
+      <button mat-stroked-button type="button"
+        [disabled]="actualizando || cargando || generando || validandoCierre || periodoCerrado"
+        (click)="recalcularRolMensual()">
+
+        <mat-icon>refresh</mat-icon>
+        Actualizar
       </button>
 
-      <button mat-stroked-button type="button" class="action-button" [disabled]="!periodoExiste || periodoCerrado"
-        (click)="cargarHoras()">
+      <button mat-stroked-button type="button" [disabled]="!periodoExiste || periodoCerrado" (click)="cargarHoras()">
+
+        <mat-icon>schedule</mat-icon>
         Cargar Horas
       </button>
 
-      <button mat-stroked-button type="button" class="action-button" [disabled]="!periodoExiste || periodoCerrado"
-        (click)="rubrosFijos()">
+      <button mat-stroked-button type="button" [disabled]="!periodoExiste || periodoCerrado" (click)="irRubrosFijos()">
+
+        <mat-icon>playlist_add</mat-icon>
         Rubros Fijos
       </button>
-      <button mat-stroked-button type="button" class="action-button action-mail"
-        [disabled]="!periodoExiste || enviandoCorreos" (click)="enviarPdfEmpleadosSeleccionados()">
+
+      <button mat-stroked-button type="button" class="btn-mail"
+        [disabled]="!periodoExiste || detalleRol.length === 0 || enviandoCorreos"
+        (click)="enviarPdfEmpleadosSeleccionados()">
 
         <mat-icon>mail</mat-icon>
-        <span>{{ enviandoCorreos ? 'Enviando...' : 'Mail' }}</span>
+        Mail
       </button>
 
-      <button mat-stroked-button type="button" class="action-button action-excel"
-        [disabled]="!detalleRol || detalleRol.length === 0 || exportandoExcel" (click)="exportarRolExcel()">
+      <button mat-stroked-button type="button" class="btn-excel"
+        [disabled]="!periodoExiste || detalleRol.length === 0 || exportandoExcel" (click)="exportarRolExcel()">
 
         <mat-icon>description</mat-icon>
-        <span>{{ exportandoExcel ? 'Exportando...' : 'Excel' }}</span>
+        Excel
       </button>
-      <button mat-stroked-button type="button" class="action-button"
-        [disabled]="!periodoExiste || cargando || generando" (click)="abrirModalBanco()">
+
+      <button mat-stroked-button type="button" [disabled]="!periodoExiste || detalleRol.length === 0"
+        (click)="abrirModalBanco()">
+
+        <mat-icon>account_balance</mat-icon>
         Banco
       </button>
-      <button mat-stroked-button color="warn" type="button" class="action-button" (click)="cancelar()">
+
+      <button mat-stroked-button type="button" class="btn-cancelar" (click)="cancelar()">
+
+        <mat-icon>close</mat-icon>
         Cancelar
       </button>
     </div>

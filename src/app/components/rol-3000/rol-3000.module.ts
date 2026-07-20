@@ -96,6 +96,8 @@ import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tip
 import { MatMenuModule } from '@angular/material/menu';
 import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomina-dialog.component';
 import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-individual-dialog.component';
+import { DialogCargaGlobalRubrosFijosComponent } from './nomina/rubros-fijos/dialog-carga-global-rubros-fijo/dialog-carga-global-rubros-fijo.component';
+
 @NgModule({
   declarations: [
     NavigationRolComponent,
@@ -145,7 +147,8 @@ import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-i
     FondoReservaComponent,
     UtilidadesComponent,
     PeriodosNominaDialogComponent,
-    RolIndividualDialogComponent
+    RolIndividualDialogComponent,
+    DialogCargaGlobalRubrosFijosComponent,
   ],
   imports: [
     CommonModule,

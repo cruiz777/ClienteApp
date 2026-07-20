@@ -20,6 +20,7 @@ import {
   CierrePeriodoService,
   ValidarCierrePeriodoRequest
 } from 'src/app/services/rol/cierre-periodo.service';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   AbstractControl,
   FormBuilder,
@@ -131,6 +132,11 @@ export class RolMensualComponent implements OnInit {
     filter: true,
     resizable: true
   };
+  private retornoRubrosFijos: {
+  fechaPeriodo: string;
+  idLocal: number | null;
+  autoActualizar: boolean;
+} | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -139,35 +145,53 @@ export class RolMensualComponent implements OnInit {
     private localesService: LocalesService,
     private snackBar: MatSnackBar,
     private cierrePeriodoService: CierrePeriodoService,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) { }
 
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      verLocales: [true],
-      areas: [true],
-      exEmpleados: [true],
-      departamentos: [false],
+ngOnInit(): void {
+  this.form = this.fb.group({
+    verLocales: [true],
+    areas: [true],
+    exEmpleados: [true],
+    departamentos: [false],
 
-      fechaPeriodo: [
-        this.obtenerUltimoDiaMesActual(),
-        [Validators.required, this.validarUltimoDiaMes]
-      ],
+    fechaPeriodo: [
+      this.obtenerUltimoDiaMesActual(),
+      [Validators.required, this.validarUltimoDiaMes]
+    ],
 
-      totalizados: [false],
-      porRubros: [false],
-      todosLosRubros: [true],
-      totalizar: [false]
-    });
+    totalizados: [false],
+    porRubros: [false],
+    todosLosRubros: [true],
+    totalizar: [false]
+  });
 
-    this.form.get('departamentos')?.valueChanges.subscribe(() => {
-      this.nodoSeleccionado = null;
-      this.cargarInicial();
-    });
+  this.route.queryParams.subscribe(params => {
+    const fechaPeriodo = params['fechaPeriodo'];
+    const idLocal = params['idLocal']
+      ? Number(params['idLocal'])
+      : null;
 
+    const autoActualizar = params['autoActualizar'] === 'true';
+
+    if (fechaPeriodo) {
+      this.retornoRubrosFijos = {
+        fechaPeriodo,
+        idLocal,
+        autoActualizar
+      };
+    }
+  });
+
+  this.form.get('departamentos')?.valueChanges.subscribe(() => {
+    this.nodoSeleccionado = null;
     this.cargarInicial();
-  }
+  });
 
+  this.cargarInicial();
+}
   cargarInicial(): void {
     this.nodos = [
       {
@@ -834,28 +858,29 @@ export class RolMensualComponent implements OnInit {
       totalizar: true
     };
   }
-  private cargarLocalesArbol(): void {
-    this.localesService.getAll().subscribe({
-      next: (response) => {
-        const locales = response.data ?? [];
+private cargarLocalesArbol(): void {
+  this.localesService.getAll().subscribe({
+    next: (response) => {
+      const locales = response.data ?? [];
 
-        const raiz = this.nodos[0];
+      const raiz = this.nodos[0];
 
-        raiz.hijos = locales.map((local: any) => ({
-          id: Number(local.id),
-          nombre: local.nombre ?? `Local ${local.id}`,
-          tipo: 'LOCAL' as const,
-          expandido: false,
-          hijos: []
-        }));
-      },
-      error: (err) => {
-        console.error('Error cargando locales:', err);
-        this.mostrarError('No se pudieron cargar los locales.');
-      }
-    });
-  }
+      raiz.hijos = locales.map((local: any) => ({
+        id: Number(local.id),
+        nombre: local.nombre ?? `Local ${local.id}`,
+        tipo: 'LOCAL' as const,
+        expandido: false,
+        hijos: []
+      }));
 
+      this.aplicarRetornoPendienteDesdeRubrosFijos();
+    },
+    error: (err) => {
+      console.error('Error cargando locales:', err);
+      this.mostrarError('No se pudieron cargar los locales.');
+    }
+  });
+}
   private obtenerUltimoDiaMesActual(): Date {
     const hoy = new Date();
 
@@ -1955,89 +1980,89 @@ export class RolMensualComponent implements OnInit {
       this.exportandoExcel = false;
     }
   }
- private obtenerColumnasExcel(): any[] {
-  if (!this.gridApi) {
-    return [];
-  }
-
-  const columnas: any[] = this.gridApi
-    .getAllDisplayedColumns()
-    .map(col => {
-      const colDef: any = col.getColDef();
-
-      const rubroHeaderName =
-        colDef.rubroHeaderName ??
-        colDef.headerTooltip ??
-        colDef.headerName ??
-        col.getColId();
-
-      const rubroSubHeaderName =
-        colDef.rubroSubHeaderName ??
-        '';
-
-      return {
-        colId: col.getColId(),
-        field: colDef.field,
-        headerName: colDef.headerName || col.getColId(),
-
-        grupoHeaderName: rubroHeaderName,
-        subHeaderName: rubroSubHeaderName,
-
-        colDef
-      };
-    })
-    .filter(col => col.colId !== 'seleccion');
-
-  /*
-   * Columnas que NO se muestran en el grid,
-   * pero SÍ se exportan a Excel.
-   */
-  const columnasSoloExcel: any[] = [
-    {
-      colId: 'cedulaExcel',
-      field: 'cedula',
-      headerName: 'Cédula',
-      grupoHeaderName: 'Cédula',
-      subHeaderName: '',
-      soloExcel: true,
-      colDef: null
-    },
-    {
-      colId: 'cargoExcel',
-      field: 'cargo',
-      headerName: 'Cargo',
-      grupoHeaderName: 'Cargo',
-      subHeaderName: '',
-      soloExcel: true,
-      colDef: null
-    },
-    {
-      colId: 'localExcel',
-      field: 'local',
-      headerName: 'Local',
-      grupoHeaderName: 'Local',
-      subHeaderName: '',
-      soloExcel: true,
-      colDef: null
+  private obtenerColumnasExcel(): any[] {
+    if (!this.gridApi) {
+      return [];
     }
-  ];
 
-  /*
-   * Insertar después de Nombre.
-   */
-  const indiceNombre = columnas.findIndex(x =>
-    x.colId === 'nombreEmpleado' ||
-    x.field === 'nombreEmpleado'
-  );
+    const columnas: any[] = this.gridApi
+      .getAllDisplayedColumns()
+      .map(col => {
+        const colDef: any = col.getColDef();
 
-  if (indiceNombre >= 0) {
-    columnas.splice(indiceNombre + 1, 0, ...columnasSoloExcel);
-  } else {
-    columnas.unshift(...columnasSoloExcel);
+        const rubroHeaderName =
+          colDef.rubroHeaderName ??
+          colDef.headerTooltip ??
+          colDef.headerName ??
+          col.getColId();
+
+        const rubroSubHeaderName =
+          colDef.rubroSubHeaderName ??
+          '';
+
+        return {
+          colId: col.getColId(),
+          field: colDef.field,
+          headerName: colDef.headerName || col.getColId(),
+
+          grupoHeaderName: rubroHeaderName,
+          subHeaderName: rubroSubHeaderName,
+
+          colDef
+        };
+      })
+      .filter(col => col.colId !== 'seleccion');
+
+    /*
+     * Columnas que NO se muestran en el grid,
+     * pero SÍ se exportan a Excel.
+     */
+    const columnasSoloExcel: any[] = [
+      {
+        colId: 'cedulaExcel',
+        field: 'cedula',
+        headerName: 'Cédula',
+        grupoHeaderName: 'Cédula',
+        subHeaderName: '',
+        soloExcel: true,
+        colDef: null
+      },
+      {
+        colId: 'cargoExcel',
+        field: 'cargo',
+        headerName: 'Cargo',
+        grupoHeaderName: 'Cargo',
+        subHeaderName: '',
+        soloExcel: true,
+        colDef: null
+      },
+      {
+        colId: 'localExcel',
+        field: 'local',
+        headerName: 'Local',
+        grupoHeaderName: 'Local',
+        subHeaderName: '',
+        soloExcel: true,
+        colDef: null
+      }
+    ];
+
+    /*
+     * Insertar después de Nombre.
+     */
+    const indiceNombre = columnas.findIndex(x =>
+      x.colId === 'nombreEmpleado' ||
+      x.field === 'nombreEmpleado'
+    );
+
+    if (indiceNombre >= 0) {
+      columnas.splice(indiceNombre + 1, 0, ...columnasSoloExcel);
+    } else {
+      columnas.unshift(...columnasSoloExcel);
+    }
+
+    return columnas;
   }
-
-  return columnas;
-}
   private obtenerValorColumnaExcel(item: any, columna: any): any {
     if (!item || !columna) {
       return '';
@@ -2083,15 +2108,15 @@ export class RolMensualComponent implements OnInit {
     return '';
   }
 
-private esColumnaNumericaExcel(columna: any): boolean {
-  return ![
-    'codigoEmpleado',
-    'nombreEmpleado',
-    'cedulaExcel',
-    'cargoExcel',
-    'localExcel'
-  ].includes(columna.colId);
-}
+  private esColumnaNumericaExcel(columna: any): boolean {
+    return ![
+      'codigoEmpleado',
+      'nombreEmpleado',
+      'cedulaExcel',
+      'cargoExcel',
+      'localExcel'
+    ].includes(columna.colId);
+  }
 
   private esColumnaTotalExcel(columna: any): boolean {
     return [
@@ -3011,140 +3036,317 @@ private esColumnaNumericaExcel(columna: any): boolean {
     return Math.round((valor + Number.EPSILON) * 100) / 100;
   }
 
-abrirModalBanco(): void {
-  const fechaPeriodo = this.formatearFechaYYYYMMDD(
-    this.form.value.fechaPeriodo
-  );
+  abrirModalBanco(): void {
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(
+      this.form.value.fechaPeriodo
+    );
 
-  const dialogRef = this.dialog.open(DialogBancoNominaComponent, {
-    width: '470px',
-    disableClose: true,
-    data: {
-      fechaPeriodo,
-      idUsuario: this.usuarioActual?.id_usuario ?? 1
-    }
-  });
-
-  /*
-   * Generar Archivo:
-   * Se ejecuta sin cerrar el modal.
-   */
-  dialogRef.componentInstance.archivoSolicitado.subscribe(
-    (result: DialogBancoNominaResult) => {
-      this.generarArchivoBancoDesdeModal(result);
-    }
-  );
-
-  /*
-   * Imprimir Reporte:
-   * Este sí viene por afterClosed porque el modal se cierra.
-   */
-  dialogRef.afterClosed().subscribe(
-    (result: DialogBancoNominaResult | null) => {
-      if (!result) {
-        return;
+    const dialogRef = this.dialog.open(DialogBancoNominaComponent, {
+      width: '470px',
+      disableClose: true,
+      data: {
+        fechaPeriodo,
+        idUsuario: this.usuarioActual?.id_usuario ?? 1
       }
+    });
 
-      if (result.accion === 'REPORTE') {
-        this.imprimirReporteFormaPagoDesdeModal(result);
-        return;
+    /*
+     * Generar Archivo:
+     * Se ejecuta sin cerrar el modal.
+     */
+    dialogRef.componentInstance.archivoSolicitado.subscribe(
+      (result: DialogBancoNominaResult) => {
+        this.generarArchivoBancoDesdeModal(result);
       }
-    }
-  );
-}
-private generarArchivoBancoDesdeModal(result: DialogBancoNominaResult): void {
-  const request = {
-    fechaPeriodo: result.fechaPeriodo,
-    codBanco: result.codBanco,
-    descripcionPago: result.descripcionPago,
-    idLocal: this.nodoSeleccionado?.tipo === 'LOCAL'
-      ? this.nodoSeleccionado.id
-      : null,
-    idUsuario: result.idUsuario
-  };
+    );
 
-  this.actualizando = true;
+    /*
+     * Imprimir Reporte:
+     * Este sí viene por afterClosed porque el modal se cierra.
+     */
+    dialogRef.afterClosed().subscribe(
+      (result: DialogBancoNominaResult | null) => {
+        if (!result) {
+          return;
+        }
 
-  this.rolNominaService.generarArchivoBanco(request).subscribe({
-    next: resp => {
-      this.actualizando = false;
-
-      if (resp.type !== 'Success' || !resp.data?.procesado) {
-        this.mostrarAdvertencia(resp.message ?? 'No se pudo generar el archivo banco.');
-        return;
+        if (result.accion === 'REPORTE') {
+          this.imprimirReporteFormaPagoDesdeModal(result);
+          return;
+        }
       }
+    );
+  }
+  private generarArchivoBancoDesdeModal(result: DialogBancoNominaResult): void {
+    const request = {
+      fechaPeriodo: result.fechaPeriodo,
+      codBanco: result.codBanco,
+      descripcionPago: result.descripcionPago,
+      idLocal: this.nodoSeleccionado?.tipo === 'LOCAL'
+        ? this.nodoSeleccionado.id
+        : null,
+      idUsuario: result.idUsuario
+    };
 
-      this.descargarArchivoBancoBase64(
-        resp.data.contenidoBase64,
-        resp.data.nombreArchivo,
-        resp.data.contentType
-      );
+    this.actualizando = true;
 
-      this.mostrarExito(resp.data.mensaje ?? 'Archivo generado correctamente.');
-    },
-    error: err => {
-      this.actualizando = false;
-      console.error(err);
-      this.mostrarError('Error al generar el archivo banco.');
+    this.rolNominaService.generarArchivoBanco(request).subscribe({
+      next: resp => {
+        this.actualizando = false;
+
+        if (resp.type !== 'Success' || !resp.data?.procesado) {
+          this.mostrarAdvertencia(resp.message ?? 'No se pudo generar el archivo banco.');
+          return;
+        }
+
+        this.descargarArchivoBancoBase64(
+          resp.data.contenidoBase64,
+          resp.data.nombreArchivo,
+          resp.data.contentType
+        );
+
+        this.mostrarExito(resp.data.mensaje ?? 'Archivo generado correctamente.');
+      },
+      error: err => {
+        this.actualizando = false;
+        console.error(err);
+        this.mostrarError('Error al generar el archivo banco.');
+      }
+    });
+  }
+  private imprimirReporteFormaPagoDesdeModal(result: DialogBancoNominaResult): void {
+    const request = {
+      fechaPeriodo: result.fechaPeriodo,
+      codBanco: result.codBanco,
+      descripcionPago: result.descripcionPago,
+      idLocal: this.nodoSeleccionado?.tipo === 'LOCAL'
+        ? this.nodoSeleccionado.id
+        : null,
+      idUsuario: result.idUsuario
+    };
+
+    this.actualizando = true;
+
+    this.rolNominaService.imprimirReporteFormaPago(request).subscribe({
+      next: blob => {
+        this.actualizando = false;
+
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 30000);
+      },
+      error: err => {
+        this.actualizando = false;
+        console.error(err);
+        this.mostrarError('Error al imprimir el reporte de forma de pago.');
+      }
+    });
+  }
+  private descargarArchivoBancoBase64(
+    contenidoBase64: string,
+    nombreArchivo: string,
+    contentType: string = 'text/plain'
+  ): void {
+    const byteCharacters = atob(contenidoBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
-  });
-}
-private imprimirReporteFormaPagoDesdeModal(result: DialogBancoNominaResult): void {
-  const request = {
-    fechaPeriodo: result.fechaPeriodo,
-    codBanco: result.codBanco,
-    descripcionPago: result.descripcionPago,
-    idLocal: this.nodoSeleccionado?.tipo === 'LOCAL'
-      ? this.nodoSeleccionado.id
-      : null,
-    idUsuario: result.idUsuario
-  };
 
-  this.actualizando = true;
+    const byteArray = new Uint8Array(byteNumbers);
 
-  this.rolNominaService.imprimirReporteFormaPago(request).subscribe({
-    next: blob => {
-      this.actualizando = false;
+    const blob = new Blob([byteArray], {
+      type: contentType
+    });
 
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
+    const url = window.URL.createObjectURL(blob);
 
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-      }, 30000);
-    },
-    error: err => {
-      this.actualizando = false;
-      console.error(err);
-      this.mostrarError('Error al imprimir el reporte de forma de pago.');
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombreArchivo;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
+  }
+  irRubrosFijos(): void {
+    const fechaPeriodo = this.form?.value?.fechaPeriodo;
+
+    if (!fechaPeriodo) {
+      this.mostrarAdvertencia('Debe seleccionar el periodo antes de ir a Rubros Fijos.');
+      return;
     }
-  });
-}
-private descargarArchivoBancoBase64(
-  contenidoBase64: string,
-  nombreArchivo: string,
-  contentType: string = 'text/plain'
-): void {
-  const byteCharacters = atob(contenidoBase64);
-  const byteNumbers = new Array(byteCharacters.length);
 
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
+    const fecha = this.formatearFechaYYYYMMDD(fechaPeriodo);
+
+    const idLocal = this.obtenerIdLocalParaRubrosFijos();
+
+    this.router.navigate(['/rol-3000/rubros-fijos'], {
+      queryParams: {
+        fechaPeriodo: fecha,
+        idLocal: idLocal,
+        origen: 'rol-mensual'
+      }
+    });
+  }
+  private obtenerIdLocalParaRubrosFijos(): number {
+    const nodo: any = this.nodoSeleccionado;
+
+    const idLocal =
+      nodo?.idLocal ??
+      nodo?.id_local ??
+      nodo?.id ??
+      this.form?.value?.idLocal ??
+      1;
+
+    const idLocalNumber = Number(idLocal);
+
+    return isNaN(idLocalNumber) || idLocalNumber <= 0
+      ? 1
+      : idLocalNumber;
   }
 
-  const byteArray = new Uint8Array(byteNumbers);
+ 
+private aplicarRetornoPendienteDesdeRubrosFijos(): void {
+  if (!this.retornoRubrosFijos) {
+    return;
+  }
 
-  const blob = new Blob([byteArray], {
-    type: contentType
+  const retorno = this.retornoRubrosFijos;
+  this.retornoRubrosFijos = null;
+
+  this.aplicarRetornoDesdeRubrosFijos(
+    retorno.fechaPeriodo,
+    retorno.idLocal,
+    retorno.autoActualizar
+  );
+}
+
+private aplicarRetornoDesdeRubrosFijos(
+  fechaPeriodo: string,
+  idLocal: number | null,
+  autoActualizar: boolean
+): void {
+  const fecha = this.crearFechaLocal(fechaPeriodo);
+
+  this.form.patchValue({
+    fechaPeriodo: fecha
   });
 
-  const url = window.URL.createObjectURL(blob);
+  if (idLocal) {
+    this.seleccionarLocalPorId(idLocal);
+  }
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = nombreArchivo;
-  link.click();
+  if (!autoActualizar) {
+    this.cargarRolMensual();
+    return;
+  }
 
-  window.URL.revokeObjectURL(url);
+  setTimeout(() => {
+    this.ejecutarActualizarDesdeRetornoRubrosFijos();
+  }, 400);
 }
+
+private crearFechaLocal(fecha: string): Date {
+  const partes = fecha.split('-');
+
+  const year = Number(partes[0]);
+  const month = Number(partes[1]) - 1;
+  const day = Number(partes[2]);
+
+  return new Date(year, month, day);
+}
+
+private seleccionarLocalPorId(idLocal: number): void {
+  if (!idLocal || !this.nodos?.length) {
+    return;
+  }
+
+  const nodoEncontrado = this.buscarNodoPorLocal(this.nodos, idLocal);
+
+  if (nodoEncontrado) {
+    this.nodoSeleccionado = nodoEncontrado;
+
+    const raiz = this.nodos[0];
+    if (raiz) {
+      raiz.expandido = true;
+    }
+  }
+}
+
+private buscarNodoPorLocal(nodos: NodoRol[], idLocal: number): NodoRol | null {
+  for (const nodo of nodos) {
+    const idNodo = Number(nodo.id);
+
+    if (nodo.tipo === 'LOCAL' && idNodo === idLocal) {
+      return nodo;
+    }
+
+    if (nodo.hijos?.length) {
+      const encontrado = this.buscarNodoPorLocal(nodo.hijos, idLocal);
+
+      if (encontrado) {
+        return encontrado;
+      }
+    }
+  }
+
+  return null;
+}
+
+private ejecutarActualizarDesdeRetornoRubrosFijos(): void {
+  if (this.periodoCerrado) {
+    this.mostrarAdvertencia(
+      'El periodo está cerrado. No se puede actualizar la nómina.'
+    );
+
+    this.cargarRolMensual();
+    return;
+  }
+
+  /*
+   * IMPORTANTE:
+   * Se limpia este bloqueo porque vienes de otra pantalla
+   * y necesitas regenerar tomando los rubros_fijos nuevos.
+   */
+  this.modificarBloqueado = false;
+  this.procesandoModificar = false;
+
+  /*
+   * Esto sí vuelve a llamar al backend y sobrescribe el rol mensual.
+   * Ahí es donde entran los rubros_fijos.
+   */
+  this.generarSobrescribiendo();
+
+  this.router.navigate([], {
+    relativeTo: this.route,
+    queryParams: {},
+    replaceUrl: true
+  });
+}
+
+
+
+
+
+private ejecutarModificarDesdeRetorno(): void {
+  this.cargarRolMensual();
+
+  setTimeout(() => {
+    if (this.periodoExiste && !this.periodoCerrado) {
+      this.modificarPeriodo();
+    }
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {},
+      replaceUrl: true
+    });
+  }, 800);
+}
+
+
 }

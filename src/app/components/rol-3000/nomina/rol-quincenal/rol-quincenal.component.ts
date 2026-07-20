@@ -1134,23 +1134,15 @@ private limpiarDatosPeriodo(): void {
       : { fechaInvalida: true };
   }
 
-  private obtenerDiaQuincenaActual(): Date {
-    const hoy = new Date();
+ private obtenerDiaQuincenaActual(): Date {
+  const hoy = new Date();
 
-    if (hoy.getDate() <= 15) {
-      return new Date(
-        hoy.getFullYear(),
-        hoy.getMonth(),
-        15
-      );
-    }
-
-    return new Date(
-      hoy.getFullYear(),
-      hoy.getMonth() + 1,
-      0
-    );
-  }
+  return new Date(
+    hoy.getFullYear(),
+    hoy.getMonth(),
+    15
+  );
+}
 
   private obtenerFechaSegunQuincena(fechaBase: any): Date {
     const fecha = fechaBase instanceof Date
