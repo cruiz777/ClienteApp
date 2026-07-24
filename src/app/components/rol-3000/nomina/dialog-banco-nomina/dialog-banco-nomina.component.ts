@@ -28,8 +28,8 @@ import { MatButtonModule } from '@angular/material/button';
 export interface DialogBancoNominaData {
   fechaPeriodo: string;
   idUsuario: number;
+  origen?: 'NOMINA' | 'QUINCENA' | 'DECIMO_CUARTO' | 'DECIMO_TERCERO';
 }
-
 export interface DialogBancoNominaResult {
   accion: 'ARCHIVO' | 'REPORTE';
   fechaPeriodo: string;
@@ -160,42 +160,69 @@ salir(): void {
     };
   }
 
-  private generarDescripcionDefault(): string {
-    const fecha = this.data.fechaPeriodo?.substring(0, 10);
+private generarDescripcionDefault(): string {
+  const fecha = this.data.fechaPeriodo?.substring(0, 10);
 
-    if (!fecha) {
-      return 'NOMINA';
-    }
-
-    const partes = fecha.split('-');
-
-    if (partes.length !== 3) {
-      return 'NOMINA';
-    }
-
-    const anio = Number(partes[0]);
-    const mes = Number(partes[1]);
-
-    const meses = [
-      '',
-      'ENERO',
-      'FEBRERO',
-      'MARZO',
-      'ABRIL',
-      'MAYO',
-      'JUNIO',
-      'JULIO',
-      'AGOSTO',
-      'SEPTIEMBRE',
-      'OCTUBRE',
-      'NOVIEMBRE',
-      'DICIEMBRE'
-    ];
-
-    if (!anio || mes < 1 || mes > 12) {
-      return 'NOMINA';
-    }
-
-    return `QUINCENA ${meses[mes]} ${anio}`;
+  if (!fecha) {
+    return this.obtenerDescripcionSinFecha();
   }
+
+  const partes = fecha.split('-');
+
+  if (partes.length !== 3) {
+    return this.obtenerDescripcionSinFecha();
+  }
+
+  const anio = Number(partes[0]);
+  const mes = Number(partes[1]);
+
+  const meses = [
+    '',
+    'ENERO',
+    'FEBRERO',
+    'MARZO',
+    'ABRIL',
+    'MAYO',
+    'JUNIO',
+    'JULIO',
+    'AGOSTO',
+    'SEPTIEMBRE',
+    'OCTUBRE',
+    'NOVIEMBRE',
+    'DICIEMBRE'
+  ];
+
+  if (!anio || mes < 1 || mes > 12) {
+    return this.obtenerDescripcionSinFecha();
+  }
+
+  switch (this.data.origen) {
+    case 'DECIMO_CUARTO':
+      return `DÉCIMO CUARTO ${anio}`;
+
+    case 'QUINCENA':
+      return `QUINCENA ${meses[mes]} ${anio}`;
+
+    case 'NOMINA':
+    default:
+      return `NÓMINA ${meses[mes]} ${anio}`;
+  }
+}
+
+private obtenerDescripcionSinFecha(): string {
+  switch (this.data.origen) {
+    case 'DECIMO_CUARTO':
+      return 'DÉCIMO CUARTO';
+
+    case 'DECIMO_TERCERO':
+      return 'DÉCIMO TERCERO';
+
+    case 'QUINCENA':
+      return 'QUINCENA';
+
+    case 'NOMINA':
+    default:
+      return 'NÓMINA';
+  }
+}
 }

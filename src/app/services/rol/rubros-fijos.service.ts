@@ -31,6 +31,8 @@ export interface RubroFijoEmpleadoResponse {
   cuotasPagadas: number;
   observacion?: string | null;
   observacionInterna?: string | null;
+  numeroCedula?: string | null;
+local?: string | null;
 }
 
 export interface CargarRubrosFijosRequest {

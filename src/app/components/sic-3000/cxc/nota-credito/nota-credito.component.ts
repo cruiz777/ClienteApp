@@ -868,18 +868,464 @@ export class NotaCreditoComponent implements OnInit {
   guardando = false;
   guardado = false;
 
+// grabar(): void {
+//   if (this.guardando || this.guardado) return;
+
+//   const tope = this.getTopePago();
+
+//   if (!(tope > 0)) {
+//     this.mostrarAlerta('No hay devolución calculada. Verifica el detalle.', 'info');
+//     return;
+//   }
+
+//   if (!this.idCodContableCliente) {
+//     this.mostrarAlerta('No Existe Código contable del cliente.', 'info');
+//     return;
+//   }
+
+//   if (!this.puedeGrabar) {
+//     this.mostrarAlerta(
+//       `No puedes grabar. Total Pago: ${this.totales.totalPago.toFixed(2)} debe ser igual a ${tope.toFixed(2)}.`,
+//       'error'
+//     );
+//     return;
+//   }
+
+//   if (!this.encabezado?.factura) {
+//     this.mostrarAlerta('Debes seleccionar/fijar una factura antes de grabar.', 'error');
+//     return;
+//   }
+
+//   if (!this.pagoRows?.length) {
+//     this.mostrarAlerta('Agrega al menos una forma de pago.', 'error');
+//     return;
+//   }
+
+//   const payload = this.buildPayload();
+
+//   this.guardando = true;
+
+//   console.log('%c[NC] ===== PAYLOAD CREAR NOTA CRÉDITO =====', 'color:#1976d2; font-weight:bold;');
+//   console.log('[NC] payload OBJ →', payload);
+//   console.log('[NC] payload JSON →', JSON.stringify(payload, null, 2));
+
+//   this.svc.crearNotaCredito(payload).pipe(
+//     switchMap(resp => {
+//       console.log('%c[NC] ===== RESPUESTA crearNotaCredito =====', 'color:#388e3c; font-weight:bold;');
+//       console.log('[NC] resp OBJ →', resp);
+//       console.log('[NC] resp JSON →', JSON.stringify(resp, null, 2));
+
+//       const tipo = (resp?.type || '').toLowerCase();
+//       const dataNc: any = resp?.data || {};
+//       const idNc = Number(dataNc.idNotaCredito ?? dataNc.idnota ?? 0);
+
+//       if (tipo !== 'success' || !Number.isFinite(idNc) || idNc <= 0) {
+//         this.mostrarAlerta(resp?.message || 'No se pudo crear la nota de crédito.', 'error');
+//         return of(null);
+//       }
+
+//       this.mostrarAlerta(resp?.message || 'Nota de crédito creada correctamente.', 'ok');
+
+//       const numeroNotaCredito: string =
+//         dataNc.numeroNotaCredito ??
+//         dataNc.numeroNota ??
+//         this.encabezado.numero ??
+//         '';
+
+//       const numeroFactura: string =
+//         dataNc.numeroFactura ??
+//         this.encabezado.factura ??
+//         '';
+
+//       this.idNota = idNc;
+//       this.guardado = true;
+//       this.encabezado.numero = numeroNotaCredito;
+
+//       const totalBaseDevCalc = +(this.totales.totalDev || 0).toFixed(2);
+//       const totalIvaDevCalc = +(this.totales.totalIvaDev || 0).toFixed(2);
+//       const totalNc = +(totalBaseDevCalc + totalIvaDevCalc).toFixed(2);
+
+//       if (totalNc <= 0) {
+//         this.mostrarAlerta(
+//           'Nota de crédito creada, pero el total es 0. No se generó asiento contable.',
+//           'info'
+//         );
+//         return of(idNc);
+//       }
+
+//       const hoy = new Date();
+//       const fechaIso = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
+//         .toISOString()
+//         .substring(0, 19);
+
+//       const hora = fechaIso.substring(11);
+//       const anioStr = hoy.getFullYear().toString();
+
+//       const idZona = 1;
+//       const idUsuario = this.usuarioActual?.id_usuario ?? 1;
+//       const idEmpresa = this.usuarioActual?.id_empresa ?? 1;
+//       const idTipoAsiento = 3;
+//       const tipdoc = 'VT';
+//       const numdoc = 0;
+
+//       const beneficiario =
+//         (this.encabezado.cliente || '').toString().trim().toUpperCase() ||
+//         `CLIENTE ID: ${this.encabezado.idCliente || this.clientesCodigo}`;
+
+//       const CTA_VENTAS = 410101;
+//       const CTA_IVA = 210602;
+//       const CUENTA_CLIENTES_NO_RELACIONADOS = '110205-001';
+
+//       const idCodContableLinea = Number(this.idCodContableCliente || 0);
+
+//       const formaPagoSeleccionada = (this.pagoRows || []).find(p => this.asNumber(p.pago) > 0);
+
+//       if (!formaPagoSeleccionada) {
+//         this.mostrarAlerta('No existe una forma de pago con valor mayor a cero.', 'error');
+//         return of(null);
+//       }
+
+//       const cuentaFormaPago = (formaPagoSeleccionada.cuenta ?? '').toString().trim();
+//       const idPlanFormaPago = this.asNumber(formaPagoSeleccionada.idPlanCuentas);
+
+//       if (!cuentaFormaPago || !idPlanFormaPago || idPlanFormaPago <= 0) {
+//         this.mostrarAlerta('La forma de pago no tiene cuenta contable válida.', 'error');
+//         return of(null);
+//       }
+
+//       const detalles: any[] = [];
+//       let numlinea = 1;
+
+//       let totalBaseDev = 0;
+//       let totalIvaDev = 0;
+
+//       // 1) DEBE → cuenta de forma de pago seleccionada
+//       for (const row of this.detalleRows) {
+//         const baseDev = this.asNumber(row.valorDev);
+//         if (baseDev <= 0) continue;
+
+//         totalBaseDev += baseDev;
+
+//         let ivaDevLinea = 0;
+
+//         if (row.porMonto) {
+//           ivaDevLinea = this.asNumber(row.ivaDev);
+//         } else {
+//           const cantDev = this.asNumber(row.cantidadd);
+//           const cantidad = this.asNumber(row.cantidad);
+//           const ivaLinea = this.asNumber(row.iva);
+
+//           if (cantidad > 0) {
+//             ivaDevLinea = cantDev * (ivaLinea / cantidad);
+//           }
+//         }
+
+//         totalIvaDev += ivaDevLinea;
+
+//         detalles.push({
+//           IdDetMaestro: 0,
+//           IdCabMaestro: 0,
+//           numlinea: numlinea++,
+//           anio: anioStr,
+//           fechatransaccion: fechaIso,
+//           fechaingreso: fechaIso,
+//           hora,
+//           idZona,
+//           idCentroCostos: null,
+//           idLocal: 1,
+//           idPlanCuentas: idPlanFormaPago,
+//           codprePc: cuentaFormaPago,
+//           idCodContable: idCodContableLinea,
+//           nocomprobante: numeroNotaCredito,
+//           docurelacionado: numeroFactura,
+//           cheque: 0,
+//           beneficiario,
+//           debe: +baseDev.toFixed(2),
+//           haber: 0,
+//           comentario: `REVERSO DEVOLUCIÓN FACTURA ${numeroFactura} / NC ${numeroNotaCredito} - ${(row.descripcion || '').toString().toUpperCase()}`,
+//           idMovBancario: 1,
+//           movbancario: '0',
+//           cierre: '',
+//           fechacierre: null,
+//           conciliado: '',
+//           fechaconciliado: null,
+//           idSustentoTrib: null,
+//           idTipoCompSri: null,
+//           autorizacion: '',
+//           fechacaduca: null,
+//           idTipoRetencion: null,
+//           idProyecto: null,
+//           idSubproyecto: null,
+//           transferido: false,
+//           fechatransferido: null,
+//           fechavencimiento: null,
+//           idConciliacion: 0,
+//           valorLetras: '',
+//           estadoIngreso: true,
+//           autorizacionRelacionado: '',
+//           fechaCadRelacionado: null
+//         });
+//       }
+
+//       totalBaseDev = +totalBaseDev.toFixed(2);
+//       totalIvaDev = +totalIvaDev.toFixed(2);
+
+//       // 2) DEBE → IVA devuelto
+//       if (totalIvaDev > 0) {
+//         detalles.push({
+//           IdDetMaestro: 0,
+//           IdCabMaestro: 0,
+//           numlinea: numlinea++,
+//           anio: anioStr,
+//           fechatransaccion: fechaIso,
+//           fechaingreso: fechaIso,
+//           hora,
+//           idZona,
+//           idCentroCostos: null,
+//           idLocal: 1,
+//           idPlanCuentas: this.planCuenta?.id_plan ?? CTA_IVA,
+//           codprePc: this.parametros?.codcueretiva ?? `${CTA_IVA}-001`,
+//           idCodContable: idCodContableLinea,
+//           nocomprobante: numeroNotaCredito,
+//           docurelacionado: numeroFactura,
+//           cheque: 0,
+//           beneficiario,
+//           debe: totalIvaDev,
+//           haber: 0,
+//           comentario: `REVERSO IVA FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+//           idMovBancario: 1,
+//           movbancario: '0',
+//           cierre: '',
+//           fechacierre: null,
+//           conciliado: '',
+//           fechaconciliado: null,
+//           idSustentoTrib: null,
+//           idTipoCompSri: null,
+//           autorizacion: '',
+//           fechacaduca: null,
+//           idTipoRetencion: null,
+//           idProyecto: null,
+//           idSubproyecto: null,
+//           transferido: false,
+//           fechatransferido: null,
+//           fechavencimiento: null,
+//           idConciliacion: 0,
+//           valorLetras: '',
+//           estadoIngreso: true,
+//           autorizacionRelacionado: '',
+//           fechaCadRelacionado: null
+//         });
+//       }
+
+//       const totalHaber = +(totalBaseDev + totalIvaDev).toFixed(2);
+
+//       // 3) Buscar id_plan_cuentas real de CLIENTES NO RELACIONADOS
+//       return this.planCueService
+//         .getByCuentaPresentacion(idEmpresa, CUENTA_CLIENTES_NO_RELACIONADOS)
+//         .pipe(
+//           switchMap(planCliente => {
+//             const idPlanCliente = Number(
+//               (planCliente as any)?.id_plan ??
+//               (planCliente as any)?.idPlan ??
+//               (planCliente as any)?.id_plan_cuentas ??
+//               (planCliente as any)?.idPlanCuentas ??
+//               0
+//             );
+
+//             if (!idPlanCliente || idPlanCliente <= 0) {
+//               this.mostrarAlerta(
+//                 `No se encontró el id_plan_cuentas de la cuenta ${CUENTA_CLIENTES_NO_RELACIONADOS}.`,
+//                 'error'
+//               );
+//               return of(idNc);
+//             }
+
+//             // 4) HABER → CLIENTES NO RELACIONADOS
+//             detalles.push({
+//               IdDetMaestro: 0,
+//               IdCabMaestro: 0,
+//               numlinea: numlinea++,
+//               anio: anioStr,
+//               fechatransaccion: fechaIso,
+//               fechaingreso: fechaIso,
+//               hora,
+//               idZona,
+//               idCentroCostos: null,
+//               idLocal: 1,
+//               idPlanCuentas: idPlanCliente,
+//               codprePc: CUENTA_CLIENTES_NO_RELACIONADOS,
+//               idCodContable: idCodContableLinea,
+//               nocomprobante: numeroNotaCredito,
+//               docurelacionado: numeroFactura,
+//               cheque: 0,
+//               beneficiario,
+//               debe: 0,
+//               haber: totalHaber,
+//               comentario: `REVERSO CUENTA POR COBRAR FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+//               idMovBancario: 1,
+//               movbancario: '0',
+//               cierre: '',
+//               fechacierre: null,
+//               conciliado: '',
+//               fechaconciliado: null,
+//               idSustentoTrib: null,
+//               idTipoCompSri: null,
+//               autorizacion: '',
+//               fechacaduca: null,
+//               idTipoRetencion: null,
+//               idProyecto: null,
+//               idSubproyecto: null,
+//               transferido: false,
+//               fechatransferido: null,
+//               fechavencimiento: null,
+//               idConciliacion: 0,
+//               valorLetras: '',
+//               estadoIngreso: true,
+//               autorizacionRelacionado: '',
+//               fechaCadRelacionado: null
+//             });
+
+//             const totalDebe = +(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0)).toFixed(2);
+
+//             const asientoNc: any = {
+//               IdCabMaestro: 0,
+//               idZona,
+//               idUsuario,
+//               idEmpresa,
+//               idTipoAsiento,
+//               tipdoc,
+//               numdoc,
+//               anio: anioStr,
+//               fechatransaccion: fechaIso,
+//               fechaingreso: fechaIso,
+//               observacion: `ASIENTO NOTA DE CRÉDITO ${numeroNotaCredito} (reverso factura ${numeroFactura})`,
+//               totdebe: totalDebe,
+//               tothaber: totalHaber,
+//               beneficiario,
+//               cierre: '',
+//               fechacierre: null,
+//               solicitado: '',
+//               depto: '',
+//               autorizado: '',
+//               homCodigo: 0,
+//               estado: true,
+//               modulo: 2,
+//               detalles
+//             };
+
+//             console.log('%c[NC] ===== ASIENTO NC A ENVIAR =====', 'color:#ff9800; font-weight:bold;');
+//             console.log('[NC] Asiento NC OBJ →', asientoNc);
+//             console.log('[NC] Asiento NC JSON →', JSON.stringify(asientoNc, null, 2));
+
+//             return this.asientoVentaService.crearAsientoVenta(asientoNc).pipe(
+//               tap(respAsiento => {
+//                 console.log('%c[NC] ===== RESPUESTA API CREAR ASIENTO NC =====', 'color:#d32f2f; font-weight:bold;');
+//                 console.log('[NC] Resp Asiento OBJ →', respAsiento);
+//                 console.log('[NC] Resp Asiento JSON →', JSON.stringify(respAsiento, null, 2));
+
+//                 const tipoResp = (respAsiento?.type || '').toString().toUpperCase();
+
+//                 if (tipoResp !== 'SUCCESS' && tipoResp !== 'CREATED') {
+//                   const msgSrv = respAsiento?.message || 'Error al crear el asiento contable.';
+//                   console.error('[NC] Error crear asiento:', msgSrv);
+//                   this.mostrarAlerta(msgSrv, 'error');
+//                   throw new Error(msgSrv);
+//                 }
+
+//                 this.mostrarAlerta(
+//                   respAsiento?.message || 'Asiento contable de la nota de crédito generado.',
+//                   'ok'
+//                 );
+
+//                 this.asientoVentaInfo = respAsiento?.data ?? null;
+//               }),
+//               catchError(err => {
+//                 console.error('[NC] Error creando asiento de nota de crédito:', err);
+//                 this.mostrarAlerta(
+//                   'Nota de crédito creada, pero ocurrió un error al generar el asiento contable.',
+//                   'error'
+//                 );
+//                 return of(null);
+//               }),
+//               map(() => idNc)
+//             );
+//           }),
+//           catchError(err => {
+//             console.error('[NC] Error buscando cuenta clientes no relacionados:', err);
+//             this.mostrarAlerta(
+//               `No se pudo obtener la cuenta ${CUENTA_CLIENTES_NO_RELACIONADOS}.`,
+//               'error'
+//             );
+//             return of(idNc);
+//           })
+//         );
+//     }),
+
+//     switchMap((idNc: number | null) => {
+//       if (!idNc || idNc <= 0) return of(void 0);
+
+//       return this.svc.generarXmlNotaCredito(idNc).pipe(
+//         switchMap((r: any) => {
+//           console.log('%c[NC] ===== RESPUESTA generarXmlNotaCredito =====', 'color:#6a1b9a; font-weight:bold;');
+//           console.log('[NC] resp XML OBJ →', r);
+//           console.log('[NC] resp XML JSON →', JSON.stringify(r, null, 2));
+
+//           const ok = (r?.success ?? r?.data?.success) === true;
+//           const fileName = r?.fileName ?? r?.data?.fileName ?? '';
+//           const msg = r?.message ?? r?.data?.message ?? '';
+
+//           if (!ok) {
+//             this.mostrarAlerta(msg || 'No se generó el XML de la Nota de Crédito.', 'error');
+//             return of(void 0);
+//           }
+
+//           this.mostrarAlerta(`XML generado en el servidor: ${fileName || 'OK'}`, 'ok');
+//           return this.svc.descargarPdfNotaCredito(idNc);
+//         }),
+//         catchError(err => {
+//           console.error('[NC] Error generando XML/PDF:', err);
+//           this.mostrarAlerta('Error generando el XML/PDF de la Nota de Crédito.', 'error');
+//           return of(void 0);
+//         })
+//       );
+//     }),
+
+//     catchError(err => {
+//       console.error('[crearNotaCredito] error general:', err);
+//       this.mostrarAlerta('Error al crear la nota de crédito.', 'error');
+//       return of(void 0);
+//     }),
+
+//     finalize(() => {
+//       this.guardando = false;
+//       this.cdr.detectChanges();
+//     })
+//   ).subscribe({
+//     next: () => {
+//       this.mostrarAlerta('PDF de la Nota de Crédito descargado.', 'ok');
+//     }
+//   });
+// }
 grabar(): void {
-  if (this.guardando || this.guardado) return;
+  if (this.guardando || this.guardado) {
+    return;
+  }
 
   const tope = this.getTopePago();
 
   if (!(tope > 0)) {
-    this.mostrarAlerta('No hay devolución calculada. Verifica el detalle.', 'info');
+    this.mostrarAlerta(
+      'No hay devolución calculada. Verifica el detalle.',
+      'info'
+    );
     return;
   }
 
   if (!this.idCodContableCliente) {
-    this.mostrarAlerta('No Existe Código contable del cliente.', 'info');
+    this.mostrarAlerta(
+      'No existe código contable del cliente.',
+      'info'
+    );
     return;
   }
 
@@ -892,12 +1338,18 @@ grabar(): void {
   }
 
   if (!this.encabezado?.factura) {
-    this.mostrarAlerta('Debes seleccionar/fijar una factura antes de grabar.', 'error');
+    this.mostrarAlerta(
+      'Debes seleccionar/fijar una factura antes de grabar.',
+      'error'
+    );
     return;
   }
 
   if (!this.pagoRows?.length) {
-    this.mostrarAlerta('Agrega al menos una forma de pago.', 'error');
+    this.mostrarAlerta(
+      'Agrega al menos una forma de pago.',
+      'error'
+    );
     return;
   }
 
@@ -905,26 +1357,51 @@ grabar(): void {
 
   this.guardando = true;
 
-  console.log('%c[NC] ===== PAYLOAD CREAR NOTA CRÉDITO =====', 'color:#1976d2; font-weight:bold;');
+  console.log(
+    '%c[NC] ===== PAYLOAD CREAR NOTA CRÉDITO =====',
+    'color:#1976d2; font-weight:bold;'
+  );
   console.log('[NC] payload OBJ →', payload);
   console.log('[NC] payload JSON →', JSON.stringify(payload, null, 2));
 
   this.svc.crearNotaCredito(payload).pipe(
-    switchMap(resp => {
-      console.log('%c[NC] ===== RESPUESTA crearNotaCredito =====', 'color:#388e3c; font-weight:bold;');
-      console.log('[NC] resp OBJ →', resp);
-      console.log('[NC] resp JSON →', JSON.stringify(resp, null, 2));
+    switchMap((resp) => {
+      console.log(
+        '%c[NC] ===== RESPUESTA crearNotaCredito =====',
+        'color:#388e3c; font-weight:bold;'
+      );
+      console.log('[NC] respuesta OBJ →', resp);
+      console.log(
+        '[NC] respuesta JSON →',
+        JSON.stringify(resp, null, 2)
+      );
 
       const tipo = (resp?.type || '').toLowerCase();
       const dataNc: any = resp?.data || {};
-      const idNc = Number(dataNc.idNotaCredito ?? dataNc.idnota ?? 0);
 
-      if (tipo !== 'success' || !Number.isFinite(idNc) || idNc <= 0) {
-        this.mostrarAlerta(resp?.message || 'No se pudo crear la nota de crédito.', 'error');
+      const idNc = Number(
+        dataNc.idNotaCredito ??
+        dataNc.idnota ??
+        0
+      );
+
+      if (
+        tipo !== 'success' ||
+        !Number.isFinite(idNc) ||
+        idNc <= 0
+      ) {
+        this.mostrarAlerta(
+          resp?.message || 'No se pudo crear la nota de crédito.',
+          'error'
+        );
+
         return of(null);
       }
 
-      this.mostrarAlerta(resp?.message || 'Nota de crédito creada correctamente.', 'ok');
+      this.mostrarAlerta(
+        resp?.message || 'Nota de crédito creada correctamente.',
+        'ok'
+      );
 
       const numeroNotaCredito: string =
         dataNc.numeroNotaCredito ??
@@ -941,20 +1418,32 @@ grabar(): void {
       this.guardado = true;
       this.encabezado.numero = numeroNotaCredito;
 
-      const totalBaseDevCalc = +(this.totales.totalDev || 0).toFixed(2);
-      const totalIvaDevCalc = +(this.totales.totalIvaDev || 0).toFixed(2);
-      const totalNc = +(totalBaseDevCalc + totalIvaDevCalc).toFixed(2);
+      const totalBaseDevCalc = +(
+        this.totales.totalDev || 0
+      ).toFixed(2);
+
+      const totalIvaDevCalc = +(
+        this.totales.totalIvaDev || 0
+      ).toFixed(2);
+
+      const totalNc = +(
+        totalBaseDevCalc + totalIvaDevCalc
+      ).toFixed(2);
 
       if (totalNc <= 0) {
         this.mostrarAlerta(
           'Nota de crédito creada, pero el total es 0. No se generó asiento contable.',
           'info'
         );
+
         return of(idNc);
       }
 
       const hoy = new Date();
-      const fechaIso = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
+
+      const fechaIso = new Date(
+        hoy.getTime() - hoy.getTimezoneOffset() * 60000
+      )
         .toISOString()
         .substring(0, 19);
 
@@ -969,27 +1458,54 @@ grabar(): void {
       const numdoc = 0;
 
       const beneficiario =
-        (this.encabezado.cliente || '').toString().trim().toUpperCase() ||
-        `CLIENTE ID: ${this.encabezado.idCliente || this.clientesCodigo}`;
+        (this.encabezado.cliente || '')
+          .toString()
+          .trim()
+          .toUpperCase() ||
+        `CLIENTE ID: ${
+          this.encabezado.idCliente || this.clientesCodigo
+        }`;
 
-      const CTA_VENTAS = 410101;
       const CTA_IVA = 210602;
       const CUENTA_CLIENTES_NO_RELACIONADOS = '110205-001';
 
-      const idCodContableLinea = Number(this.idCodContableCliente || 0);
+      const idCodContableLinea = Number(
+        this.idCodContableCliente || 0
+      );
 
-      const formaPagoSeleccionada = (this.pagoRows || []).find(p => this.asNumber(p.pago) > 0);
+      const formaPagoSeleccionada = (
+        this.pagoRows || []
+      ).find((p) => this.asNumber(p.pago) > 0);
 
       if (!formaPagoSeleccionada) {
-        this.mostrarAlerta('No existe una forma de pago con valor mayor a cero.', 'error');
+        this.mostrarAlerta(
+          'No existe una forma de pago con valor mayor a cero.',
+          'error'
+        );
+
         return of(null);
       }
 
-      const cuentaFormaPago = (formaPagoSeleccionada.cuenta ?? '').toString().trim();
-      const idPlanFormaPago = this.asNumber(formaPagoSeleccionada.idPlanCuentas);
+      const cuentaFormaPago = (
+        formaPagoSeleccionada.cuenta ?? ''
+      )
+        .toString()
+        .trim();
 
-      if (!cuentaFormaPago || !idPlanFormaPago || idPlanFormaPago <= 0) {
-        this.mostrarAlerta('La forma de pago no tiene cuenta contable válida.', 'error');
+      const idPlanFormaPago = this.asNumber(
+        formaPagoSeleccionada.idPlanCuentas
+      );
+
+      if (
+        !cuentaFormaPago ||
+        !idPlanFormaPago ||
+        idPlanFormaPago <= 0
+      ) {
+        this.mostrarAlerta(
+          'La forma de pago no tiene una cuenta contable válida.',
+          'error'
+        );
+
         return of(null);
       }
 
@@ -999,10 +1515,13 @@ grabar(): void {
       let totalBaseDev = 0;
       let totalIvaDev = 0;
 
-      // 1) DEBE → cuenta de forma de pago seleccionada
+      // 1. DEBE: cuenta de la forma de pago seleccionada.
       for (const row of this.detalleRows) {
         const baseDev = this.asNumber(row.valorDev);
-        if (baseDev <= 0) continue;
+
+        if (baseDev <= 0) {
+          continue;
+        }
 
         totalBaseDev += baseDev;
 
@@ -1042,7 +1561,12 @@ grabar(): void {
           beneficiario,
           debe: +baseDev.toFixed(2),
           haber: 0,
-          comentario: `REVERSO DEVOLUCIÓN FACTURA ${numeroFactura} / NC ${numeroNotaCredito} - ${(row.descripcion || '').toString().toUpperCase()}`,
+          comentario:
+            `REVERSO DEVOLUCIÓN FACTURA ${numeroFactura} ` +
+            `/ NC ${numeroNotaCredito} - ` +
+            `${(row.descripcion || '')
+              .toString()
+              .toUpperCase()}`,
           idMovBancario: 1,
           movbancario: '0',
           cierre: '',
@@ -1070,7 +1594,7 @@ grabar(): void {
       totalBaseDev = +totalBaseDev.toFixed(2);
       totalIvaDev = +totalIvaDev.toFixed(2);
 
-      // 2) DEBE → IVA devuelto
+      // 2. DEBE: IVA devuelto.
       if (totalIvaDev > 0) {
         detalles.push({
           IdDetMaestro: 0,
@@ -1084,7 +1608,9 @@ grabar(): void {
           idCentroCostos: null,
           idLocal: 1,
           idPlanCuentas: this.planCuenta?.id_plan ?? CTA_IVA,
-          codprePc: this.parametros?.codcueretiva ?? `${CTA_IVA}-001`,
+          codprePc:
+            this.parametros?.codcueretiva ??
+            `${CTA_IVA}-001`,
           idCodContable: idCodContableLinea,
           nocomprobante: numeroNotaCredito,
           docurelacionado: numeroFactura,
@@ -1092,7 +1618,9 @@ grabar(): void {
           beneficiario,
           debe: totalIvaDev,
           haber: 0,
-          comentario: `REVERSO IVA FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+          comentario:
+            `REVERSO IVA FACTURA ${numeroFactura} ` +
+            `/ NC ${numeroNotaCredito}`,
           idMovBancario: 1,
           movbancario: '0',
           cierre: '',
@@ -1117,13 +1645,18 @@ grabar(): void {
         });
       }
 
-      const totalHaber = +(totalBaseDev + totalIvaDev).toFixed(2);
+      const totalHaber = +(
+        totalBaseDev + totalIvaDev
+      ).toFixed(2);
 
-      // 3) Buscar id_plan_cuentas real de CLIENTES NO RELACIONADOS
+      // 3. Busca el ID real de la cuenta de clientes.
       return this.planCueService
-        .getByCuentaPresentacion(idEmpresa, CUENTA_CLIENTES_NO_RELACIONADOS)
+        .getByCuentaPresentacion(
+          idEmpresa,
+          CUENTA_CLIENTES_NO_RELACIONADOS
+        )
         .pipe(
-          switchMap(planCliente => {
+          switchMap((planCliente) => {
             const idPlanCliente = Number(
               (planCliente as any)?.id_plan ??
               (planCliente as any)?.idPlan ??
@@ -1137,10 +1670,11 @@ grabar(): void {
                 `No se encontró el id_plan_cuentas de la cuenta ${CUENTA_CLIENTES_NO_RELACIONADOS}.`,
                 'error'
               );
+
               return of(idNc);
             }
 
-            // 4) HABER → CLIENTES NO RELACIONADOS
+            // 4. HABER: clientes no relacionados.
             detalles.push({
               IdDetMaestro: 0,
               IdCabMaestro: 0,
@@ -1161,7 +1695,9 @@ grabar(): void {
               beneficiario,
               debe: 0,
               haber: totalHaber,
-              comentario: `REVERSO CUENTA POR COBRAR FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+              comentario:
+                `REVERSO CUENTA POR COBRAR FACTURA ${numeroFactura} ` +
+                `/ NC ${numeroNotaCredito}`,
               idMovBancario: 1,
               movbancario: '0',
               cierre: '',
@@ -1185,7 +1721,13 @@ grabar(): void {
               fechaCadRelacionado: null
             });
 
-            const totalDebe = +(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0)).toFixed(2);
+            const totalDebe = +detalles
+              .reduce(
+                (suma, detalle) =>
+                  suma + (Number(detalle.debe) || 0),
+                0
+              )
+              .toFixed(2);
 
             const asientoNc: any = {
               IdCabMaestro: 0,
@@ -1198,7 +1740,9 @@ grabar(): void {
               anio: anioStr,
               fechatransaccion: fechaIso,
               fechaingreso: fechaIso,
-              observacion: `ASIENTO NOTA DE CRÉDITO ${numeroNotaCredito} (reverso factura ${numeroFactura})`,
+              observacion:
+                `ASIENTO NOTA DE CRÉDITO ${numeroNotaCredito} ` +
+                `(reverso factura ${numeroFactura})`,
               totdebe: totalDebe,
               tothaber: totalHaber,
               beneficiario,
@@ -1213,86 +1757,187 @@ grabar(): void {
               detalles
             };
 
-            console.log('%c[NC] ===== ASIENTO NC A ENVIAR =====', 'color:#ff9800; font-weight:bold;');
-            console.log('[NC] Asiento NC OBJ →', asientoNc);
-            console.log('[NC] Asiento NC JSON →', JSON.stringify(asientoNc, null, 2));
-
-            return this.asientoVentaService.crearAsientoVenta(asientoNc).pipe(
-              tap(respAsiento => {
-                console.log('%c[NC] ===== RESPUESTA API CREAR ASIENTO NC =====', 'color:#d32f2f; font-weight:bold;');
-                console.log('[NC] Resp Asiento OBJ →', respAsiento);
-                console.log('[NC] Resp Asiento JSON →', JSON.stringify(respAsiento, null, 2));
-
-                const tipoResp = (respAsiento?.type || '').toString().toUpperCase();
-
-                if (tipoResp !== 'SUCCESS' && tipoResp !== 'CREATED') {
-                  const msgSrv = respAsiento?.message || 'Error al crear el asiento contable.';
-                  console.error('[NC] Error crear asiento:', msgSrv);
-                  this.mostrarAlerta(msgSrv, 'error');
-                  throw new Error(msgSrv);
-                }
-
-                this.mostrarAlerta(
-                  respAsiento?.message || 'Asiento contable de la nota de crédito generado.',
-                  'ok'
-                );
-
-                this.asientoVentaInfo = respAsiento?.data ?? null;
-              }),
-              catchError(err => {
-                console.error('[NC] Error creando asiento de nota de crédito:', err);
-                this.mostrarAlerta(
-                  'Nota de crédito creada, pero ocurrió un error al generar el asiento contable.',
-                  'error'
-                );
-                return of(null);
-              }),
-              map(() => idNc)
+            console.log(
+              '%c[NC] ===== ASIENTO NC A ENVIAR =====',
+              'color:#ff9800; font-weight:bold;'
             );
+            console.log('[NC] asiento OBJ →', asientoNc);
+            console.log(
+              '[NC] asiento JSON →',
+              JSON.stringify(asientoNc, null, 2)
+            );
+
+            return this.asientoVentaService
+              .crearAsientoVenta(asientoNc)
+              .pipe(
+                tap((respAsiento) => {
+                  console.log(
+                    '%c[NC] ===== RESPUESTA API CREAR ASIENTO NC =====',
+                    'color:#d32f2f; font-weight:bold;'
+                  );
+                  console.log(
+                    '[NC] respuesta asiento OBJ →',
+                    respAsiento
+                  );
+                  console.log(
+                    '[NC] respuesta asiento JSON →',
+                    JSON.stringify(respAsiento, null, 2)
+                  );
+
+                  const tipoResp = (
+                    respAsiento?.type || ''
+                  )
+                    .toString()
+                    .toUpperCase();
+
+                  if (
+                    tipoResp !== 'SUCCESS' &&
+                    tipoResp !== 'CREATED'
+                  ) {
+                    const msgSrv =
+                      respAsiento?.message ||
+                      'Error al crear el asiento contable.';
+
+                    console.error(
+                      '[NC] Error creando asiento:',
+                      msgSrv
+                    );
+
+                    this.mostrarAlerta(msgSrv, 'error');
+
+                    throw new Error(msgSrv);
+                  }
+
+                  this.mostrarAlerta(
+                    respAsiento?.message ||
+                    'Asiento contable de la nota de crédito generado.',
+                    'ok'
+                  );
+
+                  this.asientoVentaInfo =
+                    respAsiento?.data ?? null;
+                }),
+
+                catchError((error: unknown) => {
+                  console.error(
+                    '[NC] Error creando asiento de nota de crédito:',
+                    error
+                  );
+
+                  this.mostrarAlerta(
+                    'Nota de crédito creada, pero ocurrió un error al generar el asiento contable.',
+                    'error'
+                  );
+
+                  return of(null);
+                }),
+
+                map(() => idNc)
+              );
           }),
-          catchError(err => {
-            console.error('[NC] Error buscando cuenta clientes no relacionados:', err);
+
+          catchError((error: unknown) => {
+            console.error(
+              '[NC] Error buscando cuenta de clientes no relacionados:',
+              error
+            );
+
             this.mostrarAlerta(
               `No se pudo obtener la cuenta ${CUENTA_CLIENTES_NO_RELACIONADOS}.`,
               'error'
             );
+
             return of(idNc);
           })
         );
     }),
 
+    // Genera el XML, pero ya no descarga el PDF.
     switchMap((idNc: number | null) => {
-      if (!idNc || idNc <= 0) return of(void 0);
+      if (!idNc || idNc <= 0) {
+        return of(void 0);
+      }
 
       return this.svc.generarXmlNotaCredito(idNc).pipe(
-        switchMap((r: any) => {
-          console.log('%c[NC] ===== RESPUESTA generarXmlNotaCredito =====', 'color:#6a1b9a; font-weight:bold;');
-          console.log('[NC] resp XML OBJ →', r);
-          console.log('[NC] resp XML JSON →', JSON.stringify(r, null, 2));
+        switchMap((respuestaXml: any) => {
+          console.log(
+            '%c[NC] ===== RESPUESTA generarXmlNotaCredito =====',
+            'color:#6a1b9a; font-weight:bold;'
+          );
+          console.log(
+            '[NC] respuesta XML OBJ →',
+            respuestaXml
+          );
+          console.log(
+            '[NC] respuesta XML JSON →',
+            JSON.stringify(respuestaXml, null, 2)
+          );
 
-          const ok = (r?.success ?? r?.data?.success) === true;
-          const fileName = r?.fileName ?? r?.data?.fileName ?? '';
-          const msg = r?.message ?? r?.data?.message ?? '';
+          const xmlGenerado =
+            (
+              respuestaXml?.success ??
+              respuestaXml?.data?.success
+            ) === true;
 
-          if (!ok) {
-            this.mostrarAlerta(msg || 'No se generó el XML de la Nota de Crédito.', 'error');
+          const fileName =
+            respuestaXml?.fileName ??
+            respuestaXml?.data?.fileName ??
+            '';
+
+          const mensaje =
+            respuestaXml?.message ??
+            respuestaXml?.data?.message ??
+            '';
+
+          if (!xmlGenerado) {
+            this.mostrarAlerta(
+              mensaje ||
+              'No se generó el XML de la Nota de Crédito.',
+              'error'
+            );
+
             return of(void 0);
           }
 
-          this.mostrarAlerta(`XML generado en el servidor: ${fileName || 'OK'}`, 'ok');
-          return this.svc.descargarPdfNotaCredito(idNc);
+          this.mostrarAlerta(
+            `XML generado en el servidor: ${fileName || 'OK'}`,
+            'ok'
+          );
+
+          // Antes descargaba el PDF:
+          // return this.svc.descargarPdfNotaCredito(idNc);
+
+          // Ahora termina sin descargarlo.
+          return of(void 0);
         }),
-        catchError(err => {
-          console.error('[NC] Error generando XML/PDF:', err);
-          this.mostrarAlerta('Error generando el XML/PDF de la Nota de Crédito.', 'error');
+
+        catchError((error: unknown) => {
+          console.error(
+            '[NC] Error generando el XML:',
+            error
+          );
+
+          this.mostrarAlerta(
+            'Error generando el XML de la Nota de Crédito.',
+            'error'
+          );
+
           return of(void 0);
         })
       );
     }),
 
-    catchError(err => {
-      console.error('[crearNotaCredito] error general:', err);
-      this.mostrarAlerta('Error al crear la nota de crédito.', 'error');
+    catchError((error: unknown) => {
+      console.error(
+        '[crearNotaCredito] Error general:',
+        error
+      );
+
+      this.mostrarAlerta(
+        'Error al crear la nota de crédito.',
+        'error'
+      );
+
       return of(void 0);
     }),
 
@@ -1300,11 +1945,7 @@ grabar(): void {
       this.guardando = false;
       this.cdr.detectChanges();
     })
-  ).subscribe({
-    next: () => {
-      this.mostrarAlerta('PDF de la Nota de Crédito descargado.', 'ok');
-    }
-  });
+  ).subscribe();
 }
   exportar(): void {
     alert('Exportar (CSV/PDF) – implementar según tu necesidad.');

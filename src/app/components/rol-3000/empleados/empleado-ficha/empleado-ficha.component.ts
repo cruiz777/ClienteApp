@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormControl
+} from '@angular/forms';
 
 import { forkJoin } from 'rxjs';
 import { TipoDocumentoService } from 'src/app/services/tipo-documento.service';
@@ -32,7 +36,10 @@ import {
 } from 'src/app/services/rol/gastos-sri-empleado.service';
 
 import { RpEmpresaComplementariaService, RpEmpresaComplementaria } from 'src/app/services/rol/rp-empresa-complementaria.service';
-
+import {
+  debounceTime,
+  distinctUntilChanged
+} from 'rxjs';
 import { TipoGastoService } from 'src/app/services/tipo-gasto.service';
 import {
   EmpleadoSyncService,
@@ -131,6 +138,7 @@ function convertirDDMMYYYYaISO(value: string): string {
   templateUrl: './empleado-ficha.component.html',
   styleUrls: ['./empleado-ficha.component.css']
 })
+
 export class EmpleadoFichaComponent implements OnInit {
 
   form!: FormGroup;
@@ -144,7 +152,12 @@ export class EmpleadoFichaComponent implements OnInit {
   locales: LocalesResponse[] = [];
   zonas: Zona[] = [];
   ciudades: Ciudad[] = [];
-  ciudadesTrabajo: Ciudad[] = [];
+  
+ciudadCtrl = new FormControl<Ciudad | string | null>('');
+ciudadTrabajoCtrl = new FormControl<Ciudad | string | null>('');
+
+ciudadesFiltradas: Ciudad[] = [];
+ciudadesTrabajoFiltradas: Ciudad[] = [];
   nacionalidades: NacionalidadResponse[] = [];
   gruposOcupacionales: RpGrupoOcupacional[] = [];
   regimenes: RpRegimenResponse[] = [];
@@ -325,6 +338,7 @@ export class EmpleadoFichaComponent implements OnInit {
       field: 'codban',
       editable: true,
       width: 160,
+      hide:true,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: () => ({
         values: this.bancos.map(x => x.codban)
@@ -1012,16 +1026,18 @@ export class EmpleadoFichaComponent implements OnInit {
     private dialog: MatDialog
   ) { }
 
-  ngOnInit(): void {
-    this.crearFormulario();
+ngOnInit(): void {
+  this.crearFormulario();
 
-    this.form.get('datosGenerales.empleadoBusqueda')?.valueChanges.subscribe(valor => {
-      this.cargarEmpleadosBusqueda(valor ?? '');
-    });
+  this.configurarBusquedaCiudades();
+  this.cargarCiudades();
 
-    this.cargarCatalogos();
-  }
+  this.form.get('datosGenerales.empleadoBusqueda')?.valueChanges.subscribe(valor => {
+    this.cargarEmpleadosBusqueda(valor ?? '');
+  });
 
+  this.cargarCatalogos();
+}
   crearFormulario(): void {
     this.form = this.fb.group({
       datosGenerales: this.fb.group({
@@ -1157,8 +1173,6 @@ export class EmpleadoFichaComponent implements OnInit {
       generos: this.generoService.getGeneros(),
       locales: this.localesService.getAll(),
       zonas: this.zonaService.obtenerZona(),
-      ciudades: this.ciudadService.obtenerCiudad(),
-      ciudadesTrabajo: this.ciudadService.obtenerCiudad(),
       nacionalidades: this.nacionalidadService.getAll(),
       gruposOcupacionales: this.grupoOcupacionalService.getAll(),
       regimenes: this.regimenService.getAll(),
@@ -1176,7 +1190,7 @@ export class EmpleadoFichaComponent implements OnInit {
       empleados: this.empleadoFichaService.getFicha(),
       empresasComplementarias: this.RpEmpresaComplementariaService.getAll()
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales, tiposDiscapacidad, nivelInstruccion, tiposObservacion, tiposGasto, empleados, empresasComplementarias }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales, tiposDiscapacidad, nivelInstruccion, tiposObservacion, tiposGasto, empleados, empresasComplementarias }) => {
         this.empleadosBusqueda = empleados.data ?? [];
         this.empleadosFiltrados = this.empleadosBusqueda;
         this.departamentos = departamentos.map(dep => ({
@@ -1215,14 +1229,7 @@ export class EmpleadoFichaComponent implements OnInit {
           ...z,
           id: Number(z.id)
         }));
-        this.ciudades = ciudades.map(c => ({
-          ...c,
-          id_ciudad: Number(c.id_ciudad)
-        }));
-        this.ciudadesTrabajo = ciudadesTrabajo.map(c => ({
-          ...c,
-          id_ciudad: Number(c.id_ciudad)
-        }));
+        
         this.nacionalidades = nacionalidades.map(n => ({
           ...n,
           id_nacionalidad: Number(n.id_nacionalidad)
@@ -1308,124 +1315,160 @@ export class EmpleadoFichaComponent implements OnInit {
     });
   }
 
-  cargarFichaEmpleado(idEmpleado?: number): void {
-
-    this.empleadoFichaService.getFicha(idEmpleado).subscribe({
-      next: (resp) => {
-        if (resp.type !== 'LIST' || !resp.data || resp.data.length === 0) {
-          console.warn(resp.message || 'No se encontró empleado');
-          return;
-        }
-        const emp: EmpleadoFichaResponse = resp.data[0];
-
-        this.esNuevoEmpleado = false;
-        this.idEmpleadoActual = Number(emp.idEmpleado);
-        this.idPersonaActual = (emp as any).idPersona ?? null;
-        this.idEmpleadoActual = Number(emp.idEmpleado);
-        if (this.idEmpleadoActual && !isNaN(this.idEmpleadoActual)) {
-          this.cargarCronologiaEmpleado(this.idEmpleadoActual);
-          this.cargarHistorialBancoEmpleado(this.idEmpleadoActual);
-          this.cargarCargasEmpleado(this.idEmpleadoActual);
-          this.cargarFormacionEmpleado(this.idEmpleadoActual);
-          this.cargarObservacionesEmpleado(this.idEmpleadoActual);
-          this.cargarGastosSriEmpleado(this.idEmpleadoActual);
-          this.cargarDiscapacidadEmpleado(this.idEmpleadoActual);
-        }
-        const nombreCompleto =
-          emp.nombre ||
-          `${emp.apellidos ?? ''} ${emp.nombres ?? ''}`.trim();
-        const sueldoEmpleado =
-          emp.sueldo ??
-          (emp as any).Sueldo ??
-          (emp as any).salario ??
-          (emp as any).Salario ??
-          null;
-        const tieneSueldo = emp.sueldo !== null && emp.sueldo !== undefined && Number(emp.sueldo) !== 0;
-        this.form.patchValue({
-          datosGenerales: {
-            codigoEmpleado: emp.idEmpleado,
-            identificacion: emp.documento ?? '',
-            nombres: emp.nombres ?? '',
-            apellidos: emp.apellidos ?? '',
-            fechaNacimiento: emp.fecNac ?? '',
-            zona: Number(emp.idZona),
-
-            departamento: Number(emp.id_departamento),
-            cargo: Number(emp.idCargo),
-            tipoEmpleado: Number(emp.idTipemp),
-            tipoDocumento: Number(emp.idTipoDocumento),
-            estadoCivil: Number(emp.estadoCivilCodigo),
-            sexo: Number(emp.generoCodigo),
-            local: Number(emp.id),
-            ciudad: Number(emp.idCiudad),
-            ciudadTrabajo: Number(emp.idCiudadTrabajo),
-            direccion: emp.direccion ?? '',
-            telefono: emp.telefono ?? '',
-            email: emp.mail ?? '',
-            nacionalidad: Number(emp.id_nacionalidad),
-            empresaAportacion: emp.empresa ?? '',
-            grupoOcupacion: Number(emp.id_grupo_ocupacional),
-            linkFoto: emp.foto ?? null,
-            
-
-
-          },
-
-          datosAdicionales: {
-            empleado: nombreCompleto,
-            ctaContableEmpleado: emp.ctaCble ?? '',
-            noRecibeProvisiones: emp.proviciones === true,
-            pagoDecimoCuarto: emp.decimos === true,
-            pagoDecimoTercero: emp.decimo3ro === true,
-            pagoFondosReserva: emp.freserva === true,
-            terceraEdad: emp.teredad === true,
-            noPagaImpuestoRenta: emp.imp_renta === true,
-            cargaConyugeUtilidades: emp.carcony === true,
-            cargaHijosUtilidades: emp.carhijos ?? 0,
-            gerenteRepLegal: emp.rep_legal === true,
-            fechaPagoDecimoInicio: emp.feinivac ?? '',
-            fechaPagoDecimoFin: emp.fefinvac ?? '',
-            regimen: emp.id_regimen ?? '',
-            grupoSanguineo: emp.id_tipo_sangre ?? '',
-            establecimiento: emp.establecimiento ?? '',
-            libretaMilitar: emp.lmilitar ?? '',
-            codigoSectorialIess: emp.idSectorial ?? '',
-            rucEmpresaComplementaria: emp.idEmpresaComplementaria ?? ''
-          },
-
-          datosSalariales: {
-            empleado: nombreCompleto,
-            fechaSalario: emp.fecha_sueldo ?? '',
-            salario: tieneSueldo ? sueldoEmpleado : '',
-            incluyeAportacion: false,
-            retencionJudicial: emp.ret_judicial === true,
-            anticipoQuincenal1: emp.quincena ?? 0,
-            anticipoQuincenal2: emp.quincenaIi ?? 0,
-            valoresRetencion: emp.valor_retencion_j ?? 0,
-            valorHoraNormal: emp.valor_hora ?? 0,
-            valorHoraEspecial: emp.valor_hora_espe ?? 0,
-
-          },
-
-          datosAcademicos: {
-            empleado: nombreCompleto
-          },
-
-          datosEspeciales: {
-            empleado: nombreCompleto,
-            identificacion: emp.documento ?? '',
-            discapacitado: emp.discap === true,
-            beneficioGalapagos: emp.galapagos === true
-          }
-        });
-        this.aplicarReglaSueldo(sueldoEmpleado);
-      },
-      error: (err: any) => {
-        console.error('Error al cargar ficha de empleado:', err);
+cargarFichaEmpleado(idEmpleado?: number): void {
+  this.empleadoFichaService.getFicha(idEmpleado).subscribe({
+    next: (resp) => {
+      if (
+        resp.type !== 'LIST' ||
+        !resp.data ||
+        resp.data.length === 0
+      ) {
+        console.warn(resp.message || 'No se encontró empleado');
+        return;
       }
-    });
 
-  }
+      const emp: EmpleadoFichaResponse = resp.data[0];
+
+      this.esNuevoEmpleado = false;
+      this.idEmpleadoActual = Number(emp.idEmpleado);
+      this.idPersonaActual = (emp as any).idPersona ?? null;
+
+      if (
+        this.idEmpleadoActual &&
+        !isNaN(this.idEmpleadoActual)
+      ) {
+        this.cargarCronologiaEmpleado(this.idEmpleadoActual);
+        this.cargarHistorialBancoEmpleado(this.idEmpleadoActual);
+        this.cargarCargasEmpleado(this.idEmpleadoActual);
+        this.cargarFormacionEmpleado(this.idEmpleadoActual);
+        this.cargarObservacionesEmpleado(this.idEmpleadoActual);
+        this.cargarGastosSriEmpleado(this.idEmpleadoActual);
+        this.cargarDiscapacidadEmpleado(this.idEmpleadoActual);
+      }
+
+      const nombreCompleto =
+        emp.nombre ||
+        `${emp.apellidos ?? ''} ${emp.nombres ?? ''}`.trim();
+
+      const sueldoEmpleado =
+        emp.sueldo ??
+        (emp as any).Sueldo ??
+        (emp as any).salario ??
+        (emp as any).Salario ??
+        null;
+
+      const tieneSueldo =
+        emp.sueldo !== null &&
+        emp.sueldo !== undefined &&
+        Number(emp.sueldo) !== 0;
+
+      this.form.patchValue({
+        datosGenerales: {
+          codigoEmpleado: emp.idEmpleado,
+          identificacion: emp.documento ?? '',
+          nombres: emp.nombres ?? '',
+          apellidos: emp.apellidos ?? '',
+          fechaNacimiento: emp.fecNac ?? '',
+          zona: Number(emp.idZona),
+
+          departamento: Number(emp.id_departamento),
+          cargo: Number(emp.idCargo),
+          tipoEmpleado: Number(emp.idTipemp),
+          tipoDocumento: Number(emp.idTipoDocumento),
+          estadoCivil: Number(emp.estadoCivilCodigo),
+          sexo: Number(emp.generoCodigo),
+          local: Number(emp.id),
+
+          ciudad: Number(emp.idCiudad),
+          ciudadTrabajo: Number(emp.idCiudadTrabajo),
+
+          direccion: emp.direccion ?? '',
+          telefono: emp.telefono ?? '',
+          email: emp.mail ?? '',
+          nacionalidad: Number(emp.id_nacionalidad),
+          empresaAportacion: emp.empresa ?? '',
+          grupoOcupacion: Number(emp.id_grupo_ocupacional),
+          linkFoto: emp.foto ?? null
+        },
+
+        datosAdicionales: {
+          empleado: nombreCompleto,
+          ctaContableEmpleado: emp.ctaCble ?? '',
+          noRecibeProvisiones: emp.proviciones === true,
+          pagoDecimoCuarto: emp.decimos === true,
+          pagoDecimoTercero: emp.decimo3ro === true,
+          pagoFondosReserva: emp.freserva === true,
+          terceraEdad: emp.teredad === true,
+          noPagaImpuestoRenta: emp.imp_renta === true,
+          cargaConyugeUtilidades: emp.carcony === true,
+          cargaHijosUtilidades: emp.carhijos ?? 0,
+          gerenteRepLegal: emp.rep_legal === true,
+          fechaPagoDecimoInicio: emp.feinivac ?? '',
+          fechaPagoDecimoFin: emp.fefinvac ?? '',
+          regimen: emp.id_regimen ?? '',
+          grupoSanguineo: emp.id_tipo_sangre ?? '',
+          establecimiento: emp.establecimiento ?? '',
+          libretaMilitar: emp.lmilitar ?? '',
+          codigoSectorialIess: emp.idSectorial ?? '',
+          rucEmpresaComplementaria:
+            emp.idEmpresaComplementaria ?? ''
+        },
+
+        datosSalariales: {
+          empleado: nombreCompleto,
+          fechaSalario: emp.fecha_sueldo ?? '',
+          salario: tieneSueldo ? sueldoEmpleado : '',
+          incluyeAportacion: false,
+          retencionJudicial: emp.ret_judicial === true,
+          anticipoQuincenal1: emp.quincena ?? 0,
+          anticipoQuincenal2: emp.quincenaIi ?? 0,
+          valoresRetencion: emp.valor_retencion_j ?? 0,
+          valorHoraNormal: emp.valor_hora ?? 0,
+          valorHoraEspecial: emp.valor_hora_espe ?? 0
+        },
+
+        datosAcademicos: {
+          empleado: nombreCompleto
+        },
+
+        datosEspeciales: {
+          empleado: nombreCompleto,
+          identificacion: emp.documento ?? '',
+          discapacitado: emp.discap === true,
+          beneficioGalapagos: emp.galapagos === true
+        }
+      });
+
+      // Estas líneas deben estar DENTRO del next,
+      // porque aquí sí existe la variable emp.
+      this.idCiudadPendiente =
+        emp.idCiudad !== null &&
+        emp.idCiudad !== undefined
+          ? Number(emp.idCiudad)
+          : null;
+
+      this.idCiudadTrabajoPendiente =
+        emp.idCiudadTrabajo !== null &&
+        emp.idCiudadTrabajo !== undefined
+          ? Number(emp.idCiudadTrabajo)
+          : null;
+
+      this.mostrarCiudadesEmpleado(
+        this.idCiudadPendiente,
+        this.idCiudadTrabajoPendiente
+      );
+
+      this.aplicarReglaSueldo(sueldoEmpleado);
+    },
+
+    error: (err: any) => {
+      console.error(
+        'Error al cargar ficha de empleado:',
+        err
+      );
+    }
+  });
+}
   nuevo(): void {
     this.esNuevoEmpleado = true;
     this.idEmpleadoActual = null;
@@ -2606,4 +2649,168 @@ private mostrarMensajeError(mensaje: string): void {
     }
   });
 }
+private cargarCiudades(): void {
+  this.ciudadService.obtenerCiudad().subscribe({
+    next: data => {
+      this.ciudades = (data ?? []).map(c => ({
+        ...c,
+        id_ciudad: Number(c.id_ciudad),
+        idzona: Number(c.idzona)
+      }));
+
+      this.ciudadesFiltradas =
+        this.ciudades.slice(0, 100);
+
+      this.ciudadesTrabajoFiltradas =
+        this.ciudades.slice(0, 100);
+
+      this.mostrarCiudadesEmpleado(
+        this.idCiudadPendiente,
+        this.idCiudadTrabajoPendiente
+      );
+    },
+
+    error: err => {
+      console.error(
+        'Error al cargar ciudades:',
+        err
+      );
+
+      this.ciudades = [];
+      this.ciudadesFiltradas = [];
+      this.ciudadesTrabajoFiltradas = [];
+    }
+  });
+}
+private configurarBusquedaCiudades(): void {
+  this.ciudadCtrl.valueChanges
+    .pipe(
+      debounceTime(250),
+      distinctUntilChanged()
+    )
+    .subscribe(valor => {
+      this.ciudadesFiltradas = this.filtrarCiudades(valor);
+    });
+
+  this.ciudadTrabajoCtrl.valueChanges
+    .pipe(
+      debounceTime(250),
+      distinctUntilChanged()
+    )
+    .subscribe(valor => {
+      this.ciudadesTrabajoFiltradas = this.filtrarCiudades(valor);
+    });
+}
+private filtrarCiudades(valor: string | Ciudad | null): Ciudad[] {
+  if (typeof valor === 'object' && valor !== null) {
+    return [valor];
+  }
+
+  const texto = (valor ?? '')
+    .toString()
+    .toLowerCase()
+    .trim();
+
+  if (!texto) {
+    return this.ciudades.slice(0, 100);
+  }
+
+  return this.ciudades
+    .filter(c =>
+      `${c.ciudad ?? ''} ${c.canton ?? ''} ${c.provincia ?? ''} ${c.codigo ?? ''}`
+        .toLowerCase()
+        .includes(texto)
+    )
+    .slice(0, 100);
+}
+displayCiudad(ciudad: Ciudad | string | null): string {
+  if (!ciudad) {
+    return '';
+  }
+
+  if (typeof ciudad === 'string') {
+    return ciudad;
+  }
+
+  return [
+    ciudad.ciudad,
+    ciudad.canton,
+    ciudad.provincia
+  ]
+    .filter(Boolean)
+    .join(' - ');
+}
+seleccionarCiudad(ciudad: Ciudad): void {
+  this.form
+    .get('datosGenerales.ciudad')
+    ?.setValue(Number(ciudad.id_ciudad));
+
+  this.ciudadCtrl.setValue(ciudad, {
+    emitEvent: false
+  });
+}
+seleccionarCiudadTrabajo(ciudad: Ciudad): void {
+  this.form
+    .get('datosGenerales.ciudadTrabajo')
+    ?.setValue(Number(ciudad.id_ciudad));
+
+  this.ciudadTrabajoCtrl.setValue(ciudad, {
+    emitEvent: false
+  });
+}
+limpiarCiudad(): void {
+  this.ciudadCtrl.setValue('', {
+    emitEvent: false
+  });
+
+  this.form
+    .get('datosGenerales.ciudad')
+    ?.setValue(null);
+
+  this.ciudadesFiltradas = this.ciudades.slice(0, 100);
+}
+
+limpiarCiudadTrabajo(): void {
+  this.ciudadTrabajoCtrl.setValue('', {
+    emitEvent: false
+  });
+
+  this.form
+    .get('datosGenerales.ciudadTrabajo')
+    ?.setValue(null);
+
+  this.ciudadesTrabajoFiltradas = this.ciudades.slice(0, 100);
+}
+private mostrarCiudadesEmpleado(
+  idCiudad: number | null,
+  idCiudadTrabajo: number | null
+): void {
+  const ciudad = idCiudad
+    ? this.ciudades.find(
+        c =>
+          Number(c.id_ciudad) ===
+          Number(idCiudad)
+      )
+    : undefined;
+
+  const ciudadTrabajo = idCiudadTrabajo
+    ? this.ciudades.find(
+        c =>
+          Number(c.id_ciudad) ===
+          Number(idCiudadTrabajo)
+      )
+    : undefined;
+
+  this.ciudadCtrl.setValue(
+    ciudad ?? '',
+    { emitEvent: false }
+  );
+
+  this.ciudadTrabajoCtrl.setValue(
+    ciudadTrabajo ?? '',
+    { emitEvent: false }
+  );
+}
+private idCiudadPendiente: number | null = null;
+private idCiudadTrabajoPendiente: number | null = null;
 }

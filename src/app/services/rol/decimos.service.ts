@@ -1,61 +1,138 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ApiResponse } from 'src/app/interfaces/responses/api-response';
-import { DecimosRequest, GrabarDecimosRequest } from 'src/app/interfaces/requests/decimos-request';
+import {
+  DecimosRequest,
+  GrabarDecimosRequest
+} from 'src/app/interfaces/requests/decimos-request';
 import { DecimosEmpleadoResponse } from 'src/app/interfaces/responses/decimos-response';
-import { PeriodoNominaResponse } from '../../interfaces/responses/periodo-nomina-response';
+import { PeriodoNominaResponse } from 'src/app/interfaces/responses/periodo-nomina-response';
 import { GenerarArchivoPichinchaRequest } from 'src/app/interfaces/requests/generar-archivo-request';
 
+export interface BancoDecimosRequest {
+  numPatronal: string;
+  periodo: string;
+  codBanco: number;
+  descripcionPago: string;
+  idTipEmp: number;
+  idRegimen: number;
+  idTipoNomEsp: number;
+  idUsuario: number;
+}
+
+export interface ArchivoBancoDecimosResponse {
+  procesado: boolean;
+  nombreArchivo: string;
+  contenidoBase64: string;
+  contentType: string;
+  mensaje: string;
+  totalRegistros?: number;
+  totalValor?: number;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class DecimosService {
-
   private readonly baseUrl = `${environment.nominaEspecialUrl}/Decimos`;
 
   constructor(private http: HttpClient) {}
 
-  calcular(request: DecimosRequest): Observable<ApiResponse<DecimosEmpleadoResponse[]>> {
+  calcular(
+    request: DecimosRequest
+  ): Observable<ApiResponse<DecimosEmpleadoResponse[]>> {
     return this.http.post<ApiResponse<DecimosEmpleadoResponse[]>>(
-      `${this.baseUrl}/empleados`, request
+      `${this.baseUrl}/empleados`,
+      request
     );
   }
 
-  existe(numPatronal: string, periodo: string, idTipoNomEsp: number): Observable<ApiResponse<boolean>> {
+  existe(
+    numPatronal: string,
+    periodo: string,
+    idTipoNomEsp: number
+  ): Observable<ApiResponse<boolean>> {
     return this.http.get<ApiResponse<boolean>>(
-      `${this.baseUrl}/existe`, {
-        params: { numPatronal, periodo, idTipoNomEsp }
+      `${this.baseUrl}/existe`,
+      {
+        params: {
+          numPatronal,
+          periodo,
+          idTipoNomEsp
+        }
       }
     );
   }
 
-  grabar(request: GrabarDecimosRequest): Observable<ApiResponse<boolean>> {
+  grabar(
+    request: GrabarDecimosRequest
+  ): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(
-      `${this.baseUrl}/grabar`, request
+      `${this.baseUrl}/grabar`,
+      request
     );
   }
-  recuperar(numPatronal: string, periodo: string, idTipoNomEsp: number): Observable<ApiResponse<DecimosEmpleadoResponse[]>> {
+
+  recuperar(
+    numPatronal: string,
+    periodo: string,
+    idTipoNomEsp: number
+  ): Observable<ApiResponse<DecimosEmpleadoResponse[]>> {
     return this.http.get<ApiResponse<DecimosEmpleadoResponse[]>>(
-      `${this.baseUrl}/recuperar`, {
-        params: { numPatronal, periodo, idTipoNomEsp }
+      `${this.baseUrl}/recuperar`,
+      {
+        params: {
+          numPatronal,
+          periodo,
+          idTipoNomEsp
+        }
       }
     );
   }
-  getPeriodos(numPatronal: string): Observable<ApiResponse<PeriodoNominaResponse[]>> {
+
+  getPeriodos(
+    numPatronal: string
+  ): Observable<ApiResponse<PeriodoNominaResponse[]>> {
     return this.http.get<ApiResponse<PeriodoNominaResponse[]>>(
-      `${this.baseUrl}/periodos`, {
+      `${this.baseUrl}/periodos`,
+      {
         params: { numPatronal }
       }
     );
   }
-  generarArchivoPichincha(request: GenerarArchivoPichinchaRequest): Observable<Blob> {
+
+  generarArchivoPichincha(
+    request: GenerarArchivoPichinchaRequest
+  ): Observable<Blob> {
     return this.http.post(
       `${this.baseUrl}/generar-archivo-pichincha`,
       request,
-      { responseType: 'blob' }
+      {
+        responseType: 'blob'
+      }
+    );
+  }
+
+  generarArchivoBanco(
+    request: BancoDecimosRequest
+  ): Observable<ApiResponse<ArchivoBancoDecimosResponse>> {
+    return this.http.post<ApiResponse<ArchivoBancoDecimosResponse>>(
+      `${this.baseUrl}/generar-archivo-banco`,
+      request
+    );
+  }
+
+  imprimirReporteFormaPago(
+    request: BancoDecimosRequest
+  ): Observable<Blob> {
+    return this.http.post(
+      `${this.baseUrl}/reporte-forma-pago/pdf`,
+      request,
+      {
+        responseType: 'blob'
+      }
     );
   }
 }

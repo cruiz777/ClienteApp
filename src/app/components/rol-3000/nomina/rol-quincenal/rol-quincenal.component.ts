@@ -603,7 +603,8 @@ private construirColumnasGrid(): ColDef[] {
       disableClose: true,
       data: {
         fechaPeriodo,
-        idUsuario: this.usuarioActual?.id_usuario ?? 1
+        idUsuario: this.usuarioActual?.id_usuario ?? 1,
+        origen: 'QUINCENA'
       }
     });
 

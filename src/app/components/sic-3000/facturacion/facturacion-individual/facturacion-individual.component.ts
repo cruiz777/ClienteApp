@@ -1821,8 +1821,8 @@ private cargarClienteDetalle(id: number): void {
               tap(r => {
                 if (r?.success) {
                   this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
-                  // 4) Descargar el PDF
-                  this.descargarPdf(idNota);
+                  // 4) Descargar el PDF por el momento se desactiva
+                  //this.descargarPdf(idNota);
                 } else {
                   this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
                 }

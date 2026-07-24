@@ -109,9 +109,11 @@
             Cargar Global
           </button>
 
-          <button mat-stroked-button type="button" class="action-btn" [disabled]="dataSource.length === 0"
-            (click)="exportar()">
-            Exportar
+          <input #inputArchivoRubros type="file" accept=".xlsx" hidden (change)="onArchivoRubrosSeleccionado($event)" />
+
+          <button mat-stroked-button type="button" class="action-btn" [disabled]="dataSource.length === 0 || guardando"
+            (click)="abrirSelectorArchivoRubros(inputArchivoRubros)">
+            Upload
           </button>
         </div>
       </div>

@@ -106,9 +106,13 @@
         Actualizar
       </button>
 
-      <button mat-stroked-button type="button" [disabled]="!periodoExiste || periodoCerrado" (click)="cargarHoras()">
+      <input #inputArchivoHoras type="file" accept=".xlsx" hidden (change)="onArchivoHorasSeleccionado($event)" />
 
-        <mat-icon>schedule</mat-icon>
+      <button mat-stroked-button type="button"
+        [disabled]="!periodoExiste || periodoCerrado || cargando || generando || actualizando"
+        (click)="abrirSelectorArchivoHoras(inputArchivoHoras)">
+
+        <mat-icon>upload_file</mat-icon>
         Cargar Horas
       </button>
 

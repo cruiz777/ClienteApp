@@ -3,6 +3,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
+import * as ExcelJS from 'exceljs';
 import {
   CargaGlobalRubrosFijosResult,
   DialogCargaGlobalRubrosFijosComponent
@@ -37,7 +38,13 @@ interface TreeNode {
   checked?: boolean;
   selected?: boolean;
 }
-
+interface FilaRubroFijoExcel {
+  codigoEmpleado: string;
+  nombreEmpleado: string;
+  numeroCedula: string;
+  local: string;
+  valor: number | null;
+}
 @Component({
   selector: 'app-rubros-fijos',
   templateUrl: './rubros-fijos.component.html',
@@ -69,8 +76,8 @@ export class RubrosFijosComponent implements OnInit {
 
   reemplazarRubro = false;
   fechaPeriodoOrigen: string | null = null;
-idLocalOrigen: number | null = null;
-origen: string | null = null;
+  idLocalOrigen: number | null = null;
+  origen: string | null = null;
 
   totalValor = 0;
   totalCobrado = 0;
@@ -79,31 +86,31 @@ origen: string | null = null;
   usuarioActual: any;
 
   constructor(
-  private readonly localesService: LocalesService,
-  private readonly rubrosFijosService: RubrosFijosService,
-  private readonly usuarioService: UsuarioService,
-  private readonly snackBar: MatSnackBar,
-  private readonly dialog: MatDialog,
-  private readonly route: ActivatedRoute,
-  private readonly router: Router
+    private readonly localesService: LocalesService,
+    private readonly rubrosFijosService: RubrosFijosService,
+    private readonly usuarioService: UsuarioService,
+    private readonly snackBar: MatSnackBar,
+    private readonly dialog: MatDialog,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router
   ) {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
   }
 
-ngOnInit(): void {
-  this.columnDefs = this.construirColumnasGrid();
+  ngOnInit(): void {
+    this.columnDefs = this.construirColumnasGrid();
 
-  this.route.queryParams.subscribe(params => {
-    this.fechaPeriodoOrigen = params['fechaPeriodo'] ?? null;
-    this.idLocalOrigen = params['idLocal']
-      ? Number(params['idLocal'])
-      : null;
-    this.origen = params['origen'] ?? null;
+    this.route.queryParams.subscribe(params => {
+      this.fechaPeriodoOrigen = params['fechaPeriodo'] ?? null;
+      this.idLocalOrigen = params['idLocal']
+        ? Number(params['idLocal'])
+        : null;
+      this.origen = params['origen'] ?? null;
 
-    this.cargarLocales();
-    this.cargarRubros();
-  });
-}
+      this.cargarLocales();
+      this.cargarRubros();
+    });
+  }
 
   onGridReady(params: GridReadyEvent): void {
     this.gridApi = params.api;
@@ -136,6 +143,20 @@ ngOnInit(): void {
         width: 110,
         minWidth: 100,
         pinned: 'left',
+        filter: true
+      },
+      {
+        headerName: 'Número de Cédula',
+        field: 'numeroCedula',
+        hide: true,
+        suppressColumnsToolPanel: false,
+        filter: true
+      },
+      {
+        headerName: 'Local',
+        field: 'local',
+        hide: true,
+        suppressColumnsToolPanel: false,
         filter: true
       },
       {
@@ -213,63 +234,62 @@ ngOnInit(): void {
       }
     ];
   }
+  cargarLocales(): void {
+    this.cargandoLocales = true;
 
-cargarLocales(): void {
-  this.cargandoLocales = true;
+    this.localesService.getAll().subscribe({
+      next: resp => {
+        this.cargandoLocales = false;
 
-  this.localesService.getAll().subscribe({
-    next: resp => {
-      this.cargandoLocales = false;
+        const locales = resp.data ?? [];
 
-      const locales = resp.data ?? [];
+        const localesMapeados: TreeNode[] = locales.map((x: any) => {
+          const idLocal = Number(
+            x.id ??
+            x.idLocal ??
+            x.id_local ??
+            x.codloc ??
+            x.codLoc
+          );
 
-      const localesMapeados: TreeNode[] = locales.map((x: any) => {
-        const idLocal = Number(
-          x.id ??
-          x.idLocal ??
-          x.id_local ??
-          x.codloc ??
-          x.codLoc
-        );
+          const nombreLocal = (
+            x.nombre ??
+            x.nomloc ??
+            x.nomLoc ??
+            x.descripcion ??
+            `Local ${idLocal}`
+          ).toString();
 
-        const nombreLocal = (
-          x.nombre ??
-          x.nomloc ??
-          x.nomLoc ??
-          x.descripcion ??
-          `Local ${idLocal}`
-        ).toString();
+          return {
+            id: idLocal,
+            label: nombreLocal,
+            tipo: 'LOCAL',
+            // checked: this.idLocalOrigen
+            //   ? idLocal === this.idLocalOrigen
+            //   : nombreLocal.trim().toUpperCase() === 'ADMINISTRATIVO'
+          };
+        });
 
-        return {
-          id: idLocal,
-          label: nombreLocal,
-          tipo: 'LOCAL',
-          // checked: this.idLocalOrigen
-          //   ? idLocal === this.idLocalOrigen
-          //   : nombreLocal.trim().toUpperCase() === 'ADMINISTRATIVO'
-        };
-      });
+        this.localesTree = [
+          {
+            id: 0,
+            label: 'Listado de Locales',
+            tipo: 'ROOT_LOCAL',
+            expanded: true,
+            checked: false,
+            children: localesMapeados
+          }
+        ];
 
-      this.localesTree = [
-        {
-          id: 0,
-          label: 'Listado de Locales',
-          tipo: 'ROOT_LOCAL',
-          expanded: true,
-          checked: false,
-          children: localesMapeados
-        }
-      ];
-
-      this.actualizarCheckPadreLocales();
-    },
-    error: err => {
-      this.cargandoLocales = false;
-      console.error(err);
-      this.mostrarError('No se pudieron cargar los locales.');
-    }
-  });
-}
+        this.actualizarCheckPadreLocales();
+      },
+      error: err => {
+        this.cargandoLocales = false;
+        console.error(err);
+        this.mostrarError('No se pudieron cargar los locales.');
+      }
+    });
+  }
 
   cargarRubros(): void {
     this.cargandoRubros = true;
@@ -426,55 +446,55 @@ cargarLocales(): void {
     });
   }
 
-cargarGlobal(): void {
-  if (this.dataSource.length === 0) {
-    this.mostrarAdvertencia('Primero debe cargar empleados.');
-    return;
+  cargarGlobal(): void {
+    if (this.dataSource.length === 0) {
+      this.mostrarAdvertencia('Primero debe cargar empleados.');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(DialogCargaGlobalRubrosFijosComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      disableClose: true,
+      autoFocus: false,
+      panelClass: 'carga-global-panel'
+    });
+    dialogRef.afterClosed().subscribe((result: CargaGlobalRubrosFijosResult | null) => {
+      if (!result) {
+        return;
+      }
+
+      const tieneValor = result.valor !== null && result.valor !== undefined;
+      const tieneNumCuotas = result.numCuotas !== null && result.numCuotas !== undefined;
+      const tieneCuotasPagadas = result.cuotasPagadas !== null && result.cuotasPagadas !== undefined;
+
+      if (!tieneValor && !tieneNumCuotas && !tieneCuotasPagadas) {
+        this.mostrarAdvertencia('No se ingresó ningún valor para aplicar.');
+        return;
+      }
+
+      this.dataSource = this.dataSource.map(item => ({
+        ...item,
+        valor: tieneValor
+          ? this.toNumber(result.valor)
+          : this.toNumber(item.valor),
+
+        numCuotas: tieneNumCuotas
+          ? this.toNumber(result.numCuotas)
+          : this.toNumber(item.numCuotas),
+
+        cuotasPagadas: tieneCuotasPagadas
+          ? this.toNumber(result.cuotasPagadas)
+          : this.toNumber(item.cuotasPagadas)
+      }));
+
+      this.reemplazarRubro = true;
+      this.recalcularTotales();
+      this.actualizarGrid();
+
+      this.mostrarExito('Carga global aplicada. Presione Grabar para guardar.');
+    });
   }
-
-const dialogRef = this.dialog.open(DialogCargaGlobalRubrosFijosComponent, {
-  width: '600px',
-  maxWidth: '95vw',
-  disableClose: true,
-  autoFocus: false,
-  panelClass: 'carga-global-panel'
-});
-  dialogRef.afterClosed().subscribe((result: CargaGlobalRubrosFijosResult | null) => {
-    if (!result) {
-      return;
-    }
-
-    const tieneValor = result.valor !== null && result.valor !== undefined;
-    const tieneNumCuotas = result.numCuotas !== null && result.numCuotas !== undefined;
-    const tieneCuotasPagadas = result.cuotasPagadas !== null && result.cuotasPagadas !== undefined;
-
-    if (!tieneValor && !tieneNumCuotas && !tieneCuotasPagadas) {
-      this.mostrarAdvertencia('No se ingresó ningún valor para aplicar.');
-      return;
-    }
-
-    this.dataSource = this.dataSource.map(item => ({
-      ...item,
-      valor: tieneValor
-        ? this.toNumber(result.valor)
-        : this.toNumber(item.valor),
-
-      numCuotas: tieneNumCuotas
-        ? this.toNumber(result.numCuotas)
-        : this.toNumber(item.numCuotas),
-
-      cuotasPagadas: tieneCuotasPagadas
-        ? this.toNumber(result.cuotasPagadas)
-        : this.toNumber(item.cuotasPagadas)
-    }));
-
-    this.reemplazarRubro = true;
-    this.recalcularTotales();
-    this.actualizarGrid();
-
-    this.mostrarExito('Carga global aplicada. Presione Grabar para guardar.');
-  });
-}
   nuevo(): void {
     this.localesTree.forEach(root => {
       root.checked = false;
@@ -709,13 +729,248 @@ const dialogRef = this.dialog.open(DialogCargaGlobalRubrosFijosComponent, {
     });
   }
   volverRolMensual(): void {
-  this.router.navigate(['/rol-3000/rol-mensual'], {
-    queryParams: {
-      fechaPeriodo: this.fechaPeriodoOrigen,
-      idLocal: this.idLocalOrigen,
-      autoActualizar: true,
-      origen: 'rubros-fijos'
+    this.router.navigate(['/rol-3000/rol-mensual'], {
+      queryParams: {
+        fechaPeriodo: this.fechaPeriodoOrigen,
+        idLocal: this.idLocalOrigen,
+        autoActualizar: true,
+        origen: 'rubros-fijos'
+      }
+    });
+  }
+  abrirSelectorArchivoRubros(inputArchivo: HTMLInputElement): void {
+    if (!this.rubroSeleccionado) {
+      this.mostrarAdvertencia('Debe seleccionar un rubro.');
+      return;
     }
-  });
-}
+
+    if (!this.dataSource || this.dataSource.length === 0) {
+      this.mostrarAdvertencia('Primero debe cargar empleados.');
+      return;
+    }
+
+    inputArchivo.value = '';
+    inputArchivo.click();
+  }
+
+  async onArchivoRubrosSeleccionado(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+
+    if (!archivo) {
+      return;
+    }
+
+    const extension = archivo.name.split('.').pop()?.toLowerCase();
+
+    if (extension !== 'xlsx') {
+      this.mostrarAdvertencia('Debe seleccionar un archivo Excel .xlsx.');
+      return;
+    }
+
+    try {
+      this.guardando = true;
+
+      const filasExcel = await this.leerArchivoRubrosExcel(archivo);
+
+      if (filasExcel.length === 0) {
+        this.mostrarAdvertencia('El archivo no contiene empleados para procesar.');
+        this.guardando = false;
+        return;
+      }
+
+      this.aplicarRubrosExcelAlGrid(filasExcel);
+
+      this.guardando = false;
+
+      this.mostrarExito(
+        'Archivo procesado correctamente. Revise los valores y presione Grabar.'
+      );
+    } catch (error: any) {
+      this.guardando = false;
+      console.error(error);
+      this.mostrarError(error?.message ?? 'No se pudo procesar el archivo.');
+    }
+  }
+
+  private async leerArchivoRubrosExcel(archivo: File): Promise<FilaRubroFijoExcel[]> {
+    const buffer = await archivo.arrayBuffer();
+
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+
+    const worksheet =
+      workbook.getWorksheet('FORMATO') ??
+      workbook.getWorksheet('Formato') ??
+      workbook.worksheets[0];
+
+    if (!worksheet) {
+      throw new Error('No se encontró una hoja válida en el archivo.');
+    }
+
+    const filas: FilaRubroFijoExcel[] = [];
+
+    /*
+     * Formato esperado:
+     * Fila 4: Código | Nombre | Cédula | Local | VALOR
+     * Fila 5: filtros / Cant.
+     * Fila 6 en adelante: datos
+     */
+    for (let rowNumber = 6; rowNumber <= worksheet.rowCount; rowNumber++) {
+      const row = worksheet.getRow(rowNumber);
+
+      const codigoEmpleado = this.obtenerTextoCelda(row.getCell(1).value);
+      const nombreEmpleado = this.obtenerTextoCelda(row.getCell(2).value);
+      const numeroCedula = this.obtenerTextoCelda(row.getCell(3).value);
+      const local = this.obtenerTextoCelda(row.getCell(4).value);
+      const valor = this.obtenerNumeroCeldaONull(row.getCell(5).value);
+
+      if (!codigoEmpleado && !numeroCedula) {
+        continue;
+      }
+
+      filas.push({
+        codigoEmpleado,
+        nombreEmpleado,
+        numeroCedula,
+        local,
+        valor
+      });
+    }
+
+    return filas;
+  }
+
+  private aplicarRubrosExcelAlGrid(filasExcel: FilaRubroFijoExcel[]): void {
+    const empleadosPorCodigo = new Map<string, any>();
+    const empleadosPorCedula = new Map<string, any>();
+
+    this.dataSource.forEach(emp => {
+      const codigo = String(emp.codigoEmpleado ?? '').trim();
+
+      const cedula = String(
+        (emp as any).numeroCedula ??
+        (emp as any).cedula ??
+        ''
+      ).trim();
+
+      if (codigo) {
+        empleadosPorCodigo.set(codigo, emp);
+      }
+
+      if (cedula) {
+        empleadosPorCedula.set(cedula, emp);
+      }
+    });
+
+    let registrosProcesados = 0;
+    const empleadosNoEncontrados: string[] = [];
+
+    for (const fila of filasExcel) {
+      const empleado =
+        empleadosPorCodigo.get(fila.codigoEmpleado) ??
+        empleadosPorCedula.get(fila.numeroCedula);
+
+      if (!empleado) {
+        empleadosNoEncontrados.push(
+          fila.codigoEmpleado ||
+          fila.numeroCedula ||
+          fila.nombreEmpleado
+        );
+        continue;
+      }
+
+      if (fila.valor === null || fila.valor === undefined) {
+        continue;
+      }
+
+      if (fila.valor < 0) {
+        throw new Error(
+          `El empleado ${fila.nombreEmpleado || fila.codigoEmpleado} tiene un valor negativo.`
+        );
+      }
+
+      empleado.valor = this.toNumber(fila.valor);
+
+      /*
+       * Regla visual igual al formato:
+       * Si viene valor, se marca 1 cuota por defecto,
+       * salvo que el usuario ya tenga otro número de cuotas.
+       */
+      if (this.toNumber(empleado.numCuotas) <= 0) {
+        empleado.numCuotas = 1;
+      }
+
+      if (empleado.cuotasPagadas === null || empleado.cuotasPagadas === undefined) {
+        empleado.cuotasPagadas = 0;
+      }
+
+      registrosProcesados++;
+    }
+
+    if (registrosProcesados === 0) {
+      throw new Error('No se procesó ningún valor del archivo.');
+    }
+
+    this.reemplazarRubro = true;
+    this.recalcularTotales();
+    this.actualizarGrid();
+
+    if (empleadosNoEncontrados.length > 0) {
+      this.mostrarAdvertencia(
+        `Archivo procesado, pero algunos empleados no se encontraron: ${empleadosNoEncontrados
+          .slice(0, 5)
+          .join(', ')}`
+      );
+    }
+  }
+
+  private obtenerTextoCelda(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    if (typeof value === 'object') {
+      if (value.text) {
+        return String(value.text).trim();
+      }
+
+      if (value.result !== undefined) {
+        return String(value.result).trim();
+      }
+
+      if (value.richText) {
+        return value.richText
+          .map((x: any) => x.text)
+          .join('')
+          .trim();
+      }
+    }
+
+    return String(value).trim();
+  }
+
+  private obtenerNumeroCeldaONull(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    let valor = value;
+
+    if (typeof value === 'object') {
+      if (value.result !== undefined) {
+        valor = value.result;
+      } else if (value.text !== undefined) {
+        valor = value.text;
+      }
+    }
+
+    const numero = Number(String(valor).replace(',', '.'));
+
+    if (isNaN(numero)) {
+      return null;
+    }
+
+    return numero;
+  }
 }
