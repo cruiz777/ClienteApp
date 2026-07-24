@@ -266,7 +266,8 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
         }
       },
       { headerName: 'Observación SRI',  field: 'observacion',       minWidth: 220 },
-      { headerName: 'Clave de Acceso',  field: 'claveAcceso',       minWidth: 220 },
+      { headerName: 'RUC',               field: 'rucCliente',        width: 140    },
+      { headerName: 'Cliente',           field: 'nombreCliente',     minWidth: 200, flex: 1 },
       { headerName: 'Número Doc.',       field: 'numeroDocumento',   width: 180    },
       { 
         headerName: 'Fecha', field: 'fecha', width: 140,
@@ -283,8 +284,7 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
             : { color: '#c0392b', fontWeight: 'bold', background: '#fde8e6' }
         }
       },
-      { headerName: 'RUC',               field: 'rucCliente',        width: 140    },
-      { headerName: 'Cliente',           field: 'nombreCliente',     minWidth: 200, flex: 1 },
+      { headerName: 'Clave de Acceso',  field: 'claveAcceso',       minWidth: 220 },
       {
         headerName: 'Total', field: 'total', width: 110,
         valueFormatter: (p) => this.formatoMoneda(p),

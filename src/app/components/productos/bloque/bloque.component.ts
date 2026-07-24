@@ -1239,8 +1239,8 @@ export class BloqueComponent implements OnInit {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = producto.contenido || '';
-            fila.contenidoUM = producto.unidad || 'g';
+            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
+            fila.contenidoUM = fila.contenidoUM?.toString().trim()   || producto.unidad    || 'g';
             fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');

@@ -329,7 +329,11 @@ fechaValueCell.numFmt = 'dd/mm/yyyy';
           font: { name: 'Calibri', size: 10, bold: false }
         },
         {
-          text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
+          text: 'El dueño de la marca',
+          font: { name: 'Calibri', size: 13, bold: true, color: { argb: 'FF0000FF' } }  //azul, tamaño 11
+        },
+        {
+          text: ' del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
           font: { name: 'Calibri', size: 10, bold: false }
         },
         {
@@ -356,7 +360,7 @@ fechaValueCell.numFmt = 'dd/mm/yyyy';
     };
 
     // altura de la fila para que quepa el texto
-    worksheet.getRow(currentRow).height = 45;
+    worksheet.getRow(currentRow).height = 55;
     currentRow++;
 
 
@@ -780,7 +784,11 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
           font: { name: 'Calibri', size: 10, bold: false }
         },
         {
-          text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
+          text: 'El dueño de la marca',
+          font: { name: 'Calibri', size: 13, bold: true, color: { argb: 'FF0000FF' } }  // 👈 azul, tamaño 11
+        },
+        {
+          text: ' del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
           font: { name: 'Calibri', size: 10, bold: false }
         },
         {
@@ -807,7 +815,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     };
 
     // altura de la fila para que quepa el texto
-    worksheet.getRow(currentRow).height = 50;
+    worksheet.getRow(currentRow).height = 55;
     currentRow++;
 
     currentRow++;
