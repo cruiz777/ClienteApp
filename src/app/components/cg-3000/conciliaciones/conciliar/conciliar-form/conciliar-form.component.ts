@@ -162,6 +162,8 @@ export class ConciliacionComponent implements OnInit {
   loadingPlan = false;
   private ultimaBusquedaConciliacionKey = '';
   private cargandoConciliacionExistente = false;
+  private movimientosRequestVersion = 0;
+  private conciliacionPersistida: ConciliacionResponse | null = null;
 
 panelIzquierdoAncho = 1240;
 panelDerechoAncho = 0;
@@ -521,51 +523,70 @@ colExcel: ColDef[] = [
     { headerName: 'Tipdoc', field: 'tipdoc', width: 90 },
   ];
 
-  colResumen: ColDef[] = [
-    { headerName: 'Estado', field: 'tipo', width: 140 },
-    {
-      headerName: 'Saldo Contable',
-      field: 'saldoContable',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-    {
-      headerName: 'Depósito',
-      field: 'deposito',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-    {
-      headerName: 'Cheques',
-      field: 'cheques',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-    {
-      headerName: 'Notas/Débito',
-      field: 'notasDebito',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-    {
-      headerName: 'Notas/Crédito',
-      field: 'notasCredito',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-    {
-      headerName: 'Saldo Bancario',
-      field: 'saldoBancario',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-    {
-      headerName: 'Diferencia',
-      field: 'diferencia',
-      valueFormatter: (p) => this.formatNumber2(p.value),
-      cellStyle: (p) => this.numberCellStyle(p),
-    },
-  ];
+ colResumen: ColDef[] = [
+  {
+    headerName: 'Estado',
+    field: 'tipo',
+    minWidth: 120,
+    flex: 1.15,
+  },
+  {
+    headerName: 'Saldo Contable',
+    field: 'saldoContable',
+    minWidth: 115,
+    flex: 1,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Depósito',
+    field: 'deposito',
+    minWidth: 105,
+    flex: 1,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Cheques',
+    field: 'cheques',
+    minWidth: 105,
+    flex: 1,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Notas/Débito',
+    field: 'notasDebito',
+    minWidth: 115,
+    flex: 1,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Notas/Crédito',
+    field: 'notasCredito',
+    minWidth: 115,
+    flex: 1,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Saldo Bancario',
+    field: 'saldoBancario',
+    minWidth: 120,
+    flex: 1,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Diferencia',
+    field: 'diferencia',
+    minWidth: 110,
+    flex: 0.9,
+    valueFormatter: p => this.formatNumber2(p.value),
+    cellStyle: p => this.numberCellStyle(p),
+  },
+];
 
   // filtros quick filter
   filtroTipMov = '';
@@ -696,13 +717,17 @@ colExcel: ColDef[] = [
     this.cargarConciliacionPorId(Number(item.idConciliacion));
   }
 
-  private cargarConciliacionPorId(id: number) {
+  private cargarConciliacionPorId(id: number): void {
     if (!id || Number.isNaN(id) || id <= 0) return;
 
     this.loading = true;
+    this.cargandoConciliacionExistente = true;
 
     this.svc.getConciliacionById(id)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.cargandoConciliacionExistente = false;
+      }))
       .subscribe({
         next: (res: ApiResponse<ConciliacionResponse>) => {
           if (res.type !== 'success' || !res.data) {
@@ -710,13 +735,18 @@ colExcel: ColDef[] = [
             return;
           }
 
-          // VB6: si existe conciliación (cabecera) => bloqueado
+          this.conciliacionPersistida = this.clonarConciliacion(res.data);
+          this.idConciliacion = Number(res.data.idConciliacion);
           this.isLocked = true;
-          this.idConciliacion = res.data.idConciliacion;
 
-          this.cargarDesdeResponse(res.data);
+          this.cargarDesdeResponse(this.conciliacionPersistida);
+          this.bloquearConciliacionRecuperada();
         },
-        error: () => this.notify('Error al buscar conciliación.', 'error', 5000),
+        error: (error) => {
+          console.error('Error recuperando conciliación:', error);
+          this.conciliacionPersistida = null;
+          this.notify('Error al buscar conciliación.', 'error', 5000);
+        },
       });
   }
 
@@ -790,6 +820,9 @@ colExcel: ColDef[] = [
   // TOP BOTONES
   // =======================
 onNuevaConciliacion() {
+  this.conciliacionPersistida = null;
+  this.ultimaBusquedaConciliacionKey = '';
+  this.cargandoConciliacionExistente = false;
   this.isLocked = false;
   this.idConciliacion = null;
 
@@ -892,6 +925,10 @@ onNuevaConciliacion() {
   }
 
   onCargar() {
+    if (this.isLocked || this.cargandoConciliacionExistente) {
+      return;
+    }
+
     this.cargarMovimientosDetalleDesdeMaestro();
 
     setTimeout(() => {
@@ -912,10 +949,7 @@ onNuevaConciliacion() {
     this.setRowDataCompat(this.gridSaldosApi, [this.saldosConciliados]);
   }
 
-  onGridResumenReady(e: GridReadyEvent) {
-    this.gridResumenApi = e.api;
-    this.setRowDataCompat(this.gridResumenApi, this.resumenRows);
-  }
+
   onGridExcelReady(e: GridReadyEvent) {
     this.gridExcelApi = e.api;
     if (this.excelRows?.length) {
@@ -972,6 +1006,33 @@ onNuevaConciliacion() {
     this.lastClickKey = key;
     this.lastClickTs = now;
   }
+
+  onGridResumenReady(e: GridReadyEvent): void {
+  this.gridResumenApi = e.api;
+
+  this.setRowDataCompat(
+    this.gridResumenApi,
+    this.resumenRows
+  );
+
+  setTimeout(() => {
+    this.ajustarGridResumen();
+  }, 100);
+}
+
+ajustarGridResumen(): void {
+  if (!this.gridResumenApi) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    this.gridResumenApi?.sizeColumnsToFit();
+    this.gridResumenApi?.refreshHeader();
+    this.gridResumenApi?.refreshCells({
+      force: true
+    });
+  });
+}
   private abrirAgruparPorComprobante(numcomp: string) {
     if (this.isLocked) return;
 
@@ -1041,22 +1102,22 @@ onNuevaConciliacion() {
   // =======================
   // CARGAR DESDE RESPONSE (TOTAL => bloqueado)
   // =======================
-  private cargarDesdeResponse(c: ConciliacionResponse) {
+  private cargarDesdeResponse(c: ConciliacionResponse): void {
     const rango = this.obtenerRangoDesdeConciliacion(c);
 
     this.form.patchValue({
-      idPlanCuentas: c.idPlanCuentas,
+      idPlanCuentas: this.num(c.idPlanCuentas),
       codprePc: c.codprePc ?? null,
       descripcion: c.descripcion ?? null,
       fechaInicial: rango.fechaInicial,
       fechaFinal: rango.fechaFinal,
-      saldcontini: c.saldcontini ?? 0,
-      saldcontfin: c.saldcontfin ?? 0,
-      saldbancini: c.saldbancini ?? 0,
-      saldbancfin: c.saldbancfin ?? 0,
+      saldcontini: this.num(c.saldcontini),
+      saldcontfin: this.num(c.saldcontfin),
+      saldbancini: this.num(c.saldbancini),
+      saldbancfin: this.num(c.saldbancfin),
       comentario: c.comentario ?? null,
-      idEmpresa: c.idEmpresa,
-      idUsuario: c.idUsuario,
+      idEmpresa: this.num(c.idEmpresa),
+      idUsuario: this.num(c.idUsuario),
     }, { emitEvent: false });
 
     const idPlan = Number(c.idPlanCuentas ?? 0);
@@ -1066,39 +1127,87 @@ onNuevaConciliacion() {
       this.pendingPlanId = idPlan;
     }
 
-    const detallesNormalizados = (c.detalles ?? []).map((d: any) => {
-      const concVal = String(d?.concil ?? 'N').toUpperCase().trim();
-      const concil = (concVal === 'S' || concVal === 'C') ? 'C' : 'N';
+    this.movimientos = (c.detalles ?? [])
+      .filter((d: any) => this.isChecked(d?.concil))
+      .map((d: any, index: number) => {
+        const conciliado = this.isChecked(d?.concil);
 
-      const fechaconcil =
-        concil === 'C' && d?.fechaconcil
-          ? this.normalizeIsoString(d.fechaconcil)
-          : null;
+        return {
+          ...d,
+          idDetMaestro: this.num(d?.idDetMaestro ?? d?.id_det_maestro),
+          linea: this.num(d?.linea) || index + 1,
+          idMovBancario: d?.idMovBancario ?? d?.id_mov_bancario ?? null,
+          movbancario: d?.movbancario ?? d?.movBancario ?? null,
+          nocomprobante: d?.nocomprobante ?? d?.noComprobante ?? null,
+          fechatran: d?.fechatran ? this.normalizeIsoString(d.fechatran) : null,
+          cheque: this.num(d?.cheque),
+          debito: this.num(d?.debito),
+          credito: this.num(d?.credito),
+          concil: conciliado ? 'C' : 'N',
+          fechaconcil: conciliado && d?.fechaconcil
+            ? this.normalizeIsoString(d.fechaconcil)
+            : null,
+          beneficiario: d?.beneficiario ?? null,
+          numdoc: d?.numdoc != null ? String(d.numdoc) : null,
+          tipdoc: d?.tipdoc ?? null,
+          matchExcel: false,
+        } as MovimientoRow;
+      })
+      .sort((a: any, b: any) => this.num(a.linea) - this.num(b.linea));
 
-      return {
-        ...d,
-        concil,
-        fechatran: d?.fechatran ? this.normalizeIsoString(d.fechatran) : d?.fechatran,
-        fechaconcil,
-        numdoc: d?.numdoc != null ? String(d.numdoc) : null,
-      } as any;
-    });
+    this.saldosConciliados = {
+      salconini: this.r2((c as any).salconini),
+      salcondep: this.r2((c as any).salcondep),
+      salconchq: this.r2((c as any).salconchq),
+      salconnc: this.r2((c as any).salconnc),
+      salconnd: this.r2((c as any).salconnd),
+      salconbanc: this.r2((c as any).salconbanc),
+      salcondif: 0,
+    };
 
-    this.movimientos = detallesNormalizados.filter((d: any) =>
-      this.estaDentroDelPeriodo(d?.fechatran, rango.fechaInicial, rango.fechaFinal)
-    );
+    this.resumenRows = [
+      {
+        tipo: 'Conciliados',
+        saldoContable: 0,
+        deposito: this.r2((c as any).salconcidep),
+        cheques: this.r2((c as any).salconcichq),
+        notasDebito: this.r2((c as any).salconcind),
+        notasCredito: this.r2((c as any).salconcinc),
+        saldoBancario: 0,
+        diferencia: 0,
+      },
+      {
+        tipo: 'No Conciliados',
+        saldoContable: this.r2((c as any).salconcini),
+        deposito: this.r2((c as any).salconcdep),
+        cheques: this.r2((c as any).salconcchq),
+        notasDebito: this.r2((c as any).salconcnd),
+        notasCredito: this.r2((c as any).salconcnc),
+        saldoBancario: this.r2((c as any).salconcbanc),
+        diferencia: this.r2((c as any).salconcdif),
+      },
+    ];
 
     this.setRowDataCompat(this.gridMovApi, this.movimientos);
-    this.gridMovApi?.refreshCells({ force: true, columns: ['fechaconcil', 'concil'] });
+    this.setRowDataCompat(this.gridSaldosApi, [this.saldosConciliados]);
+    this.setRowDataCompat(this.gridResumenApi, this.resumenRows);
 
-    this.recalcularResumenes();
+    setTimeout(() => {
+      this.gridMovApi?.refreshCells({ force: true });
+      this.gridSaldosApi?.refreshCells({ force: true });
+      this.gridResumenApi?.refreshCells({ force: true });
+      this.gridMovApi?.redrawRows();
+      this.gridSaldosApi?.redrawRows();
+      this.gridResumenApi?.redrawRows();
+    });
   }
   // =======================
   // MOVIMIENTOS MAESTRO (EN PROCESO)
   // =======================
   cargarMovimientosDetalleDesdeMaestro() {
-    if (this.isLocked) return;
+    if (this.isLocked || this.cargandoConciliacionExistente) return;
 
+    const requestVersion = ++this.movimientosRequestVersion;
     const idPlan = Number(this.form.get('idPlanCuentas')?.value);
     const fIni: Date | null = this.form.get('fechaInicial')?.value ?? null;
     const fFin: Date | null = this.form.get('fechaFinal')?.value ?? null;
@@ -1119,6 +1228,7 @@ onNuevaConciliacion() {
     this.loading = true;
 
     const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const requestKey = `${idPlan}|${codprePc}|${fechaInicio}|${fechaFin}`;
 
     this.svc.getMovimientosMaestro(
       idPlan,
@@ -1129,6 +1239,23 @@ onNuevaConciliacion() {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
+          const idPlanActual = Number(this.form.get('idPlanCuentas')?.value);
+          const codpreActual = String(this.form.get('codprePc')?.value ?? '').trim();
+          const fIniActual = this.form.get('fechaInicial')?.value as Date | null;
+          const fFinActual = this.form.get('fechaFinal')?.value as Date | null;
+          const currentRequestKey = fIniActual && fFinActual
+            ? `${idPlanActual}|${codpreActual}|${this.toYmd(fIniActual)}|${this.toYmd(fFinActual)}`
+            : '';
+
+          if (
+            requestVersion !== this.movimientosRequestVersion ||
+            requestKey !== currentRequestKey ||
+            this.isLocked ||
+            this.cargandoConciliacionExistente
+          ) {
+            return;
+          }
+
           if (res.type !== 'success' || !Array.isArray(res.data)) {
             this.notify(res.message ?? 'No se pudo cargar movimientos.', 'error', 5000);
             this.movimientos = [];
@@ -1397,6 +1524,7 @@ onNuevaConciliacion() {
     return rows;
   }
   private recalcularResumenes(): void {
+    if (this.esConciliacionGuardada) return;
     const cab = this.form.getRawValue();
     const rows = this.getMovimientosActuales();
 
@@ -1628,7 +1756,7 @@ onNuevaConciliacion() {
       salconnc: this.num(this.saldosConciliados.salconnc),
       salconnd: this.num(this.saldosConciliados.salconnd),
       salconbanc: this.num(this.saldosConciliados.salconbanc),
-      salcondif: this.num(this.saldosConciliados.salcondif),
+      salcondif: 0,
 
       salconcidep: this.num(concRow.deposito),
       salconcichq: this.num(concRow.cheques),
@@ -1780,64 +1908,62 @@ onNuevaConciliacion() {
     const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
     const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
 
-    if (!codprePc || !fechaInicial || isNaN(fechaInicial.getTime())) {
-      return;
-    }
+    if (!codprePc || !fechaInicial || isNaN(fechaInicial.getTime())) return;
 
     const fecconcil = this.getPeriodoDesdeFecha(fechaInicial);
     const currentKey = `${codprePc}|${fecconcil}`;
 
+    if (this.ultimaBusquedaConciliacionKey === currentKey && this.cargandoConciliacionExistente) {
+      return;
+    }
+
     this.ultimaBusquedaConciliacionKey = currentKey;
     this.cargandoConciliacionExistente = true;
 
-    this.svc.getConciliacionByPeriodoCuenta(codprePc, fecconcil).subscribe({
-      next: (res) => {
-        if (this.ultimaBusquedaConciliacionKey !== currentKey) {
-          return;
+    // Invalida cualquier respuesta pendiente de movimientos-maestro.
+    this.movimientosRequestVersion++;
+
+    this.svc.getConciliacionByPeriodoCuenta(codprePc, fecconcil)
+      .pipe(finalize(() => {
+        if (this.ultimaBusquedaConciliacionKey === currentKey) {
+          this.cargandoConciliacionExistente = false;
         }
+      }))
+      .subscribe({
+        next: (res) => {
+          if (this.ultimaBusquedaConciliacionKey !== currentKey) return;
 
-        this.cargandoConciliacionExistente = false;
+          if (res.type === 'success' && res.data) {
+            this.conciliacionPersistida = this.clonarConciliacion(res.data);
+            this.idConciliacion = Number(res.data.idConciliacion);
+            this.isLocked = true;
 
-        if (res.type === 'success' && res.data) {
-          this.isLocked = true;
-          this.idConciliacion = res.data.idConciliacion;
+            this.cargarDesdeResponse(this.conciliacionPersistida);
+            this.bloquearConciliacionRecuperada();
+            this.notify('La conciliación ya existe. Se cargó en modo consulta.', 'info');
+            return;
+          }
 
-          this.cargarDesdeResponse(res.data);
-
-          this.form.disable({ emitEvent: false });
-          this.planForm.disable({ emitEvent: false });
-
-          this.form.get('saldcontini')?.disable({ emitEvent: false });
-          this.form.get('saldcontfin')?.disable({ emitEvent: false });
-
-          this.notify('La conciliación ya existe. Se cargó en modo consulta.', 'info');
-        } else {
+          this.conciliacionPersistida = null;
           this.isLocked = false;
           this.idConciliacion = null;
-
           this.form.enable({ emitEvent: false });
           this.planForm.enable({ emitEvent: false });
+          this.form.get('saldcontini')?.disable({ emitEvent: false });
+          this.form.get('saldcontfin')?.disable({ emitEvent: false });
+        },
+        error: () => {
+          if (this.ultimaBusquedaConciliacionKey !== currentKey) return;
 
+          this.conciliacionPersistida = null;
+          this.isLocked = false;
+          this.idConciliacion = null;
+          this.form.enable({ emitEvent: false });
+          this.planForm.enable({ emitEvent: false });
           this.form.get('saldcontini')?.disable({ emitEvent: false });
           this.form.get('saldcontfin')?.disable({ emitEvent: false });
         }
-      },
-      error: () => {
-        if (this.ultimaBusquedaConciliacionKey !== currentKey) {
-          return;
-        }
-
-        this.cargandoConciliacionExistente = false;
-        this.isLocked = false;
-        this.idConciliacion = null;
-
-        this.form.enable({ emitEvent: false });
-        this.planForm.enable({ emitEvent: false });
-
-        this.form.get('saldcontini')?.disable({ emitEvent: false });
-        this.form.get('saldcontfin')?.disable({ emitEvent: false });
-      }
-    });
+      });
   }
   private getPeriodoDesdeFecha(fecha: Date): string {
     const yyyy = fecha.getFullYear();
@@ -2017,83 +2143,144 @@ onNuevaConciliacion() {
     return Number(this.usuarioActual?.id_usuario ?? 2);
   }
   onImprimir(): void {
-    const rows = this.getMovimientosActuales();
+    this.imprimirDesdeBase('CONCILIADOS');
+  }
 
-    if (!rows || rows.length === 0) {
-      this.notify('No hay información para descargar.', 'warn');
+  get esConciliacionGuardada(): boolean {
+    return this.isLocked &&
+      this.idConciliacion !== null &&
+      this.idConciliacion > 0 &&
+      this.conciliacionPersistida !== null;
+  }
+
+  private clonarConciliacion(c: ConciliacionResponse): ConciliacionResponse {
+    return {
+      ...c,
+      detalles: (c.detalles ?? []).map(d => ({ ...d }))
+    };
+  }
+
+  private bloquearConciliacionRecuperada(): void {
+    this.isLocked = true;
+    this.form.disable({ emitEvent: false });
+    this.planForm.disable({ emitEvent: false });
+    this.buscarForm.enable({ emitEvent: false });
+    this.gridMovApi?.refreshCells({ force: true, columns: ['concil', 'fechaconcil'] });
+    this.gridMovApi?.redrawRows();
+  }
+
+  private imprimirDesdeBase(tipo: 'CONCILIADOS' | 'NO_CONCILIADOS'): void {
+    if (!this.idConciliacion || this.idConciliacion <= 0) {
+      this.notify('Primero debe recuperar o guardar una conciliación total.', 'warn');
       return;
     }
 
-    const movimientosNoConciliados = rows.filter(r => !this.isChecked((r as any).concil));
-
-    if (movimientosNoConciliados.length === 0) {
-      this.notify('No existen movimientos no conciliados para descargar.', 'warn');
-      return;
-    }
-
-    try {
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
+    this.loading = true;
+    this.svc.getConciliacionById(this.idConciliacion)
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: (res: ApiResponse<ConciliacionResponse>) => {
+          if (res.type !== 'success' || !res.data) {
+            this.notify(res.message ?? 'No se pudo recuperar la conciliación para imprimir.', 'error', 5000);
+            return;
+          }
+          this.generarPdfConciliacionPersistida(res.data, tipo);
+        },
+        error: (error) => {
+          console.error('Error recuperando conciliación para PDF:', error);
+          this.notify('Error consultando la conciliación en base de datos.', 'error', 5000);
+        }
       });
+  }
 
-      const cab = this.form.getRawValue();
-      const resumenNo = this.resumenRows.find(x => x.tipo === 'No Conciliados');
+  private generarPdfConciliacionPersistida(
+    conciliacion: ConciliacionResponse,
+    tipoReporte: 'CONCILIADOS' | 'NO_CONCILIADOS'
+  ): void {
+    try {
+      const detalles = (conciliacion.detalles ?? [])
+        .map((d: any, index: number) => ({
+          ...d,
+          linea: this.num(d?.linea) || index + 1,
+          concil: this.isChecked(d?.concil) ? 'C' : 'N',
+          cheque: this.num(d?.cheque),
+          debito: this.num(d?.debito),
+          credito: this.num(d?.credito),
+        }))
+        .filter((d: any) => tipoReporte === 'CONCILIADOS' ? d.concil === 'C' : d.concil !== 'C')
+        .sort((a: any, b: any) => this.num(a.linea) - this.num(b.linea));
 
-      const cuenta = String(cab.codprePc ?? '');
-      const descripcion = String(cab.descripcion ?? '');
-      const fechaInicial = this.formatearFechaDdMmYyyy(cab.fechaInicial);
-      const fechaFinal = this.formatearFechaDdMmYyyy(cab.fechaFinal);
+      if (!detalles.length) {
+        this.notify(
+          tipoReporte === 'CONCILIADOS'
+            ? 'No existen movimientos conciliados almacenados.'
+            : 'No existen movimientos no conciliados almacenados.',
+          'warn'
+        );
+        return;
+      }
 
-      const saldoInicial = this.formatNumber2(cab.saldbancini ?? 0);
-      const depositosNoEfect = this.formatNumber2(resumenNo?.deposito ?? 0);
-      const chequesNoCobrados = this.formatNumber2(resumenNo?.cheques ?? 0);
-      const notasDebitoNoReg = this.formatNumber2(resumenNo?.notasDebito ?? 0);
-      const notasCreditoNoReg = this.formatNumber2(resumenNo?.notasCredito ?? 0);
-      const saldoEnLibros = this.formatNumber2(resumenNo?.saldoBancario ?? 0);
-      const diferencia = this.formatNumber2(resumenNo?.diferencia ?? 0);
+      const rango = this.obtenerRangoDesdeConciliacion(conciliacion);
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const cuenta = String((conciliacion as any).codPrePc ?? conciliacion.codprePc ?? '');
+      const descripcion = String(conciliacion.descripcion ?? '');
+      const fechaInicial = this.formatearFechaDdMmYyyy(rango.fechaInicial);
+      const fechaFinal = this.formatearFechaDdMmYyyy(rango.fechaFinal);
+      const fechaConciliacion = this.formatDdMmYyyy(conciliacion.fechaconcil);
+      const titulo = tipoReporte === 'CONCILIADOS'
+        ? 'DETALLE DE MOVIMIENTOS CONCILIADOS'
+        : 'DETALLE DE MOVIMIENTOS NO CONCILIADOS';
 
       let y = 12;
+      doc.setFont('times', 'bold');
+      doc.setFontSize(14);
+      doc.text('CONCILIACIÓN BANCARIA', 148.5, y, { align: 'center' });
+      y += 8;
+
+      doc.setFontSize(10);
+      doc.text('N.º conciliación:', 10, y);
+      doc.setFont('times', 'normal');
+      doc.text(String(conciliacion.idConciliacion ?? ''), 42, y);
+      doc.setFont('times', 'bold');
+      doc.text('Periodo:', 75, y);
+      doc.setFont('times', 'normal');
+      doc.text(String((conciliacion as any).fecconcil ?? ''), 93, y);
+      doc.setFont('times', 'bold');
+      doc.text('Fecha conciliación:', 125, y);
+      doc.setFont('times', 'normal');
+      doc.text(fechaConciliacion, 160, y);
+      y += 6;
 
       doc.setFont('times', 'bold');
-      doc.setFontSize(11);
-      doc.text('Cuenta Bancaria', 10, y);
+      doc.text('Cuenta bancaria:', 10, y);
       doc.setFont('times', 'normal');
       doc.text(cuenta, 42, y);
-      doc.text(descripcion, 72, y);
-
+      doc.text(descripcion, 75, y);
       y += 6;
-      doc.setFont('times', 'bold');
-      doc.text('Saldo Inicial', 10, y);
-      doc.setFont('times', 'normal');
-      doc.text(saldoInicial, 190, y, { align: 'right' });
 
-      y += 6;
       doc.setFont('times', 'bold');
-      doc.text('Fecha Inicial', 10, y);
+      doc.text('Fecha inicial:', 10, y);
       doc.setFont('times', 'normal');
       doc.text(fechaInicial, 42, y);
-
-      y += 6;
       doc.setFont('times', 'bold');
-      doc.text('Fecha Final', 10, y);
+      doc.text('Fecha final:', 75, y);
       doc.setFont('times', 'normal');
-      doc.text(fechaFinal, 42, y);
-
-      y += 4;
-      doc.line(10, y, 200, y);
-
-      y += 6;
+      doc.text(fechaFinal, 100, y);
+      y += 5;
+      doc.line(10, y, 287, y);
+      y += 7;
       doc.setFont('times', 'bold');
-      doc.text('DETALLE DE MOVIMIENTOS NO CONCILIADOS', 10, y);
+      doc.setFontSize(11);
+      doc.text(titulo, 10, y);
 
-      const body = movimientosNoConciliados.map((r: any) => [
+      const body = detalles.map((r: any) => [
+        String(r.linea ?? ''),
         this.formatDdMmYyyy(r.fechatran),
+        String(r.movbancario ?? ''),
         String(r.nocomprobante ?? ''),
-        this.formatNumber2(r.cheque ?? 0),
-        this.formatNumber2(r.debito ?? 0),
-        this.formatNumber2(r.credito ?? 0),
+        String(r.cheque ?? ''),
+        this.formatNumber2(r.debito),
+        this.formatNumber2(r.credito),
         String(r.numdoc ?? ''),
         String(r.beneficiario ?? ''),
         String(r.tipdoc ?? ''),
@@ -2101,93 +2288,95 @@ onNuevaConciliacion() {
 
       autoTable(doc, {
         startY: y + 2,
-        theme: 'plain',
-        styles: {
-          font: 'times',
-          fontSize: 8,
-          cellPadding: 1.2,
-          textColor: 0,
-          lineColor: 0,
-        },
-        headStyles: {
-          fontStyle: 'bold',
-          textColor: 0,
-        },
+        theme: 'grid',
+        styles: { font: 'times', fontSize: 7.5, cellPadding: 1.2, overflow: 'linebreak', textColor: 0, lineColor: 160, lineWidth: 0.1 },
+        headStyles: { fontStyle: 'bold', halign: 'center', fillColor: [235, 235, 235], textColor: 0 },
         columnStyles: {
-          2: { halign: 'right' },
-          3: { halign: 'right' },
-          4: { halign: 'right' },
+          0: { halign: 'center', cellWidth: 12 },
+          1: { halign: 'center', cellWidth: 22 },
+          2: { halign: 'center', cellWidth: 14 },
+          3: { cellWidth: 34 },
+          4: { cellWidth: 27 },
+          5: { halign: 'right', cellWidth: 24 },
+          6: { halign: 'right', cellWidth: 24 },
+          7: { cellWidth: 25 },
+          8: { cellWidth: 72 },
+          9: { halign: 'center', cellWidth: 16 },
         },
-        head: [[
-          'fechatran',
-          'numcomp',
-          'cheque',
-          'debito',
-          'credito',
-          'numdoc',
-          'beneficiario',
-          'tipdoc'
-        ]],
+        head: [['Línea', 'Fecha', 'Tipo', 'Comprobante', 'Cheque', 'Débito', 'Crédito', 'Documento', 'Beneficiario', 'Tip. Doc.']],
         body,
         margin: { left: 10, right: 10 },
       });
 
-      const finalY = (doc as any).lastAutoTable?.finalY ?? 120;
-
-      let summaryY = finalY + 8;
-      if (summaryY > 220) {
+      let summaryY = ((doc as any).lastAutoTable?.finalY ?? 120) + 8;
+      if (summaryY > 175) {
         doc.addPage();
         summaryY = 20;
       }
 
-      doc.line(10, summaryY, 200, summaryY);
-      summaryY += 8;
+      const resumen = tipoReporte === 'CONCILIADOS'
+        ? {
+            saldoInicial: this.num((conciliacion as any).salconini),
+            deposito: this.num((conciliacion as any).salconcidep),
+            cheques: this.num((conciliacion as any).salconcichq),
+            notasDebito: this.num((conciliacion as any).salconcind),
+            notasCredito: this.num((conciliacion as any).salconcinc),
+            saldoBancario: this.num((conciliacion as any).salconbanc),
+            diferencia: 0,
+          }
+        : {
+            saldoInicial: this.num((conciliacion as any).salconcini),
+            deposito: this.num((conciliacion as any).salconcdep),
+            cheques: this.num((conciliacion as any).salconcchq),
+            notasDebito: this.num((conciliacion as any).salconcnd),
+            notasCredito: this.num((conciliacion as any).salconcnc),
+            saldoBancario: this.num((conciliacion as any).salconcbanc),
+            diferencia: this.num((conciliacion as any).salconcdif),
+          };
 
-      doc.setFont('times', 'bold');
-      doc.setFontSize(12);
+      doc.line(160, summaryY, 287, summaryY);
+      summaryY += 6;
+      doc.setFontSize(10);
 
-      const summaryRows: Array<[string, string]> = [
-        ['Saldo Inicial', saldoInicial],
-        ['Depositos no Efectivisados', depositosNoEfect],
-        ['Cheques no Cobrados', chequesNoCobrados],
-        ['Notas de Debito no Registradas', notasDebitoNoReg],
-        ['Notas de Crédito no Registradas', notasCreditoNoReg],
-        ['Saldo en Libros', saldoEnLibros],
-        ['Diferencia', diferencia],
+      const summaryRows: Array<[string, number]> = [
+        ['Saldo inicial', resumen.saldoInicial],
+        ['Depósitos', resumen.deposito],
+        ['Cheques', resumen.cheques],
+        ['Notas de débito', resumen.notasDebito],
+        ['Notas de crédito', resumen.notasCredito],
+        ['Saldo bancario', resumen.saldoBancario],
+        ['Diferencia', resumen.diferencia],
       ];
 
       for (const [label, value] of summaryRows) {
-        doc.text(label, 14, summaryY);
-        doc.setFont('times', 'normal');
-        doc.text(value, 110, summaryY, { align: 'right' });
         doc.setFont('times', 'bold');
-        summaryY += 8;
+        doc.text(label, 165, summaryY);
+        doc.setFont('times', 'normal');
+        doc.text(this.formatNumber2(value), 282, summaryY, { align: 'right' });
+        summaryY += 6;
       }
 
-      summaryY += 24;
+      summaryY += 14;
+      if (summaryY > 185) {
+        doc.addPage();
+        summaryY = 40;
+      }
 
-      doc.line(55, summaryY, 105, summaryY);
-      doc.line(135, summaryY, 185, summaryY);
+      doc.line(45, summaryY, 115, summaryY);
+      doc.line(180, summaryY, 250, summaryY);
+      summaryY += 6;
+      doc.setFont('times', 'bold');
+      doc.text('Realizado por', 80, summaryY, { align: 'center' });
+      doc.text('Revisado por', 215, summaryY, { align: 'center' });
 
-      summaryY += 7;
-      doc.text('Realizado Por', 80, summaryY, { align: 'center' });
-      doc.text('Revisado Por', 160, summaryY, { align: 'center' });
-
-      const fecha = new Date();
-      const yyyy = fecha.getFullYear();
-      const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-      const dd = String(fecha.getDate()).padStart(2, '0');
-      const hh = String(fecha.getHours()).padStart(2, '0');
-      const mi = String(fecha.getMinutes()).padStart(2, '0');
-
-      const nombreArchivo = `Conciliacion_Bancaria_${yyyy}${mm}${dd}_${hh}${mi}.pdf`;
-
-      doc.save(nombreArchivo);
-      this.notify('Reporte PDF descargado correctamente.', 'success');
-
+      const id = conciliacion.idConciliacion ?? 0;
+      const periodo = (conciliacion as any).fecconcil ?? '';
+      const sufijo = tipoReporte === 'CONCILIADOS' ? 'Conciliados' : 'No_Conciliados';
+      doc.save(`Conciliacion_${id}_${periodo}_${sufijo}.pdf`);
+      this.notify('Reporte generado con información de base de datos.', 'success');
     } catch (error) {
-      console.error(error);
-      this.notify('Ocurrió un error al generar el PDF.', 'error');
+      console.error('Error generando PDF de conciliación:', error);
+      this.notify('Ocurrió un error al generar el PDF.', 'error', 5000);
     }
   }
 
@@ -2227,178 +2416,7 @@ onNuevaConciliacion() {
     return new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
   }
   onImprimirMarcados(): void {
-    const rows = this.getMovimientosActuales();
-
-    if (!rows || rows.length === 0) {
-      this.notify('No hay información para descargar.', 'warn');
-      return;
-    }
-
-    const movimientosMarcados = rows.filter(r => this.isChecked((r as any).concil));
-
-    if (movimientosMarcados.length === 0) {
-      this.notify('No existen movimientos marcados para descargar.', 'warn');
-      return;
-    }
-
-    try {
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
-      const cab = this.form.getRawValue();
-      const resumenConc = this.resumenRows.find(x => x.tipo === 'Conciliados');
-
-      const cuenta = String(cab.codprePc ?? '');
-      const descripcion = String(cab.descripcion ?? '');
-      const fechaInicial = this.formatearFechaDdMmYyyy(cab.fechaInicial);
-      const fechaFinal = this.formatearFechaDdMmYyyy(cab.fechaFinal);
-
-      const saldoInicial = this.formatNumber2(cab.saldbancini ?? 0);
-      const depositos = this.formatNumber2(resumenConc?.deposito ?? 0);
-      const cheques = this.formatNumber2(resumenConc?.cheques ?? 0);
-      const notasDebito = this.formatNumber2(resumenConc?.notasDebito ?? 0);
-      const notasCredito = this.formatNumber2(resumenConc?.notasCredito ?? 0);
-      const saldoBancario = this.formatNumber2(this.saldosConciliados?.salconbanc ?? 0);
-      const diferencia = this.formatNumber2(this.saldosConciliados?.salcondif ?? 0);
-
-      let y = 12;
-
-      doc.setFont('times', 'bold');
-      doc.setFontSize(11);
-      doc.text('Cuenta Bancaria', 10, y);
-      doc.setFont('times', 'normal');
-      doc.text(cuenta, 42, y);
-      doc.text(descripcion, 72, y);
-
-      y += 6;
-      doc.setFont('times', 'bold');
-      doc.text('Saldo Inicial', 10, y);
-      doc.setFont('times', 'normal');
-      doc.text(saldoInicial, 190, y, { align: 'right' });
-
-      y += 6;
-      doc.setFont('times', 'bold');
-      doc.text('Fecha Inicial', 10, y);
-      doc.setFont('times', 'normal');
-      doc.text(fechaInicial, 42, y);
-
-      y += 6;
-      doc.setFont('times', 'bold');
-      doc.text('Fecha Final', 10, y);
-      doc.setFont('times', 'normal');
-      doc.text(fechaFinal, 42, y);
-
-      y += 4;
-      doc.line(10, y, 200, y);
-
-      y += 6;
-      doc.setFont('times', 'bold');
-      doc.text('DETALLE DE MOVIMIENTOS MARCADOS', 10, y);
-
-      const body = movimientosMarcados.map((r: any) => [
-        this.formatDdMmYyyy(r.fechatran),
-        String(r.nocomprobante ?? ''),
-        this.formatNumber2(r.cheque ?? 0),
-        this.formatNumber2(r.debito ?? 0),
-        this.formatNumber2(r.credito ?? 0),
-        String(r.numdoc ?? ''),
-        String(r.beneficiario ?? ''),
-        String(r.tipdoc ?? ''),
-      ]);
-
-      autoTable(doc, {
-        startY: y + 2,
-        theme: 'plain',
-        styles: {
-          font: 'times',
-          fontSize: 8,
-          cellPadding: 1.2,
-          textColor: 0,
-          lineColor: 0,
-        },
-        headStyles: {
-          fontStyle: 'bold',
-          textColor: 0,
-        },
-        columnStyles: {
-          2: { halign: 'right' },
-          3: { halign: 'right' },
-          4: { halign: 'right' },
-        },
-        head: [[
-          'fechatran',
-          'numcomp',
-          'cheque',
-          'debito',
-          'credito',
-          'numdoc',
-          'beneficiario',
-          'tipdoc'
-        ]],
-        body,
-        margin: { left: 10, right: 10 },
-      });
-
-      const finalY = (doc as any).lastAutoTable?.finalY ?? 120;
-
-      let summaryY = finalY + 8;
-      if (summaryY > 220) {
-        doc.addPage();
-        summaryY = 20;
-      }
-
-      doc.line(10, summaryY, 200, summaryY);
-      summaryY += 8;
-
-      doc.setFont('times', 'bold');
-      doc.setFontSize(12);
-
-      const summaryRows: Array<[string, string]> = [
-        ['Saldo Inicial', saldoInicial],
-        ['Depositos', depositos],
-        ['Cheques', cheques],
-        ['Notas de Debito', notasDebito],
-        ['Notas de Crédito', notasCredito],
-        ['Saldo Bancario', saldoBancario],
-        ['Diferencia', diferencia],
-      ];
-
-      for (const [label, value] of summaryRows) {
-        doc.text(label, 14, summaryY);
-        doc.setFont('times', 'normal');
-        doc.text(value, 110, summaryY, { align: 'right' });
-        doc.setFont('times', 'bold');
-        summaryY += 8;
-      }
-
-      summaryY += 24;
-
-      doc.line(55, summaryY, 105, summaryY);
-      doc.line(135, summaryY, 185, summaryY);
-
-      summaryY += 7;
-      doc.text('Realizado Por', 80, summaryY, { align: 'center' });
-      doc.text('Revisado Por', 160, summaryY, { align: 'center' });
-
-      const fecha = new Date();
-      const yyyy = fecha.getFullYear();
-      const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-      const dd = String(fecha.getDate()).padStart(2, '0');
-      const hh = String(fecha.getHours()).padStart(2, '0');
-      const mi = String(fecha.getMinutes()).padStart(2, '0');
-
-      const nombreArchivo = `Conciliacion_Marcados_${yyyy}${mm}${dd}_${hh}${mi}.pdf`;
-
-      doc.save(nombreArchivo);
-      this.notify('Reporte PDF de marcados descargado correctamente.', 'success');
-
-    } catch (error) {
-      console.error(error);
-      this.notify('Ocurrió un error al generar el PDF de marcados.', 'error');
-    }
+    this.imprimirDesdeBase('CONCILIADOS');
   }
   onFechaChange(): void {
     const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
@@ -2410,8 +2428,10 @@ onNuevaConciliacion() {
     if (!(fechaInicial instanceof Date) || isNaN(fechaInicial.getTime())) return;
     if (!(fechaFinal instanceof Date) || isNaN(fechaFinal.getTime())) return;
 
+    // Primero verifica si el período ya fue conciliado.
+    // No cargamos movimientos-maestro aquí porque esa llamada podía terminar
+    // después y sobrescribir los detalles históricos recuperados desde la base.
     this.onBlurDatosCabecera();
-    this.onCargar();
   }
   private validarRangoMensualCompleto(): { ok: boolean; mensaje: string } {
     const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;

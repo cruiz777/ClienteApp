@@ -64,7 +64,7 @@ import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/li
 import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
 import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
-
+import { ExploradorEmpleadosComponent } from './empleados/explorador-empleado/explorador-empleado.component';
 const routes: Routes = [
    {
       path: '',
@@ -133,7 +133,7 @@ const routes: Routes = [
         {path:'bancos-rol', component: RpBancosComponent},
         {path:'emp-comp', component: RpEmpresaComplementariaComponent},
         {path:'tipo-nomina-esp', component: TipoNominaEspComponent},
-        
+        {path:'explorador-empleados',component:ExploradorEmpleadosComponent},
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },
