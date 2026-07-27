@@ -10,7 +10,8 @@ import {
   RolIndividualResponse,
   RolIndividualRubroResponse,
   RolNominaService,
-  GuardarRolIndividualRequest
+  GuardarRolIndividualRequest,
+  CalcularImpuestoRentaRequest
 } from 'src/app/services/rol/rol-nomina.service';
 
 @Component({
@@ -35,6 +36,7 @@ export class RolIndividualDialogComponent implements OnInit {
   guardando = false;
   hayCambios = false;
   rolActualizado = false;
+  recalculandoImpuesto = false;
   private valoresAutomaticosRubrosManuales = new Map<number, number>();
   columnDefs: ColDef<RolIndividualRubroResponse>[] = [
     {
@@ -217,54 +219,42 @@ export class RolIndividualDialogComponent implements OnInit {
     params.api.sizeColumnsToFit();
   }
 
-  onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
+  onCellValueChanged(
+    event: CellValueChangedEvent<RolIndividualRubroResponse>
+  ): void {
     const row = event.data;
 
     if (!row) {
       return;
     }
 
-    const campoEditado = event.colDef.field as keyof RolIndividualRubroResponse;
-    const valorAnterior = this.toNumber(event.oldValue);
+    const campoEditado =
+      event.colDef.field as keyof RolIndividualRubroResponse;
+
+    const valorAnterior =
+      this.toNumber(event.oldValue);
 
     row.cantidad = this.toNumber(row.cantidad);
     row.valor = this.toNumber(row.valor);
 
-    if (!this.validarValorNoNegativo(row, campoEditado, valorAnterior)) {
+    if (
+      !this.validarValorNoNegativo(
+        row,
+        campoEditado,
+        valorAnterior
+      )
+    ) {
       this.ingresos = [...this.ingresos];
       this.egresos = [...this.egresos];
       this.calcularSinMarcarCambios();
       return;
     }
 
-    /*
-     * RUBROS MANUALES:
-     *
-     * Aplica para:
-     * - IMP. RENTA
-     * - ANTICIPO I QUINCENA
-     *
-     * Regla:
-     *
-     * Cant/% = 1:
-     * - El valor queda manual.
-     * - El usuario puede cambiar Valor.
-     * - No se toma el valor automático.
-     *
-     * Cant/% != 1:
-     * - El valor vuelve al original que vino del backend.
-     * - Ejemplo: ANTICIPO I QUINCENA vuelve a 480.
-     */
     if (this.esRubroManualEditable(row)) {
       if (campoEditado === 'cantidad') {
         row.cantidad = this.toNumber(row.cantidad);
 
         if (this.esRubroManualActivo(row)) {
-          /*
-           * Cant/% = 1.
-           * No tocar row.valor.
-           * Si estaba 480, queda 480 para que el usuario lo cambie.
-           */
           this.recalcularTotales();
           this.hayCambios = true;
 
@@ -276,12 +266,22 @@ export class RolIndividualDialogComponent implements OnInit {
           return;
         }
 
-        /*
-         * Cant/% distinto de 1.
-         * Restaurar valor automático original del empleado.
-         * Ejemplo: ANTICIPO I QUINCENA = 480.
-         */
-        row.valor = this.obtenerValorAutomaticoRubroManual(row);
+        if (this.esRubroImpuestoRenta(row)) {
+          row.cantidad = 0;
+
+          this.recalcularTotales();
+          this.recalcularImpuestoRentaAutomatico();
+
+          event.api.refreshCells({
+            force: true,
+            rowNodes: [event.node]
+          });
+
+          return;
+        }
+
+        row.valor =
+          this.obtenerValorAutomaticoRubroManual(row);
 
         this.recalcularTotales();
         this.hayCambios = true;
@@ -296,10 +296,6 @@ export class RolIndividualDialogComponent implements OnInit {
 
       if (campoEditado === 'valor') {
         if (this.esRubroManualActivo(row)) {
-          /*
-           * Valor digitado manualmente.
-           * No recalcular desde parámetro.
-           */
           row.valor = this.toNumber(row.valor);
 
           this.recalcularTotales();
@@ -313,13 +309,14 @@ export class RolIndividualDialogComponent implements OnInit {
           return;
         }
 
-        /*
-         * Si intenta editar valor sin Cant/% = 1,
-         * se restaura el valor automático.
-         */
-        row.valor = this.obtenerValorAutomaticoRubroManual(row);
+        if (this.esRubroImpuestoRenta(row)) {
+          this.recalcularImpuestoRentaAutomatico();
+        } else {
+          row.valor =
+            this.obtenerValorAutomaticoRubroManual(row);
 
-        this.recalcularTotales();
+          this.recalcularTotales();
+        }
 
         event.api.refreshCells({
           force: true,
@@ -330,15 +327,33 @@ export class RolIndividualDialogComponent implements OnInit {
       }
     }
 
-    if (!this.validarDiasAusenciaEditada(row, valorAnterior)) {
+    if (
+      !this.validarDiasAusenciaEditada(
+        row,
+        valorAnterior
+      )
+    ) {
       this.ingresos = [...this.ingresos];
       this.egresos = [...this.egresos];
       this.calcularSinMarcarCambios();
       return;
     }
 
-    this.calcular();
+    const afectaImpuestoRenta =
+      row.tipoPago === 'I' &&
+      row.aplicaImpuestoRenta === true;
+
+    const calculado = this.calcular();
+
+    if (!calculado) {
+      return;
+    }
+
+    if (afectaImpuestoRenta) {
+      this.recalcularImpuestoRentaAutomatico();
+    }
   }
+
   recalcularTotales(): void {
     this.totalIngresos = this.ingresos
       .filter(item => !this.esRubroSueldo(item))
@@ -534,7 +549,7 @@ export class RolIndividualDialogComponent implements OnInit {
      */
     this.egresos = this.egresos.map(x => {
       if (
-        this.esRubroManualEditable(x) &&
+        this.esRubroAnticipoQuincena(x) &&
         this.toNumber(x.cantidad) !== 1
       ) {
         return {
@@ -708,101 +723,231 @@ export class RolIndividualDialogComponent implements OnInit {
     return this.validarAusenciasAntesDeCalcular(true);
   }
 
-private recalcularDiasTrabajadosPorAusencias(): void {
-  const sueldo = this.toNumber(this.dataRol?.sueldo);
-  const diasBaseNomina = 30;
+  private recalcularDiasTrabajadosPorAusencias(): void {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const diasBaseNomina = 30;
 
-  const diasBasePeriodo = this.diasTrabajadosBasePeriodo > 0
-    ? this.diasTrabajadosBasePeriodo
-    : 30;
+    const diasBasePeriodo = this.diasTrabajadosBasePeriodo > 0
+      ? this.diasTrabajadosBasePeriodo
+      : 30;
 
-  const diasAusencia = this.obtenerDiasAusencias();
+    const diasAusencia = this.obtenerDiasAusencias();
 
-  const diasTrabajados = Math.max(
-    diasBasePeriodo - diasAusencia,
-    0
-  );
-
-  const rubroDiasTrabajados = this.ingresos.find(x =>
-    this.esRubroDiasTrabajados(x)
-  );
-
-  if (rubroDiasTrabajados) {
-    rubroDiasTrabajados.cantidad = diasTrabajados;
-    rubroDiasTrabajados.valor = this.redondear(
-      (sueldo / diasBaseNomina) * diasTrabajados
+    const diasTrabajados = Math.max(
+      diasBasePeriodo - diasAusencia,
+      0
     );
+
+    const rubroDiasTrabajados = this.ingresos.find(x =>
+      this.esRubroDiasTrabajados(x)
+    );
+
+    if (rubroDiasTrabajados) {
+      rubroDiasTrabajados.cantidad = diasTrabajados;
+      rubroDiasTrabajados.valor = this.redondear(
+        (sueldo / diasBaseNomina) * diasTrabajados
+      );
+    }
   }
-}
-private guardarDiasTrabajadosBasePeriodo(): void {
-  /*
-   * La base del periodo debe salir de las fechas del empleado,
-   * usando mes comercial de 30 días.
-   *
-   * Si el empleado trabajó todo febrero:
-   * base = 30
-   *
-   * Si tuvo salida el 01/06:
-   * base = 1
-   *
-   * Si ingresó el 16/02:
-   * base = 15
-   */
-  this.diasTrabajadosBasePeriodo = this.calcularDiasBaseNominaEmpleado();
+  private guardarDiasTrabajadosBasePeriodo(): void {
+    /*
+     * La base del periodo debe salir de las fechas del empleado,
+     * usando mes comercial de 30 días.
+     *
+     * Si el empleado trabajó todo febrero:
+     * base = 30
+     *
+     * Si tuvo salida el 01/06:
+     * base = 1
+     *
+     * Si ingresó el 16/02:
+     * base = 15
+     */
+    this.diasTrabajadosBasePeriodo = this.calcularDiasBaseNominaEmpleado();
 
-  const rubroDiasTrabajados = this.ingresos.find(x =>
-    this.esRubroDiasTrabajados(x)
-  );
+    const rubroDiasTrabajados = this.ingresos.find(x =>
+      this.esRubroDiasTrabajados(x)
+    );
 
-  this.valorDiasTrabajadosBasePeriodo = rubroDiasTrabajados
-    ? this.toNumber(rubroDiasTrabajados.valor)
-    : this.toNumber(this.dataRol?.sueldo);
-}
-private recalcularAporteIess(): void {
+    this.valorDiasTrabajadosBasePeriodo = rubroDiasTrabajados
+      ? this.toNumber(rubroDiasTrabajados.valor)
+      : this.toNumber(this.dataRol?.sueldo);
+  }
+ private recalcularAporteIess(): void {
   const porcentajeIess = this.toNumber(
     this.dataRol?.porcentajeIessPersonal || 9.45
   );
 
+  const sueldo = this.toNumber(
+    this.dataRol?.sueldo
+  );
+
+  if (sueldo <= 0 || porcentajeIess <= 0) {
+    return;
+  }
+
+  const valorDia = sueldo / 30;
+
   /*
-   * Regla:
+   * El rubro DÍAS TRABAJADOS ya contiene
+   * el sueldo proporcional según las ausencias.
+   */
+  const rubroDiasTrabajados = this.ingresos.find(x =>
+    this.esRubroDiasTrabajados(x)
+  );
+
+  const valorDiasTrabajados = rubroDiasTrabajados
+    ? this.toNumber(rubroDiasTrabajados.valor)
+    : sueldo;
+
+  /*
+   * PERMISO MATERNIDAD:
+   * conserva la regla que ya tenías.
    *
-   * 1. Si hay PERMISO MATERNIDAD:
-   *    El IESS se calcula sobre el SUELDO completo.
-   *
-   *    Ejemplo:
-   *    Sueldo = 890.00
-   *    IESS = 890.00 * 9.45% = 84.11
-   *
-   * 2. Si NO hay maternidad:
-   *    El IESS se calcula sobre ingresos reales aportables,
-   *    excluyendo SUELDO porque es referencial.
+   * Cuando existe maternidad, la base salarial
+   * del IESS se mantiene sobre el sueldo completo.
    */
   const hayMaternidad = this.ingresos.some(x =>
     this.esRubroPermisoMaternidad(x) &&
     this.toNumber(x.cantidad) > 0
   );
 
-  let baseIess = 0;
+  /*
+   * Ausencias con aportaciones = 0:
+   *
+   * Según la regla requerida, esos días no deben
+   * disminuir la base del aporte al IESS.
+   *
+   * En Angular:
+   * aportaIess = false equivale a aportaciones = 0.
+   */
+  const diasAusenciaSinDisminuirIess = this.ingresos
+    .filter(x =>
+      this.esRubroAusencia(x) &&
+      !this.esRubroPermisoMaternidad(x) &&
+      this.toNumber(x.cantidad) > 0 &&
+      x.aportaIess === false
+    )
+    .reduce(
+      (total, item) =>
+        total + this.toNumber(item.cantidad),
+      0
+    );
+
+  /*
+   * Base salarial:
+   *
+   * - Maternidad: sueldo completo.
+   * - Sin maternidad:
+   *     valor de días trabajados
+   *     + días de ausencia con aportaciones = 0.
+   *
+   * Ejemplo:
+   * 20 días trabajados = 2033.33
+   * 10 días con aportaciones = 0 = 1016.67
+   * Base IESS = 3050.00
+   */
+  let baseSalarialIess: number;
 
   if (hayMaternidad) {
-    baseIess = this.toNumber(this.dataRol?.sueldo);
+    baseSalarialIess = sueldo;
+  } else {
+    const valorAusenciasSinDisminuir =
+      valorDia * diasAusenciaSinDisminuirIess;
+
+    baseSalarialIess =
+      valorDiasTrabajados +
+      valorAusenciasSinDisminuir;
+  }
+
+  /*
+   * Evitar que por combinaciones incorrectas
+   * de días la base salarial supere el sueldo.
+   */
+  baseSalarialIess = Math.min(
+    baseSalarialIess,
+    sueldo
+  );
+
+  /*
+   * Otros ingresos que aportan al IESS:
+   *
+   * - horas extras
+   * - bonos
+   * - retroactivos
+   * - otros rubros configurados
+   *
+   * No se incluyen nuevamente:
+   * - sueldo
+   * - días trabajados
+   * - maternidad
+   * - enfermedad
+   * - accidente
+   * - fondo de reserva
+   * - décimo tercero
+   */
+  const otrosIngresosAportables = this.ingresos
+    .filter(x => x.tipoPago === 'I')
+    .filter(x => x.aportaIess === true)
+    .filter(x => !this.esRubroSueldo(x))
+    .filter(x => !this.esRubroDiasTrabajados(x))
+    .filter(x => !this.esRubroPermisoMaternidad(x))
+    .filter(x => !this.esRubroEnfermedad(x))
+    .filter(x => !this.esRubroAccidenteTrabajo(x))
+    .filter(x => !this.esRubroFondoReserva(x))
+    .filter(x => !this.esRubroDecimoTercero(x))
+    .reduce(
+      (total, item) =>
+        total + this.toNumber(item.valor),
+      0
+    );
+
+  const baseIess =
+    baseSalarialIess +
+    otrosIngresosAportables;
+
+  const rubroIess = this.egresos.find(x =>
+    this.esRubroAporteIess(x)
+  );
+
+  if (!rubroIess) {
+    return;
+  }
+
+  rubroIess.valor = this.redondear(
+    baseIess * porcentajeIess / 100
+  );
+
+  rubroIess.cantidad = 0;
+}
+  private recalcularFondoReserva(): void {
+    const rubroFondoReserva = this.ingresos.find(x =>
+      this.esRubroFondoReserva(x)
+    );
+
+    if (!rubroFondoReserva) {
+      return;
+    }
+
+    if (!this.dataRol?.tieneDerechoFondoReserva) {
+      rubroFondoReserva.valor = 0;
+      rubroFondoReserva.cantidad = 0;
+      return;
+    }
+
+    const porcentajeFondoReserva = this.toNumber(
+      this.dataRol?.porcentajeFondoReserva || 8.33
+    );
 
     /*
-     * Si además tiene otros ingresos aportables reales,
-     * como horas extras, bono, retroactivo, etc.,
-     * se suman aparte.
-     *
-     * No se suma:
-     * - SUELDO, porque ya se tomó desde dataRol.sueldo.
-     * - DIAS TRABAJADOS, porque en maternidad puede estar 0.
-     * - PERMISO MATERNIDAD, porque no es la base del IESS en este caso.
-     * - Fondo reserva / décimos / enfermedad / accidente.
+     * Fondo de reserva debe tomar ingresos reales.
+     * SUELDO se excluye porque es referencial.
+     * DIAS TRABAJADOS queda como base real.
      */
-    const otrosIngresosAportables = this.ingresos
+    const baseFondoReserva = this.ingresos
       .filter(x => x.tipoPago === 'I')
-      .filter(x => x.aportaIess === true)
+      .filter(x => x.aplicaFondoReserva === true)
       .filter(x => !this.esRubroSueldo(x))
-      .filter(x => !this.esRubroDiasTrabajados(x))
       .filter(x => !this.esRubroPermisoMaternidad(x))
       .filter(x => !this.esRubroFondoReserva(x))
       .filter(x => !this.esRubroDecimoTercero(x))
@@ -810,93 +955,38 @@ private recalcularAporteIess(): void {
       .filter(x => !this.esRubroAccidenteTrabajo(x))
       .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
-    baseIess += otrosIngresosAportables;
-  } else {
-    baseIess = this.ingresos
+    rubroFondoReserva.valor = this.redondear(
+      baseFondoReserva * porcentajeFondoReserva / 100
+    );
+
+    rubroFondoReserva.cantidad = 0;
+  }
+  private recalcularDecimoTercero(): void {
+    /*
+     * Décimo tercero debe tomar ingresos reales.
+     * SUELDO se excluye porque es referencial.
+     * DIAS TRABAJADOS queda como base real.
+     */
+    const baseDecimoTercero = this.ingresos
       .filter(x => x.tipoPago === 'I')
-      .filter(x => x.aportaIess === true)
+      .filter(x => x.aplicaDecimoTercero === true)
       .filter(x => !this.esRubroSueldo(x))
+      .filter(x => !this.esRubroPermisoMaternidad(x))
       .filter(x => !this.esRubroFondoReserva(x))
       .filter(x => !this.esRubroDecimoTercero(x))
       .filter(x => !this.esRubroEnfermedad(x))
       .filter(x => !this.esRubroAccidenteTrabajo(x))
       .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+    const rubroDecimoTercero = this.ingresos.find(x =>
+      this.esRubroDecimoTercero(x)
+    );
+
+    if (rubroDecimoTercero) {
+      rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
+      rubroDecimoTercero.cantidad = 0;
+    }
   }
-
-  const rubroIess = this.egresos.find(x => this.esRubroAporteIess(x));
-
-  if (rubroIess) {
-    rubroIess.valor = this.redondear(baseIess * porcentajeIess / 100);
-    rubroIess.cantidad = 0;
-  }
-}
-private recalcularFondoReserva(): void {
-  const rubroFondoReserva = this.ingresos.find(x =>
-    this.esRubroFondoReserva(x)
-  );
-
-  if (!rubroFondoReserva) {
-    return;
-  }
-
-  if (!this.dataRol?.tieneDerechoFondoReserva) {
-    rubroFondoReserva.valor = 0;
-    rubroFondoReserva.cantidad = 0;
-    return;
-  }
-
-  const porcentajeFondoReserva = this.toNumber(
-    this.dataRol?.porcentajeFondoReserva || 8.33
-  );
-
-  /*
-   * Fondo de reserva debe tomar ingresos reales.
-   * SUELDO se excluye porque es referencial.
-   * DIAS TRABAJADOS queda como base real.
-   */
-  const baseFondoReserva = this.ingresos
-    .filter(x => x.tipoPago === 'I')
-    .filter(x => x.aplicaFondoReserva === true)
-    .filter(x => !this.esRubroSueldo(x))
-    .filter(x => !this.esRubroPermisoMaternidad(x))
-    .filter(x => !this.esRubroFondoReserva(x))
-    .filter(x => !this.esRubroDecimoTercero(x))
-    .filter(x => !this.esRubroEnfermedad(x))
-    .filter(x => !this.esRubroAccidenteTrabajo(x))
-    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
-
-  rubroFondoReserva.valor = this.redondear(
-    baseFondoReserva * porcentajeFondoReserva / 100
-  );
-
-  rubroFondoReserva.cantidad = 0;
-} 
- private recalcularDecimoTercero(): void {
-  /*
-   * Décimo tercero debe tomar ingresos reales.
-   * SUELDO se excluye porque es referencial.
-   * DIAS TRABAJADOS queda como base real.
-   */
-  const baseDecimoTercero = this.ingresos
-    .filter(x => x.tipoPago === 'I')
-    .filter(x => x.aplicaDecimoTercero === true)
-    .filter(x => !this.esRubroSueldo(x))
-    .filter(x => !this.esRubroPermisoMaternidad(x))
-    .filter(x => !this.esRubroFondoReserva(x))
-    .filter(x => !this.esRubroDecimoTercero(x))
-    .filter(x => !this.esRubroEnfermedad(x))
-    .filter(x => !this.esRubroAccidenteTrabajo(x))
-    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
-
-  const rubroDecimoTercero = this.ingresos.find(x =>
-    this.esRubroDecimoTercero(x)
-  );
-
-  if (rubroDecimoTercero) {
-    rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
-    rubroDecimoTercero.cantidad = 0;
-  }
-}
   private calcularValorHoraExtra(row: RolIndividualRubroResponse): number {
     const valorHoraBase = this.toNumber(this.dataRol?.valorHoraBase);
     const cantidad = this.toNumber(row.cantidad);
@@ -909,40 +999,40 @@ private recalcularFondoReserva(): void {
     return this.redondear(valorHoraBase * cantidad * factor);
   }
 
-private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
-  const sueldo = this.toNumber(this.dataRol?.sueldo);
-  const diasMaternidad = this.toNumber(row.cantidad);
+  private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const diasMaternidad = this.toNumber(row.cantidad);
 
-  if (sueldo <= 0 || diasMaternidad <= 0) {
-    return 0;
+    if (sueldo <= 0 || diasMaternidad <= 0) {
+      return 0;
+    }
+
+    return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
   }
 
-  return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
-}
+  private calcularEnfermedad(row: RolIndividualRubroResponse): number {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const dias = this.toNumber(row.cantidad);
+    const factor = this.obtenerFactorEnfermedad(row);
 
-private calcularEnfermedad(row: RolIndividualRubroResponse): number {
-  const sueldo = this.toNumber(this.dataRol?.sueldo);
-  const dias = this.toNumber(row.cantidad);
-  const factor = this.obtenerFactorEnfermedad(row);
+    if (sueldo <= 0 || dias <= 0) {
+      return 0;
+    }
 
-  if (sueldo <= 0 || dias <= 0) {
-    return 0;
+    return this.redondear((sueldo / 30) * factor * dias);
   }
 
-  return this.redondear((sueldo / 30) * factor * dias);
-}
+  private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const dias = this.toNumber(row.cantidad);
+    const factor = this.obtenerFactorAccidenteTrabajo(row);
 
-private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
-  const sueldo = this.toNumber(this.dataRol?.sueldo);
-  const dias = this.toNumber(row.cantidad);
-  const factor = this.obtenerFactorAccidenteTrabajo(row);
+    if (sueldo <= 0 || dias <= 0) {
+      return 0;
+    }
 
-  if (sueldo <= 0 || dias <= 0) {
-    return 0;
+    return this.redondear((sueldo / 30) * factor * dias);
   }
-
-  return this.redondear((sueldo / 30) * factor * dias);
-}
 
 
 
@@ -1095,19 +1185,19 @@ private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
     return isNaN(n) ? 0 : n;
   }
 
-private redondear(valor: number): number {
-  /*
-   * Redondeo financiero compatible con C#:
-   * Math.Round(valor, 2, MidpointRounding.AwayFromZero)
-   *
-   * Evita casos como:
-   * 288.225 => 288.22 por precisión decimal de JavaScript.
-   */
-  const signo = valor < 0 ? -1 : 1;
-  const absoluto = Math.abs(valor);
+  private redondear(valor: number): number {
+    /*
+     * Redondeo financiero compatible con C#:
+     * Math.Round(valor, 2, MidpointRounding.AwayFromZero)
+     *
+     * Evita casos como:
+     * 288.225 => 288.22 por precisión decimal de JavaScript.
+     */
+    const signo = valor < 0 ? -1 : 1;
+    const absoluto = Math.abs(valor);
 
-  return signo * (Math.floor((absoluto * 100) + 0.5 + 0.0000001) / 100);
-}
+    return signo * (Math.floor((absoluto * 100) + 0.5 + 0.0000001) / 100);
+  }
 
   private normalizarCodigo(codigo: string | null | undefined): string {
     if (!codigo) {
@@ -1406,130 +1496,290 @@ private redondear(valor: number): number {
       return x;
     });
   }
-private obtenerDiasBasePeriodo(): number {
+  private obtenerDiasBasePeriodo(): number {
+    /*
+     * La nómina trabaja con mes comercial.
+     * Todos los meses tienen base 30, incluido febrero.
+     */
+    return 30;
+  }
+  private calcularDiasBaseNominaEmpleado(): number {
+    const fechaPeriodoTexto =
+      (this.dataRol?.fechaPeriodo ?? this.data?.fechaPeriodo ?? '')
+        .toString()
+        .substring(0, 10);
+
+    if (!fechaPeriodoTexto) {
+      return 30;
+    }
+
+    const partesPeriodo = fechaPeriodoTexto.split('-');
+
+    if (partesPeriodo.length !== 3) {
+      return 30;
+    }
+
+    const anio = Number(partesPeriodo[0]);
+    const mes = Number(partesPeriodo[1]);
+
+    if (!anio || !mes) {
+      return 30;
+    }
+
+    const inicioPeriodo = new Date(anio, mes - 1, 1);
+    const ultimoDiaCalendario = new Date(anio, mes, 0).getDate();
+    const finPeriodo = new Date(anio, mes - 1, ultimoDiaCalendario);
+
+    const fechaIngreso = this.parsearFechaDateOnly(this.dataRol?.fechaIngreso);
+    const fechaSalida = this.parsearFechaDateOnly(this.dataRol?.fechaSalida);
+
+    if (fechaIngreso && fechaIngreso > finPeriodo) {
+      return 0;
+    }
+
+    if (fechaSalida && fechaSalida < inicioPeriodo) {
+      return 0;
+    }
+
+    let diaInicioNomina = 1;
+    let diaFinNomina = 30;
+
+    if (
+      fechaIngreso &&
+      fechaIngreso.getFullYear() === anio &&
+      fechaIngreso.getMonth() === mes - 1
+    ) {
+      diaInicioNomina = this.convertirDiaCalendarioADiaNomina(
+        fechaIngreso.getDate(),
+        ultimoDiaCalendario
+      );
+    }
+
+    if (
+      fechaSalida &&
+      fechaSalida.getFullYear() === anio &&
+      fechaSalida.getMonth() === mes - 1
+    ) {
+      diaFinNomina = this.convertirDiaCalendarioADiaNomina(
+        fechaSalida.getDate(),
+        ultimoDiaCalendario
+      );
+    }
+
+    const dias = diaFinNomina - diaInicioNomina + 1;
+
+    if (dias < 0) {
+      return 0;
+    }
+
+    if (dias > 30) {
+      return 30;
+    }
+
+    return dias;
+  }
+
+  private convertirDiaCalendarioADiaNomina(
+    diaCalendario: number,
+    ultimoDiaCalendario: number
+  ): number {
+    /*
+     * En febrero, el último día calendario equivale al día 30 de nómina.
+     * Ejemplo:
+     * 28/02 => día nómina 30
+     * 29/02 => día nómina 30
+     */
+    if (diaCalendario === ultimoDiaCalendario) {
+      return 30;
+    }
+
+    if (diaCalendario > 30) {
+      return 30;
+    }
+
+    return diaCalendario;
+  }
+
+  private parsearFechaDateOnly(fecha: string | null | undefined): Date | null {
+    if (!fecha || fecha === 'N/D') {
+      return null;
+    }
+
+    const texto = fecha.toString().substring(0, 10);
+    const partes = texto.split('-');
+
+    if (partes.length !== 3) {
+      return null;
+    }
+
+    const anio = Number(partes[0]);
+    const mes = Number(partes[1]);
+    const dia = Number(partes[2]);
+
+    if (!anio || !mes || !dia) {
+      return null;
+    }
+
+    return new Date(anio, mes - 1, dia);
+  }
+  private recalcularImpuestoRentaAutomatico(): void {
+  if (!this.dataRol) {
+    return;
+  }
+
+  const rubroImpuesto = this.egresos.find(x =>
+    this.esRubroImpuestoRenta(x)
+  );
+
+  if (!rubroImpuesto) {
+    return;
+  }
+
   /*
-   * La nómina trabaja con mes comercial.
-   * Todos los meses tienen base 30, incluido febrero.
+   * Cant/% = 1:
+   * conservar impuesto manual.
    */
-  return 30;
-}
-private calcularDiasBaseNominaEmpleado(): number {
-  const fechaPeriodoTexto =
-    (this.dataRol?.fechaPeriodo ?? this.data?.fechaPeriodo ?? '')
-      .toString()
-      .substring(0, 10);
-
-  if (!fechaPeriodoTexto) {
-    return 30;
+  if (this.esRubroManualActivo(rubroImpuesto)) {
+    this.recalcularTotales();
+    return;
   }
 
-  const partesPeriodo = fechaPeriodoTexto.split('-');
-
-  if (partesPeriodo.length !== 3) {
-    return 30;
+  if (this.recalculandoImpuesto) {
+    return;
   }
 
-  const anio = Number(partesPeriodo[0]);
-  const mes = Number(partesPeriodo[1]);
-
-  if (!anio || !mes) {
-    return 30;
-  }
-
-  const inicioPeriodo = new Date(anio, mes - 1, 1);
-  const ultimoDiaCalendario = new Date(anio, mes, 0).getDate();
-  const finPeriodo = new Date(anio, mes - 1, ultimoDiaCalendario);
-
-  const fechaIngreso = this.parsearFechaDateOnly(this.dataRol?.fechaIngreso);
-  const fechaSalida = this.parsearFechaDateOnly(this.dataRol?.fechaSalida);
-
-  if (fechaIngreso && fechaIngreso > finPeriodo) {
-    return 0;
-  }
-
-  if (fechaSalida && fechaSalida < inicioPeriodo) {
-    return 0;
-  }
-
-  let diaInicioNomina = 1;
-  let diaFinNomina = 30;
-
-  if (
-    fechaIngreso &&
-    fechaIngreso.getFullYear() === anio &&
-    fechaIngreso.getMonth() === mes - 1
-  ) {
-    diaInicioNomina = this.convertirDiaCalendarioADiaNomina(
-      fechaIngreso.getDate(),
-      ultimoDiaCalendario
-    );
-  }
-
-  if (
-    fechaSalida &&
-    fechaSalida.getFullYear() === anio &&
-    fechaSalida.getMonth() === mes - 1
-  ) {
-    diaFinNomina = this.convertirDiaCalendarioADiaNomina(
-      fechaSalida.getDate(),
-      ultimoDiaCalendario
-    );
-  }
-
-  const dias = diaFinNomina - diaInicioNomina + 1;
-
-  if (dias < 0) {
-    return 0;
-  }
-
-  if (dias > 30) {
-    return 30;
-  }
-
-  return dias;
-}
-
-private convertirDiaCalendarioADiaNomina(
-  diaCalendario: number,
-  ultimoDiaCalendario: number
-): number {
   /*
-   * En febrero, el último día calendario equivale al día 30 de nómina.
-   * Ejemplo:
-   * 28/02 => día nómina 30
-   * 29/02 => día nómina 30
+   * Guardamos el impuesto actual.
+   * Solo se reemplaza si el backend responde correctamente.
    */
-  if (diaCalendario === ultimoDiaCalendario) {
-    return 30;
-  }
+  const impuestoAnterior =
+    this.toNumber(rubroImpuesto.valor);
 
-  if (diaCalendario > 30) {
-    return 30;
-  }
+  rubroImpuesto.cantidad = 0;
 
-  return diaCalendario;
-}
+  const request: CalcularImpuestoRentaRequest = {
+    idEmpleado: this.dataRol.idEmpleado,
+    fechaPeriodo: this.dataRol.fechaPeriodo,
+    idLocal: this.dataRol.idLocal ?? null,
+    idUsuario:
+      this.usuarioActual?.id_usuario ?? 1,
 
-private parsearFechaDateOnly(fecha: string | null | undefined): Date | null {
-  if (!fecha || fecha === 'N/D') {
-    return null;
-  }
+    respetarValorManual: false,
 
-  const texto = fecha.toString().substring(0, 10);
-  const partes = texto.split('-');
+    rubros: this.ingresos.map(x => ({
+      idRolNomina: x.idRolNomina,
+      idIngDesc: x.idIngDesc,
+      tipoPago: x.tipoPago,
+      codigo: x.codigo,
+      descripcion: x.descripcion,
+      cantidad: this.toNumber(x.cantidad),
+      valor: this.toNumber(x.valor),
+      esHoraExtra: x.esHoraExtra,
+      factorHoraExtra:
+        this.toNumber(x.factorHoraExtra),
+      aplicaImpuestoRenta:
+        x.aplicaImpuestoRenta === true
+    }))
+  };
 
-  if (partes.length !== 3) {
-    return null;
-  }
+  this.recalculandoImpuesto = true;
 
-  const anio = Number(partes[0]);
-  const mes = Number(partes[1]);
-  const dia = Number(partes[2]);
+  this.rolNominaService
+    .calcularImpuestoRenta(request)
+    .subscribe({
+      next: resp => {
+        this.recalculandoImpuesto = false;
 
-  if (!anio || !mes || !dia) {
-    return null;
-  }
+        if (
+          resp.type !== 'Success' ||
+          !resp.data
+        ) {
+          rubroImpuesto.valor =
+            impuestoAnterior;
 
-  return new Date(anio, mes - 1, dia);
+          this.egresos = [
+            ...this.egresos
+          ];
+
+          this.recalcularTotales();
+
+          this.mostrarMensajePorTipo(
+            resp.type,
+            resp.message
+          );
+
+          return;
+        }
+
+        const nuevoImpuesto =
+          this.toNumber(
+            resp.data.valorImpuestoRenta
+          );
+
+        if (
+          !resp.data.calculado ||
+          nuevoImpuesto < 0
+        ) {
+          rubroImpuesto.valor =
+            impuestoAnterior;
+
+          this.egresos = [
+            ...this.egresos
+          ];
+
+          this.recalcularTotales();
+
+          this.mostrarAdvertencia(
+            resp.message ||
+            'No se pudo recalcular el impuesto a la renta.'
+          );
+
+          return;
+        }
+
+        rubroImpuesto.valor =
+          this.redondear(nuevoImpuesto);
+
+        rubroImpuesto.cantidad = 0;
+
+        this.valoresAutomaticosRubrosManuales.set(
+          rubroImpuesto.idIngDesc,
+          rubroImpuesto.valor
+        );
+
+        this.egresos = [
+          ...this.egresos
+        ];
+
+        this.recalcularTotales();
+
+        this.hayCambios = true;
+      },
+
+      error: (err: any) => {
+        this.recalculandoImpuesto = false;
+
+        /*
+         * Restaurar valor anterior si falla la petición.
+         */
+        rubroImpuesto.valor =
+          impuestoAnterior;
+
+        this.egresos = [
+          ...this.egresos
+        ];
+
+        this.recalcularTotales();
+
+        console.error(
+          'Error recalculando impuesto a la renta:',
+          err
+        );
+
+        this.mostrarError(
+          'No se pudo recalcular automáticamente el impuesto a la renta.'
+        );
+      }
+    });
 }
 }

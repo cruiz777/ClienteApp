@@ -2919,49 +2919,159 @@ private cargarLocalesArbol(): void {
     empleado.rubros[keyDias] = this.redondear((sueldo / 30) * diasTrabajados);
     empleado.diasTrabajados = diasTrabajados;
   }
-  private recalcularAporteIessFila(empleado: any): void {
-    const keyIess = this.obtenerKeyPorCodigoTipo('25', 'D');
+private recalcularAporteIessFila(empleado: any): void {
+  const keyIess =
+    this.obtenerKeyPorCodigoTipo('25', 'D');
 
-    if (!keyIess) {
-      return;
-    }
+  if (!keyIess) {
+    return;
+  }
 
-    const sueldo = this.obtenerSueldoFila(empleado);
-    const porcentajeIess = 9.45;
+  const sueldo =
+    this.obtenerSueldoFila(empleado);
 
-    const hayMaternidad = this.columnasRubros.some(col =>
+  const porcentajeIess = 9.45;
+
+  if (sueldo <= 0) {
+    empleado.rubros[keyIess] = 0;
+    return;
+  }
+
+  const valorDia = sueldo / 30;
+
+  /*
+   * Valor actual de DÍAS TRABAJADOS.
+   */
+  const keyDias =
+    this.obtenerKeyPorCodigoTipo('02', 'I');
+
+  const valorDiasTrabajados = keyDias
+    ? this.toNumber(
+        empleado.rubros?.[keyDias]
+      )
+    : sueldo;
+
+  /*
+   * Maternidad conserva la base salarial completa.
+   */
+  const hayMaternidad =
+    this.columnasRubros.some(col =>
       this.esRubroMaternidadMensual(col) &&
-      this.toNumber(empleado.rubros?.[`${this.obtenerKeyRubro(col)}_CANT`]) > 0
+      this.toNumber(
+        empleado.rubros?.[
+          `${this.obtenerKeyRubro(col)}_CANT`
+        ]
+      ) > 0
     );
 
-    let baseIess = 0;
+  /*
+   * Días de ausencia con aportaciones = 0:
+   * no deben reducir la base del IESS.
+   */
+  const diasAusenciaSinDisminuirIess =
+    this.columnasRubros
+      .filter(col =>
+        this.esRubroAusenciaMensual(col)
+      )
+      .filter(col =>
+        !this.esRubroMaternidadMensual(col)
+      )
+      .filter(col =>
+        col.aportaciones === false
+      )
+      .reduce((total, col) => {
+        const keyCantidad =
+          `${this.obtenerKeyRubro(col)}_CANT`;
 
-    if (hayMaternidad) {
-      baseIess = sueldo;
+        return total +
+          this.toNumber(
+            empleado.rubros?.[keyCantidad]
+          );
+      }, 0);
 
-      baseIess += this.columnasRubros
-        .filter(col => col.tipoPago === 'I')
-        .filter(col => !this.esRubroSueldoMensual(col))
-        .filter(col => !this.esRubroDiasTrabajadosMensual(col))
-        .filter(col => !this.esRubroMaternidadMensual(col))
-        .filter(col => !this.esBeneficioNoAportableMensual(col))
-        .reduce((acc, col) => {
-          const key = this.obtenerKeyRubro(col);
-          return acc + this.toNumber(empleado.rubros?.[key]);
-        }, 0);
-    } else {
-      baseIess = this.columnasRubros
-        .filter(col => col.tipoPago === 'I')
-        .filter(col => !this.esRubroSueldoMensual(col))
-        .filter(col => !this.esBeneficioNoAportableMensual(col))
-        .reduce((acc, col) => {
-          const key = this.obtenerKeyRubro(col);
-          return acc + this.toNumber(empleado.rubros?.[key]);
-        }, 0);
-    }
+  let baseSalarialIess: number;
 
-    empleado.rubros[keyIess] = this.redondear(baseIess * porcentajeIess / 100);
+  if (hayMaternidad) {
+    baseSalarialIess = sueldo;
+  } else {
+    const valorAusenciasSinDisminuir =
+      valorDia *
+      diasAusenciaSinDisminuirIess;
+
+    baseSalarialIess =
+      valorDiasTrabajados +
+      valorAusenciasSinDisminuir;
   }
+
+  /*
+   * La parte salarial no debe superar
+   * el sueldo mensual.
+   */
+  baseSalarialIess = Math.min(
+    baseSalarialIess,
+    sueldo
+  );
+
+  /*
+   * Otros ingresos aportables:
+   * horas extras, bonos, retroactivos, etc.
+   *
+   * Se excluyen:
+   * - sueldo
+   * - días trabajados
+   * - maternidad
+   * - enfermedad
+   * - accidente
+   * - fondo de reserva
+   * - décimos
+   */
+  const otrosIngresosAportables =
+    this.columnasRubros
+      .filter(col =>
+        col.tipoPago === 'I'
+      )
+      .filter(col =>
+        col.aportaciones === true
+      )
+      .filter(col =>
+        !this.esRubroSueldoMensual(col)
+      )
+      .filter(col =>
+        !this.esRubroDiasTrabajadosMensual(col)
+      )
+      .filter(col =>
+        !this.esRubroMaternidadMensual(col)
+      )
+      .filter(col =>
+        !this.esRubroEnfermedadMensual(col)
+      )
+      .filter(col =>
+        !this.esRubroAccidenteMensual(col)
+      )
+      .filter(col =>
+        !this.esBeneficioNoAportableMensual(col)
+      )
+      .reduce((total, col) => {
+        const key =
+          this.obtenerKeyRubro(col);
+
+        return total +
+          this.toNumber(
+            empleado.rubros?.[key]
+          );
+      }, 0);
+
+  const baseIess =
+    baseSalarialIess +
+    otrosIngresosAportables;
+
+  empleado.rubros[keyIess] =
+    this.redondear(
+      baseIess *
+      porcentajeIess /
+      100
+    );
+}
   private recalcularFondoReservaFila(empleado: any): void {
     const keyFondo = this.obtenerKeyPorCodigoTipo('18', 'I');
 
