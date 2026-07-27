@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from 'src/app/guards/auth.guard';
+import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { NavigationRolComponent } from './navigation-rol/navigation-rol.component';
 import { InicioRolComponent } from './inicio-rol/inicio-rol.component';
 import { EstructuraEmpleadosComponent } from './empleados/estructura-empleados/estructura-empleados.component';
@@ -72,68 +73,393 @@ const routes: Routes = [
       canActivate: [AuthGuard],
       children: [
         { path: '', redirectTo: 'inicio-rol', pathMatch: 'full' },
+
+        // INICIO - libre, mismo patrón que seguridades/inicio, sic-3000/inicio-sic
+        // y cg-3000/inicio-cg (sin exigir el permiso raíz por el bug de backend)
         { path: 'inicio-rol', component: InicioRolComponent },
-        {path:'empleado-estructura',component:EstructuraEmpleadosComponent},
-        {path:'empleado-ficha',component:EmpleadoFichaComponent},
-        {path:'empleado-adaptacion',component:EmpresaAdaptacionComponent},
-        {path:'banco-rol',component:BancoRolComponent},
-        {path:'reporte-empleados',component:ReporteEmpleadosComponent},
-        {path:'reporte-cumpleanios',component:ReporteCumpleaniosComponent},
-        {path:'reporte-cargas',component:ReporteCargasComponent}, 
-        {path:'listado-fondos-reserva',component:ListadoFondosReservaComponent},
-        {path:'terminacion-contrato',component:TerminacionContratoComponent},
-        {path:'reporte-entrada-salidas',component:ReporteEntradaSalidasComponent},
-        {path:'tipo-contrato',component:TipoContratoComponent},
-        {path:'personas-discapacidad',component:PersonasDiscapacidadComponent},
-        {path:'cambio-sueldos',component:CambioSueldosComponent},
-        {path:'solicitud-permiso',component:SolicitudPermisoComponent},
-        {path:'aprobacion',component:AprobacionComponent},
-        {path:'registro-vacaciones',component:RegistroVacacionesComponent},
-        {path:'reporte-permisos',component:ReportePermisosComponent},
-        {path:'reporte-vacaciones',component:ReporteVacacionesComponent},
-        {path:'detalle-vacaciones-empleado',component:DetalleVacacionesEmpleadoComponent},
-        {path:'procesar-vacaciones',component:ProcesarVacacionesComponent},
-        {path:'rol-mensual',component:RolMensualComponent},
-        {path:'rol-quincenal',component:RolQuincenalComponent},
-        {path:'rubros-fijos',component:RubrosFijosComponent},
-        {path:'anulacion-rol',component:AnulacionRolComponent},
-        {path:'anulacion-rolq',component:AnulacionRolqComponent},
-        {path:'cierre-periodo-quincenal',component:CierrePeriodoQuincenalComponent},
-        {path:'cierre-periodo-mensual',component:CierrePeriodoMensualComponent},
-        {path:'cierre-periodo-mensual-contable',component:CierrePeriodoMensualContableComponent},
-        {path:'generacion-contabilidad',component:GeneracionContabilidadComponent},
-        {path:'impresion-contabilidad',component:ImpresionContabilidadComponent},
-        {path:'reporte-rol-nomina',component:ReporteRolNominaComponent},
-        {path:'reporte-rol-individual',component:ReporteRolIndividualComponent},
-        {path:'reporte-listado-general',component:ReporteListadoGeneralComponent},
-        {path:'reporte-listado-general-gastos',component:ReporteListadoGeneralGastosComponent},
-        {path: 'reporte-provisiones', component: ReporteProvisionesComponent},
-        {path: 'reporte-ingreso-descuentos-empleado', component: ReporteIngresoDescuentosEmpleadoComponent},
-        {path: 'empleados-excluidos-nomina-actual', component: EmpleadosExcluidosNominaActualComponent},
-        {path: 'resumen-inec', component: ResumenInecComponent},
-        {path: 'personal-ocupado', component: PersonalOcupadoComponent},
-        {path: 'generacion-aviso-nuevo-sueldo-iess', component: GeneracionAvisoNuevoSueldoIessComponent},
-        {path: 'decimo-cuarto', component: DecimoCuartoComponent},
-        {path: 'decimo-tercero', component: DecimoTerceroComponent},
-        {path: 'fondo-reserva', component: FondoReservaComponent},
-        {path:'utilidades', component: UtilidadesComponent},
-        {path:'cargos', component: RpCargosComponent},
-        {path:'tipo-emp', component: RpTipEmpComponent},
-        {path:'tipo-gasto', component: TipoGastoComponent},
-        {path:'nivel-instruccion', component: RpNivelInstruccionComponent},
-        {path:'parametros-costos', component: ParametrosCostosComponent},
-        {path:'ingreso-descuentos', component: IngresoDescuentosComponent},
-        {path:'impuestos-renta', component: ImpuestoRentaComponent},
-        {path:'sectorial', component: SectorialComponent},
-        {path:'forma-pago', component: RpFormaPagoRolComponent},
-        {path:'tipo-sangre', component: RpTipoSangreComponent},
-        {path:'regimen', component: RpRegimenComponent},
-        {path:'tipo-cuenta', component: TipoCuentaBancoComponent},
-        {path:'bancos-terceros-rol', component: RpBanTerceroComponent},
-        {path:'bancos-rol', component: RpBancosComponent},
-        {path:'emp-comp', component: RpEmpresaComplementariaComponent},
-        {path:'tipo-nomina-esp', component: TipoNominaEspComponent},
-        
+
+        // EMPLEADO - Archivo
+        {
+          path: 'empleado-estructura',
+          component: EstructuraEmpleadosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.archivo.estructura-de-empleados' }
+        },
+        {
+          path: 'empleado-ficha',
+          component: EmpleadoFichaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.archivo.empleado' }
+        },
+        {
+          path: 'empleado-adaptacion',
+          component: EmpresaAdaptacionComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.archivo.empresa-para-adaptación' }
+        },
+        {
+          path: 'banco-rol',
+          component: BancoRolComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.archivo.banco' }
+        },
+
+        // EMPLEADO - Reportes
+        {
+          path: 'reporte-empleados',
+          component: ReporteEmpleadosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.empleados' }
+        },
+        {
+          path: 'reporte-cumpleanios',
+          component: ReporteCumpleaniosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.cumpleaños' }
+        },
+        {
+          path: 'reporte-cargas',
+          component: ReporteCargasComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.cargas' }
+        },
+        {
+          path: 'listado-fondos-reserva',
+          component: ListadoFondosReservaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.fondos-de-reserva' }
+        },
+        {
+          path: 'terminacion-contrato',
+          component: TerminacionContratoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.terminacion-de-contrato' }
+        },
+        {
+          path: 'reporte-entrada-salidas',
+          component: ReporteEntradaSalidasComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.entrada-y-salidas' }
+        },
+        {
+          path: 'tipo-contrato',
+          component: TipoContratoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.tipo-de-contrato' }
+        },
+        {
+          path: 'personas-discapacidad',
+          component: PersonasDiscapacidadComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.personas-con-discapacidad' }
+        },
+
+        // EMPLEADO - Procesos
+        {
+          path: 'cambio-sueldos',
+          component: CambioSueldosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.procesos.cambio-de-sueldos' }
+        },
+
+        // NOVEDADES - Generar
+        {
+          path: 'solicitud-permiso',
+          component: SolicitudPermisoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.generar.solicitud-de-permiso' }
+        },
+        {
+          path: 'aprobacion',
+          component: AprobacionComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.generar.aprobacion' }
+        },
+        {
+          path: 'registro-vacaciones',
+          component: RegistroVacacionesComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.generar.registro-de-vacaciones' }
+        },
+
+        // NOVEDADES - Reportes
+        {
+          path: 'reporte-permisos',
+          component: ReportePermisosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.reportes.permisos' }
+        },
+        {
+          path: 'reporte-vacaciones',
+          component: ReporteVacacionesComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.reportes.vacaciones' }
+        },
+        {
+          path: 'detalle-vacaciones-empleado',
+          component: DetalleVacacionesEmpleadoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.reportes.vacaciones-de-empleado' }
+        },
+
+        // NOVEDADES - Procesos
+        {
+          path: 'procesar-vacaciones',
+          component: ProcesarVacacionesComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.novedades.procesos.periodo-de-vacaciones' }
+        },
+
+        // NOMINA - Roles
+        {
+          path: 'rol-mensual',
+          component: RolMensualComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.rol-mensual' }
+        },
+        {
+          path: 'rol-quincenal',
+          component: RolQuincenalComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.rol-quincena' }
+        },
+        {
+          path: 'rubros-fijos',
+          component: RubrosFijosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.rubros-fijos' }
+        },
+        {
+          path: 'anulacion-rol',
+          component: AnulacionRolComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.anulación-de-rol-mensual' }
+        },
+        {
+          path: 'anulacion-rolq',
+          component: AnulacionRolqComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.anulación-de-rol-quincenal' }
+        },
+        {
+          path: 'cierre-periodo-quincenal',
+          component: CierrePeriodoQuincenalComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.cierre-de-periodo-quincenal' }
+        },
+        {
+          path: 'cierre-periodo-mensual',
+          component: CierrePeriodoMensualComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.cierre-de-periodo-mensual-nomina' }
+        },
+        {
+          path: 'cierre-periodo-mensual-contable',
+          component: CierrePeriodoMensualContableComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.cierre-de-periodo-mensual-contable' }
+        },
+        {
+          path: 'generacion-contabilidad',
+          component: GeneracionContabilidadComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.generacion-para-contabilidad' }
+        },
+        {
+          path: 'impresion-contabilidad',
+          component: ImpresionContabilidadComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.roles.impresion-asientos-diarios-y-provisiones' }
+        },
+
+        // NOMINA - Reportes
+        {
+          path: 'reporte-rol-nomina',
+          component: ReporteRolNominaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.rol-nomina' }
+        },
+        {
+          path: 'reporte-rol-individual',
+          component: ReporteRolIndividualComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.rol-individual' }
+        },
+        {
+          path: 'reporte-listado-general',
+          component: ReporteListadoGeneralComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.listado-general' }
+        },
+        {
+          path: 'reporte-listado-general-gastos',
+          component: ReporteListadoGeneralGastosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.listado-general-y-gastos' }
+        },
+        {
+          path: 'reporte-provisiones',
+          component: ReporteProvisionesComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.provision' }
+        },
+        {
+          path: 'reporte-ingreso-descuentos-empleado',
+          component: ReporteIngresoDescuentosEmpleadoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.ingreso-descuentos-por-empleado' }
+        },
+        {
+          path: 'empleados-excluidos-nomina-actual',
+          component: EmpleadosExcluidosNominaActualComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.empleados-excluidos' }
+        },
+        {
+          path: 'resumen-inec',
+          component: ResumenInecComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.resumen-inec' }
+        },
+        {
+          path: 'personal-ocupado',
+          component: PersonalOcupadoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.reportes.personal-ocupado' }
+        },
+
+        // NOMINA - Generación de archivo
+        {
+          path: 'generacion-aviso-nuevo-sueldo-iess',
+          component: GeneracionAvisoNuevoSueldoIessComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina.generacion-archivo.aviso-nuevo-sueldo' }
+        },
+
+        // NÓMINA ESPECIAL
+        {
+          path: 'decimo-cuarto',
+          component: DecimoCuartoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina-especial.nomina-especial.decimo-cuarto' }
+        },
+        {
+          path: 'decimo-tercero',
+          component: DecimoTerceroComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina-especial.nomina-especial.decimo-tercero' }
+        },
+        {
+          path: 'fondo-reserva',
+          component: FondoReservaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina-especial.nomina-especial.fondos-reserva' }
+        },
+        {
+          path: 'utilidades',
+          component: UtilidadesComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.nomina-especial.nomina-especial.utilidades' }
+        },
+
+        // CONFIGURACIÓN
+        {
+          path: 'cargos',
+          component: RpCargosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.cargos' }
+        },
+        {
+          path: 'tipo-emp',
+          component: RpTipEmpComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-empleado' }
+        },
+        {
+          path: 'tipo-gasto',
+          component: TipoGastoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-gasto' }
+        },
+        {
+          path: 'nivel-instruccion',
+          component: RpNivelInstruccionComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.niveles-de-instruccion' }
+        },
+        {
+          path: 'parametros-costos',
+          component: ParametrosCostosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.parametros-y-costos' }
+        },
+        {
+          path: 'ingreso-descuentos',
+          component: IngresoDescuentosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.ingreso-descuentos' }
+        },
+        {
+          path: 'impuestos-renta',
+          component: ImpuestoRentaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.impuesto-a-la-renta' }
+        },
+        {
+          path: 'sectorial',
+          component: SectorialComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.sectorial' }
+        },
+        {
+          path: 'forma-pago',
+          component: RpFormaPagoRolComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.formas-de-pago' }
+        },
+        {
+          path: 'tipo-sangre',
+          component: RpTipoSangreComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-sangre' }
+        },
+        {
+          path: 'regimen',
+          component: RpRegimenComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.regimen' }
+        },
+        {
+          path: 'tipo-cuenta',
+          component: TipoCuentaBancoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-cuenta' }
+        },
+        {
+          path: 'bancos-terceros-rol',
+          component: RpBanTerceroComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.bancos.bancos-terceros' }
+        },
+        {
+          path: 'bancos-rol',
+          component: RpBancosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.bancos' }
+        },
+        {
+          path: 'emp-comp',
+          component: RpEmpresaComplementariaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.empresas-complementarias' }
+        },
+        {
+          path: 'tipo-nomina-esp',
+          component: TipoNominaEspComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-nomina-especial' }
+        },
+
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },

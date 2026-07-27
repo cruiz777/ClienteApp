@@ -13,6 +13,9 @@
       <img src="assets/logo/SIC-3000.png" alt="Logo">
     </div>
 
+    <!-- Una sola suscripción a menuSic$ para TODO el menú -->
+    <ng-container *ngIf="menuSic$ | async as menu">
+
     <!-- Menú Principal -->
     <mat-nav-list>
 
@@ -33,14 +36,26 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item [routerLink]="['estructura-list']" routerLinkActive="active">
+          <a mat-list-item
+            [routerLink]="menu.estructuraComercial ? ['estructura-list'] : null"
+            [class.disabled]="!menu.estructuraComercial"
+            routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Estructura Comercial</span>
+            <mat-icon *ngIf="!menu.estructuraComercial" class="lock-icon">lock</mat-icon>
           </a>
-          <a mat-list-item [routerLink]="['productossic']" routerLinkActive="active">
+          <a mat-list-item
+            [routerLink]="menu.producto ? ['productossic'] : null"
+            [class.disabled]="!menu.producto"
+            routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Producto</span>
+            <mat-icon *ngIf="!menu.producto" class="lock-icon">lock</mat-icon>
           </a>
-          <a mat-list-item [routerLink]="['proveedores']" routerLinkActive="active">
+          <a mat-list-item
+            [routerLink]="menu.proveedores ? ['proveedores'] : null"
+            [class.disabled]="!menu.proveedores"
+            routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Proveedores</span>
+            <mat-icon *ngIf="!menu.proveedores" class="lock-icon">lock</mat-icon>
           </a>
           <!-- Se comenta hasta poder desarrollar comnpletamente esta parte-->
           <!-- <a mat-list-item routerLink="">
@@ -72,21 +87,39 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Facturacion -->
-            <a mat-list-item [routerLink]="'/sic-3000/findividual'" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.facturacionIndividual ? '/sic-3000/findividual' : null"
+              [class.disabled]="!menu.facturacionIndividual"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Facturación Individual</span>
+              <mat-icon *ngIf="!menu.facturacionIndividual" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="'/sic-3000/fglobal'">
+            <a mat-list-item
+              [routerLink]="menu.facturacionGlobal ? '/sic-3000/fglobal' : null"
+              [class.disabled]="!menu.facturacionGlobal">
               <span *ngIf="isExpanded" class="menu-text">Facturación Global</span>
+              <mat-icon *ngIf="!menu.facturacionGlobal" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="'/sic-3000/fanuladas'">
+            <a mat-list-item
+              [routerLink]="menu.facturasAnuladas ? '/sic-3000/fanuladas' : null"
+              [class.disabled]="!menu.facturasAnuladas">
               <span *ngIf="isExpanded" class="menu-text">Facturas Anuladas</span>
+              <mat-icon *ngIf="!menu.facturasAnuladas" class="lock-icon">lock</mat-icon>
             </a>
 
-            <a mat-list-item [routerLink]="['doc-electronicos']" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.docElectronicos ? ['doc-electronicos'] : null"
+              [class.disabled]="!menu.docElectronicos"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Documentos Electrónicos</span>
+              <mat-icon *ngIf="!menu.docElectronicos" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="['doc-locales']" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.docLocales ? ['doc-locales'] : null"
+              [class.disabled]="!menu.docLocales"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Documentos Elect. Locales</span>
+              <mat-icon *ngIf="!menu.docLocales" class="lock-icon">lock</mat-icon>
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Notas de Crédito/Debito -->
@@ -99,9 +132,13 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Notas de Crédito/Debito-->
-            <a mat-list-item [routerLink]="'/sic-3000/notaCredito'">
+            <a mat-list-item
+              [routerLink]="menu.notaCredito ? '/sic-3000/notaCredito' : null"
+              [class.disabled]="!menu.notaCredito">
               <span *ngIf="isExpanded" class="menu-text">Notas de Crédito</span>
+              <mat-icon *ngIf="!menu.notaCredito" class="lock-icon">lock</mat-icon>
             </a>
+            <!-- Notas de Débito: sin ruta implementada todavía, se deja sin candado -->
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Notas de Débito</span>
             </a>
@@ -115,23 +152,41 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Anticipos-->
-            <a mat-list-item [routerLink]="'/sic-3000/creacion-anticipos'" >
+            <a mat-list-item
+              [routerLink]="menu.creacionAnticipos ? '/sic-3000/creacion-anticipos' : null"
+              [class.disabled]="!menu.creacionAnticipos">
               <span *ngIf="isExpanded" class="menu-text">Creación de Anticipos</span>
+              <mat-icon *ngIf="!menu.creacionAnticipos" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="'/sic-3000/reporte-anticipos'" >
+            <a mat-list-item
+              [routerLink]="menu.reporteAnticipos ? '/sic-3000/reporte-anticipos' : null"
+              [class.disabled]="!menu.reporteAnticipos">
               <span *ngIf="isExpanded" class="menu-text">Reporte de Anticipos</span>
+              <mat-icon *ngIf="!menu.reporteAnticipos" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="['cierre-anticipos']" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.cierreAnticipos ? ['cierre-anticipos'] : null"
+              [class.disabled]="!menu.cierreAnticipos"
+              routerLinkActive="active">
              <span *ngIf="isExpanded" class="menu-text">Cierre de Anticipos</span>
+             <mat-icon *ngIf="!menu.cierreAnticipos" class="lock-icon">lock</mat-icon>
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Reenvio Documentos Electronicos-->
 
-         <a mat-list-item  [routerLink]="'/sic-3000/reenvio-fact'"  routerLinkActive="active">
+         <a mat-list-item
+            [routerLink]="menu.reenvioFact ? '/sic-3000/reenvio-fact' : null"
+            [class.disabled]="!menu.reenvioFact"
+            routerLinkActive="active">
              <span *ngIf="isExpanded" class="menu-text">Reenvio Facturas Electronicas</span>
+             <mat-icon *ngIf="!menu.reenvioFact" class="lock-icon">lock</mat-icon>
           </a>
-          <a mat-list-item [routerLink]="'/sic-3000/reporte-ventas'" routerLinkActive="active">
+          <a mat-list-item
+            [routerLink]="menu.reporteVentas ? '/sic-3000/reporte-ventas' : null"
+            [class.disabled]="!menu.reporteVentas"
+            routerLinkActive="active">
              <span *ngIf="isExpanded" class="menu-text">Reporte de Ventas</span>
+             <mat-icon *ngIf="!menu.reporteVentas" class="lock-icon">lock</mat-icon>
           </a>
         </mat-expansion-panel>
 
@@ -151,28 +206,25 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: registro de cobros-->
-            <!-- <mat-expansion-panel hideToggle>
-              <mat-expansion-panel-header (click)="goTo('registroCobros')" class="clickable-header">
-                <mat-panel-title>
-                  <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-            </mat-expansion-panel> -->
-            <!-- <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('cobroIndividual')" class="clickable-header">
-            <mat-panel-title>
-              <span *ngIf="isExpanded" class="menu-text">Pagos Individuales</span>
-            </mat-panel-title>
-            </mat-expansion-panel-header>
-          </mat-expansion-panel> -->
-            <a mat-list-item [routerLink]="'/sic-3000/registroCobros'" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.registroCobros ? '/sic-3000/registroCobros' : null"
+              [class.disabled]="!menu.registroCobros"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
+              <mat-icon *ngIf="!menu.registroCobros" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="'/sic-3000/anularCobros'" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.reversionPagos ? '/sic-3000/anularCobros' : null"
+              [class.disabled]="!menu.reversionPagos"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Reversion de Pagos</span>
+              <mat-icon *ngIf="!menu.reversionPagos" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="'/sic-3000/panulados'">
+            <a mat-list-item
+              [routerLink]="menu.listadoPagos ? '/sic-3000/panulados' : null"
+              [class.disabled]="!menu.listadoPagos">
               <span *ngIf="isExpanded" class="menu-text">Listado Pagos</span>
+              <mat-icon *ngIf="!menu.listadoPagos" class="lock-icon">lock</mat-icon>
             </a>
           </mat-expansion-panel>
 
@@ -184,17 +236,33 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Reportes-->
-            <a mat-list-item [routerLink]="['exp-estadocuenta']" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.expEstadoCuenta ? ['exp-estadocuenta'] : null"
+              [class.disabled]="!menu.expEstadoCuenta"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Estado de cuenta cliente</span>
+              <mat-icon *ngIf="!menu.expEstadoCuenta" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="['exp-estado-cuenta-general']" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.expEstadoCuentaGeneral ? ['exp-estado-cuenta-general'] : null"
+              [class.disabled]="!menu.expEstadoCuentaGeneral"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Estado de Cuenta General</span>
+              <mat-icon *ngIf="!menu.expEstadoCuentaGeneral" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item [routerLink]="['exp-cxc-general']" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.expCxcGeneral ? ['exp-cxc-general'] : null"
+              [class.disabled]="!menu.expCxcGeneral"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Cuentas por Cobrar General</span>
-            </a>            
-            <a mat-list-item [routerLink]="['exp-cuentaxcobrar']" routerLinkActive="active">
+              <mat-icon *ngIf="!menu.expCxcGeneral" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.expCuentaxcobrar ? ['exp-cuentaxcobrar'] : null"
+              [class.disabled]="!menu.expCuentaxcobrar"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Cuentas por Cobrar</span>
+              <mat-icon *ngIf="!menu.expCuentaxcobrar" class="lock-icon">lock</mat-icon>
             </a>
             </mat-expansion-panel>
 
@@ -223,22 +291,27 @@
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Parámetros Clientes</span>
             </a> -->
-            <a mat-list-item routerLink="/sic-3000/cajas">
+            <a mat-list-item
+              [routerLink]="menu.parametroCaja ? '/sic-3000/cajas' : null"
+              [class.disabled]="!menu.parametroCaja">
               <span *ngIf="isExpanded" class="menu-text">Parámetros Caja</span>
+              <mat-icon *ngIf="!menu.parametroCaja" class="lock-icon">lock</mat-icon>
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Descuentos-->
           <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header routerlink="/sic-3000/descuento">
-              <mat-panel-title routerLink="descuento" routerLinkActive="active" >
+            <mat-expansion-panel-header [routerLink]="menu.descuento ? '/sic-3000/descuento' : null">
+              <mat-panel-title [routerLink]="menu.descuento ? 'descuento' : null" routerLinkActive="active" >
                 <span *ngIf="isExpanded" class="menu-text">Descuentos</span>
+                <mat-icon *ngIf="!menu.descuento" class="lock-icon">lock</mat-icon>
               </mat-panel-title>
             </mat-expansion-panel-header>
           </mat-expansion-panel>
           <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header routerlink="/sic-3000/tipdocsri">
-              <mat-panel-title routerLink="tipdocsri" routerLinkActive="active" >
+            <mat-expansion-panel-header [routerLink]="menu.tipDocSri ? '/sic-3000/tipdocsri' : null">
+              <mat-panel-title [routerLink]="menu.tipDocSri ? 'tipdocsri' : null" routerLinkActive="active" >
                 <span *ngIf="isExpanded" class="menu-text">Tipo Doc. Sri</span>
+                <mat-icon *ngIf="!menu.tipDocSri" class="lock-icon">lock</mat-icon>
               </mat-panel-title>
             </mat-expansion-panel-header>
           </mat-expansion-panel>
@@ -250,11 +323,19 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Forma de Pago-->
-            <a mat-list-item routerLink="clasificacion" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.clasificacion ? 'clasificacion' : null"
+              [class.disabled]="!menu.clasificacion"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Clasificación de Pagos</span>
+              <mat-icon *ngIf="!menu.clasificacion" class="lock-icon">lock</mat-icon>
             </a>
-            <a mat-list-item routerLink="formapago" routerLinkActive="active">
+            <a mat-list-item
+              [routerLink]="menu.formaPago ? 'formapago' : null"
+              [class.disabled]="!menu.formaPago"
+              routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
+              <mat-icon *ngIf="!menu.formaPago" class="lock-icon">lock</mat-icon>
             </a>
           </mat-expansion-panel>
         </mat-expansion-panel>
@@ -269,6 +350,8 @@
         </div>
       </mat-list-item>
     </mat-nav-list>
+
+    </ng-container>
 
   </mat-sidenav>
 
