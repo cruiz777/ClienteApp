@@ -74,7 +74,7 @@ export class DocElectronicosComponent implements OnInit {
   defaultColDef: ColDef;
   rowData: DocumentoGrid[] = [];
 
-  private gridApi?: GridApi<DocumentoGrid>;
+private gridApi?: GridApi<DocumentoGrid>;
   loading = false;
   currentPage = 1;        // ⬅️ AGREGAR
   pageSize = 20;          // ⬅️ AGREGAR
@@ -123,15 +123,22 @@ export class DocElectronicosComponent implements OnInit {
       },
 
       { headerName: 'F. Emisión', field: 'fechaEmision', width: 120 },
-      { headerName: 'Estb', field: 'estab', width: 80 },
-      { headerName: 'P. Emisión', field: 'ptoEmision', width: 110 },
-      { headerName: 'Secuencial', field: 'secuencial', width: 120 },
+      {
+        headerName: 'Fecha Autorizada',
+        field: 'fechaAutorizada',
+        minWidth: 180,
+      },
+      { headerName: 'Clave de Acceso', field: 'claveAcceso', minWidth: 220 },
       {
         headerName: 'Razón Social',
         field: 'razonSocial',
         minWidth: 220,
         flex: 1,
       },
+      { headerName: 'RUC', field: 'ruc', minWidth: 130 },
+      { headerName: 'Estb', field: 'estab', width: 80 },
+      { headerName: 'P. Emisión', field: 'ptoEmision', width: 110 },
+      { headerName: 'Secuencial', field: 'secuencial', width: 120 },
       {
         headerName: 'Total',
         field: 'total',
@@ -144,13 +151,6 @@ export class DocElectronicosComponent implements OnInit {
         field: 'estado',
         minWidth: 250,
       },
-      {
-        headerName: 'Fecha Autorizada',
-        field: 'fechaAutorizada',
-        minWidth: 180,
-      },
-      { headerName: 'RUC', field: 'ruc', minWidth: 130 },
-      { headerName: 'Clave de Acceso', field: 'claveAcceso', minWidth: 220 },
 
       // ===== COLUMNA ACCIÓN CON 4 BOTONES =====
       {

@@ -1922,8 +1922,12 @@ export class NuevoProductoComponent implements OnInit {
           font: { bold: false, color: { argb: 'FF000000' } }  // negro normal
         },
         {
-          text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
-          font: { bold: false, color: { argb: 'FF000000' } }  // negro normal
+          text: 'El dueño de la marca',
+          font: { name: 'Calibri', size: 13, bold: true, color: { argb: 'FF0000FF' } }
+        },
+        {
+          text: ' del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
+          font: { name: 'Calibri', size: 10, bold: false }
         },
         {
           text: 'El Prefijo Global De Compañía GS1, GCP, es ',

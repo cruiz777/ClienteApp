@@ -1239,8 +1239,12 @@ export class BloqueComponent implements OnInit {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = producto.contenido || '';
-            fila.contenidoUM = producto.unidad || 'g';
+            fila.contenidoNeto = this.formUV.get('checkExiste')?.value
+              ? (producto.contenido ?? fila.contenidoNeto?.toString().trim() ?? '')
+              : (fila.contenidoNeto?.toString().trim() || producto.contenido || '');
+            fila.contenidoUM = this.formUV.get('checkExiste')?.value
+              ? (producto.unidad || fila.contenidoUM?.toString().trim() || 'g')
+              : (fila.contenidoUM?.toString().trim() || producto.unidad || 'g');
             fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
@@ -1416,8 +1420,13 @@ export class BloqueComponent implements OnInit {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = producto.contenido || '';
-            fila.contenidoUM = producto.unidad || 'g';
+            fila.contenidoNeto = this.formUV.get('checkExiste')?.value
+              ? (producto.contenido ?? fila.contenidoNeto?.toString().trim() ?? '')
+              : (fila.contenidoNeto?.toString().trim() || producto.contenido || '');
+
+            fila.contenidoUM = this.formUV.get('checkExiste')?.value
+              ? (producto.unidad || fila.contenidoUM?.toString().trim() || 'g')
+              : (fila.contenidoUM?.toString().trim() || producto.unidad || 'g');
             fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
@@ -1521,8 +1530,12 @@ export class BloqueComponent implements OnInit {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = producto.contenido || '';
-            fila.contenidoUM = producto.unidad || 'g';
+            fila.contenidoNeto = this.formUV.get('checkExiste')?.value
+              ? (producto.contenido ?? fila.contenidoNeto?.toString().trim() ?? '')
+              : (fila.contenidoNeto?.toString().trim() || producto.contenido || '');
+            fila.contenidoUM = this.formUV.get('checkExiste')?.value
+              ? (producto.unidad || fila.contenidoUM?.toString().trim() || 'g')
+              : (fila.contenidoUM?.toString().trim() || producto.unidad || 'g');
             fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
@@ -3113,8 +3126,13 @@ export class BloqueComponent implements OnInit {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = producto.contenido || '';
-            fila.contenidoUM = producto.unidad || 'g';
+            fila.contenidoNeto = this.formUV.get('checkExiste')?.value
+              ? (producto.contenido ?? fila.contenidoNeto?.toString().trim() ?? '')
+              : (fila.contenidoNeto?.toString().trim() || producto.contenido || '');
+
+            fila.contenidoUM = this.formUV.get('checkExiste')?.value
+              ? (producto.unidad || fila.contenidoUM?.toString().trim() || 'g')
+              : (fila.contenidoUM?.toString().trim() || producto.unidad || 'g');
             fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
