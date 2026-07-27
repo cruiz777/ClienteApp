@@ -3,9 +3,11 @@
     <h2>Rubros Fijos</h2>
 
     <div class="top-section">
-      <!-- árbol locales -->
       <div class="tree-card small-card">
-        <div class="tree-header"> </div>
+        <div class="tree-header">
+          Locales
+        </div>
+
         <div class="tree-body">
           <ng-container *ngFor="let node of localesTree">
             <div class="tree-node root">
@@ -13,22 +15,23 @@
                 <button class="toggle-btn" type="button" (click)="toggleNode(node)">
                   {{ node.expanded ? '−' : '+' }}
                 </button>
-                <mat-checkbox
-                  [checked]="node.checked"
-                  (change)="toggleCheck(node)">
+
+                <mat-checkbox [checked]="node.checked" (change)="toggleCheck(node)">
                 </mat-checkbox>
+
                 <span class="folder">📁</span>
                 <span class="node-label">{{ node.label }}</span>
               </div>
 
               <div class="children" *ngIf="node.expanded">
                 <div class="tree-node child" *ngFor="let child of node.children">
+
                   <div class="node-line">
                     <span class="indent"></span>
-                    <mat-checkbox
-                      [checked]="child.checked"
-                      (change)="toggleCheck(child)">
+
+                    <mat-checkbox [checked]="child.checked" (change)="toggleCheck(child)">
                     </mat-checkbox>
+
                     <span class="folder">📁</span>
                     <span class="node-label">{{ child.label }}</span>
                   </div>
@@ -39,9 +42,11 @@
         </div>
       </div>
 
-      <!-- árbol rubros -->
       <div class="tree-card small-card">
-        <div class="tree-header"> </div>
+        <div class="tree-header">
+          Rubros
+        </div>
+
         <div class="tree-body">
           <ng-container *ngFor="let node of rubrosTree">
             <div class="tree-node root">
@@ -49,12 +54,15 @@
                 <button class="toggle-btn" type="button" (click)="toggleNode(node)">
                   {{ node.expanded ? '−' : '+' }}
                 </button>
+
                 <span class="folder">📁</span>
                 <span class="node-label">{{ node.label }}</span>
               </div>
 
               <div class="children" *ngIf="node.expanded">
-                <div class="tree-node child" *ngFor="let child of node.children">
+                <div class="tree-node child rubro-child" *ngFor="let child of node.children"
+                  [class.selected-rubro]="child.selected" (click)="seleccionarRubro(child)">
+
                   <div class="node-line">
                     <span class="indent"></span>
                     <span class="plus">+</span>
@@ -66,66 +74,76 @@
           </ng-container>
         </div>
       </div>
+
+      <div class="actions-panel">
+        <div class="actions-title">
+          Acciones
+        </div>
+
+        <div class="actions-grid">
+          <button mat-stroked-button type="button" class="action-btn action-back" *ngIf="origen === 'rol-mensual'"
+            (click)="volverRolMensual()">
+            ← Volver al Rol Mensual
+          </button>
+
+          <button mat-stroked-button type="button" class="action-btn action-primary" (click)="nuevo()">
+            Nuevo
+          </button>
+
+          <button mat-stroked-button type="button" class="action-btn action-success"
+            [disabled]="guardando || dataSource.length === 0" (click)="grabar()">
+            {{ guardando ? 'Grabando...' : 'Grabar' }}
+          </button>
+
+          <button mat-stroked-button type="button" class="action-btn action-danger" (click)="cancelar()">
+            Cancelar
+          </button>
+
+          <button mat-stroked-button type="button" class="action-btn"
+            [disabled]="cargandoEmpleados || !rubroSeleccionado" (click)="cargarEmpleados()">
+            {{ cargandoEmpleados ? 'Cargando...' : 'Cargar Empleados' }}
+          </button>
+
+          <button mat-stroked-button type="button" class="action-btn" [disabled]="dataSource.length === 0"
+            (click)="cargarGlobal()">
+            Cargar Global
+          </button>
+
+          <input #inputArchivoRubros type="file" accept=".xlsx" hidden (change)="onArchivoRubrosSeleccionado($event)" />
+
+          <button mat-stroked-button type="button" class="action-btn" [disabled]="dataSource.length === 0 || guardando"
+            (click)="abrirSelectorArchivoRubros(inputArchivoRubros)">
+            Upload
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="table-wrapper">
-      <table mat-table [dataSource]="dataSource" class="custom-table">
-
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row">{{ row.id }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="codigo">
-          <th mat-header-cell *matHeaderCellDef>Código</th>
-          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Nombre</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="valor">
-          <th mat-header-cell *matHeaderCellDef>Valor</th>
-          <td mat-cell *matCellDef="let row">{{ row.valor ?? '' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="noCuenta">
-          <th mat-header-cell *matHeaderCellDef>No. Cuenta</th>
-          <td mat-cell *matCellDef="let row">{{ row.noCuenta }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="cuentaPagada">
-          <th mat-header-cell *matHeaderCellDef>Cuenta Pagada</th>
-          <td mat-cell *matCellDef="let row">{{ row.cuentaPagada }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="observaciones">
-          <th mat-header-cell *matHeaderCellDef>Observaciones</th>
-          <td mat-cell *matCellDef="let row">{{ row.observaciones }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
+    <div class="rubro-seleccionado" *ngIf="rubroSeleccionado">
+      {{ rubroSeleccionado.tipoPago }}-{{ rubroSeleccionado.codigo }}
+      {{ rubroSeleccionado.descripcion | uppercase }}
     </div>
 
-    <div class="middle-actions">
-      <button mat-stroked-button type="button" (click)="cargarEmpleados()">
-        Cargar Empleados
-      </button>
-
-      <button mat-stroked-button type="button" (click)="cargarGlobal()">
-        Cargar Global
-      </button>
+    <div class="grid-wrapper ag-theme-alpine">
+      <ag-grid-angular style="width: 100%; height: 100%;" [rowData]="dataSource" [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef" [pinnedBottomRowData]="pinnedBottomRowData" [animateRows]="true"
+        [singleClickEdit]="true" [stopEditingWhenCellsLoseFocus]="true" (gridReady)="onGridReady($event)"
+        (gridSizeChanged)="onGridSizeChanged()" (cellValueChanged)="onCellValueChanged($event)">
+      </ag-grid-angular>
     </div>
 
-    <div class="bottom-actions">
-      <button mat-stroked-button type="button" (click)="nuevo()">Nuevo</button>
-      <button mat-stroked-button type="button" (click)="grabar()">Grabar</button>
-      <button mat-stroked-button type="button" (click)="exportar()">Exportar</button>
-      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+    <div class="totales">
+      <span>Total:</span>
+
+      <input type="text" [value]="totalValor | number:'1.2-2'" readonly />
+
+      <span class="total-info">
+        Cobrado: {{ totalCobrado | number:'1.2-2' }}
+      </span>
+
+      <span class="total-info">
+        Pendiente: {{ totalPendiente | number:'1.2-2' }}
+      </span>
     </div>
   </div>
 </div>

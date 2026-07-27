@@ -12,17 +12,18 @@ export interface ApiResponse<T> {
 
 export interface ValidarCierrePeriodoRequest {
   fecha: string; // yyyy-MM-dd
+  tipo?: 'M' | 'Q' | string;
 }
 
 export interface CrearCierrePeriodoRequest {
-  fecha: string;      // yyyy-MM-dd
+  fecha: string; // yyyy-MM-dd
   idUsuario: number;
-  tipo?: string;
+  tipo?: 'M' | 'Q' | string;
 }
 
 export interface EliminarCierrePeriodoRequest {
-  fecha: string;      // yyyy-MM-dd
-  tipo?: string;
+  fecha: string; // yyyy-MM-dd
+  tipo?: 'M' | 'Q' | string;
 }
 
 export interface ValidarCierrePeriodoResponse {
@@ -33,22 +34,14 @@ export interface ValidarCierrePeriodoResponse {
   tipo?: string | null;
 }
 
-/**
- * Request para:
- * POST /api/CierrePeriodo/contabilizar-mensual
- */
 export interface ContabilizarMensualRequest {
-  fechaPeriodo: string;      // yyyy-MM-dd
+  fechaPeriodo: string; // yyyy-MM-dd
   idUsuario: number;
   idEmpresa: number;
   idZona: number;
   recalcularAntes: boolean;
 }
 
-/**
- * Response de:
- * POST /api/CierrePeriodo/contabilizar-mensual
- */
 export interface ContabilizarMensualResponse {
   procesado: boolean;
 
@@ -70,12 +63,19 @@ export interface ContabilizarMensualResponse {
   reporteAsientoMensual?: string | null;
 }
 
+export interface CerrarQuincenaRequest {
+  fechaPeriodo: string; // yyyy-MM-dd
+  numeroQuincena: number;
+  idUsuario: number;
+  tipo: 'Q' | string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CierrePeriodoService {
-
-  private readonly apiUrl = environment.nominaUrl + '/CierrePeriodo';
+  private readonly cierrePeriodoUrl = environment.nominaUrl + '/CierrePeriodo';
+  private readonly rolNominaUrl = environment.nominaUrl + '/RolNomina';
 
   constructor(private http: HttpClient) {}
 
@@ -83,7 +83,7 @@ export class CierrePeriodoService {
     request: ValidarCierrePeriodoRequest
   ): Observable<ApiResponse<ValidarCierrePeriodoResponse>> {
     return this.http.post<ApiResponse<ValidarCierrePeriodoResponse>>(
-      `${this.apiUrl}/validar`,
+      `${this.cierrePeriodoUrl}/validar`,
       request
     );
   }
@@ -92,7 +92,7 @@ export class CierrePeriodoService {
     request: CrearCierrePeriodoRequest
   ): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(
-      `${this.apiUrl}/crear`,
+      `${this.cierrePeriodoUrl}/crear`,
       request
     );
   }
@@ -101,22 +101,91 @@ export class CierrePeriodoService {
     request: EliminarCierrePeriodoRequest
   ): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(
-      `${this.apiUrl}/eliminar`,
+      `${this.cierrePeriodoUrl}/eliminar`,
       request
     );
+  }
+
+  validarMensual(
+    fecha: string
+  ): Observable<ApiResponse<ValidarCierrePeriodoResponse>> {
+    return this.validar({
+      fecha,
+      tipo: 'M'
+    });
+  }
+
+  validarQuincenal(
+    fecha: string
+  ): Observable<ApiResponse<ValidarCierrePeriodoResponse>> {
+    return this.validar({
+      fecha,
+      tipo: 'Q'
+    });
+  }
+
+  crearMensual(
+    fecha: string,
+    idUsuario: number
+  ): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.cierrePeriodoUrl}/crear`,
+      {
+        fecha,
+        idUsuario,
+        tipo: 'M'
+      }
+    );
+  }
+
+  cerrarQuincena(
+    fechaPeriodo: string,
+    idUsuario: number,
+    numeroQuincena: number = 1
+  ): Observable<ApiResponse<boolean>> {
+    const request: CerrarQuincenaRequest = {
+      fechaPeriodo,
+      numeroQuincena,
+      idUsuario,
+      tipo: 'Q'
+    };
+
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.rolNominaUrl}/cerrar-quincena`,
+      request
+    );
+  }
+
+  eliminarMensual(
+    fecha: string
+  ): Observable<ApiResponse<boolean>> {
+    return this.eliminar({
+      fecha,
+      tipo: 'M'
+    });
+  }
+
+  eliminarQuincenal(
+    fecha: string
+  ): Observable<ApiResponse<boolean>> {
+    return this.eliminar({
+      fecha,
+      tipo: 'Q'
+    });
   }
 
   contabilizarMensual(
     request: ContabilizarMensualRequest
   ): Observable<ApiResponse<ContabilizarMensualResponse>> {
     return this.http.post<ApiResponse<ContabilizarMensualResponse>>(
-      `${this.apiUrl}/contabilizar-mensual`,
+      `${this.cierrePeriodoUrl}/contabilizar-mensual`,
       request
     );
   }
+
   descargarReportePdf(url: string): Observable<Blob> {
-  return this.http.get(url, {
-    responseType: 'blob'
-  });
-}
+    return this.http.get(url, {
+      responseType: 'blob'
+    });
+  }
 }

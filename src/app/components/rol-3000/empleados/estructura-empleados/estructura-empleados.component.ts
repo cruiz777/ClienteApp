@@ -79,7 +79,7 @@ columnDefs: ColDef[] = [
   { field: 'cargo', headerName: 'Cargo', width: 160 },
   { field: 'zona', headerName: 'Zona', width: 140 },
   { field: 'documento', headerName: 'Documento', width: 140 },
-  { field: 'ctaCble', headerName: 'Cuenta Cble', width: 140 },
+  { field: 'ctaCble', headerName: 'Cuenta Cble', width: 140 ,hide: true},
   { field: 'fecIngreso', headerName: 'Fec. Ingreso', width: 130 }
 ];
 

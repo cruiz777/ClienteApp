@@ -1,84 +1,106 @@
 <div class="banco-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Datos de Banco</h2>
-
-    <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Código</mat-label>
-        <input matInput formControlName="codigo" />
-        <mat-error *ngIf="esCampoInvalido('codigo')">
-          El código es obligatorio
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Cuenta Corriente</mat-label>
-        <input matInput formControlName="cuentaCorriente" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Cuenta Contable</mat-label>
-        <input matInput formControlName="cuentaContable" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Nombre de Banco</mat-label>
-        <mat-select formControlName="nombreBanco">
-          <mat-option *ngFor="let item of nombresBanco" [value]="item">
-            {{ item }}
-          </mat-option>
-        </mat-select>
-        <mat-error *ngIf="esCampoInvalido('nombreBanco')">
-          El nombre del banco es obligatorio
-        </mat-error>
-      </mat-form-field>
-    </div>
-
-    <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="nuevo()">Nuevo</button>
-      <button mat-flat-button color="primary" type="button" (click)="grabar()">Grabar</button>
-      <button mat-stroked-button color="warn" type="button" (click)="borrar()">Borrar</button>
-      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
-    </div>
-  </div>
 
   <div class="list-card">
+
     <div class="list-header">
       <h3>Listado de Bancos</h3>
-      <span>{{ bancos.length }} registro(s)</span>
+
+      <span *ngIf="!cargando">
+        {{ bancos.length }} registro(s)
+      </span>
+
+      <span *ngIf="cargando">
+        Cargando...
+      </span>
     </div>
 
-    <div class="table-container">
-      <table mat-table [dataSource]="bancos" class="custom-table">
+    <div
+      class="mensaje-error"
+      *ngIf="mensajeError">
 
-        <ng-container matColumnDef="codigo">
-          <th mat-header-cell *matHeaderCellDef>Código</th>
-          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+      {{ mensajeError }}
+    </div>
+
+    <div
+      class="table-container"
+      *ngIf="!cargando">
+
+      <table
+        mat-table
+        [dataSource]="bancos"
+        class="custom-table">
+
+        <ng-container matColumnDef="codban">
+          <th mat-header-cell *matHeaderCellDef>
+            Código
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.codban }}
+          </td>
         </ng-container>
 
-        <ng-container matColumnDef="cuentaCorriente">
-          <th mat-header-cell *matHeaderCellDef>Cuenta Corriente</th>
-          <td mat-cell *matCellDef="let row">{{ row.cuentaCorriente }}</td>
+        <ng-container matColumnDef="desban">
+          <th mat-header-cell *matHeaderCellDef>
+            Banco / Formato
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.desban }}
+          </td>
         </ng-container>
 
-        <ng-container matColumnDef="cuentaContable">
-          <th mat-header-cell *matHeaderCellDef>Cuenta Contable</th>
-          <td mat-cell *matCellDef="let row">{{ row.cuentaContable }}</td>
+        <ng-container matColumnDef="codcue">
+          <th mat-header-cell *matHeaderCellDef>
+            Cuenta origen
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.codcue }}
+          </td>
         </ng-container>
 
-        <ng-container matColumnDef="nombreBanco">
-          <th mat-header-cell *matHeaderCellDef>Nombre de Banco</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombreBanco }}</td>
+        <ng-container matColumnDef="ctacontabilidad">
+          <th mat-header-cell *matHeaderCellDef>
+            Cuenta contable
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.ctacontabilidad }}
+          </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns">
+        </tr>
+
         <tr
           mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          (click)="seleccionarBanco(row)"
-          [class.row-selected]="bancoSeleccionadoId === row.id">
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          ">
         </tr>
+
+        <tr
+          class="mat-row"
+          *matNoDataRow>
+
+          <td
+            class="mat-cell no-data"
+            [attr.colspan]="displayedColumns.length">
+
+            No existen bancos registrados.
+          </td>
+        </tr>
+
       </table>
+
     </div>
+
   </div>
+
 </div>

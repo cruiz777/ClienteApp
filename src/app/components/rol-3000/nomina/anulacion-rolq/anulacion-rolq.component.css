@@ -43,3 +43,21 @@
 ::ng-deep .mdc-text-field--outlined {
   --mdc-outlined-text-field-container-shape: 6px;
 }
+
+.snackbar-success {
+  --mdc-snackbar-container-color: #16a34a;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+}
+
+.snackbar-error {
+  --mdc-snackbar-container-color: #dc2626;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+}
+
+.snackbar-warning {
+  --mdc-snackbar-container-color: #f59e0b;
+  --mdc-snackbar-supporting-text-color: #111827;
+  --mat-snack-bar-button-color: #111827;
+}

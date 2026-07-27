@@ -1868,19 +1868,27 @@ enviarEmpresaAJson(): void {
     dapi: this.api,
     capi: this.claveApi
   };
-  debugger
-  const jsonData = this.jsonEmpresaService.buildJson(data);
+  this.jsonEmpresaService.generarJsonEmpresa(data).subscribe({
+  next: (response: unknown) => {
+    console.log('✅ Enviado correctamente:', response);
+  },
+  error: (error: unknown) => {
+    console.error('❌ Error al enviar JSON:', error);
+  }
+});
+  // debugger
+  // const jsonData = this.jsonEmpresaService.buildJson(data);
 
-  this.jsonEmpresaService.generarJsonEmpresa(data)
-    .pipe(finalize(() => this.jsonEmpresaService.descargarArchivo(jsonData, data.licenceKey)))
-    .subscribe({
-      next: (response: unknown) => {
-        console.log('✅ Enviado correctamente:', response);
-      },
-      error: (error: unknown) => {
-        console.error('❌ Error al enviar JSON:', error);
-      }
-    });
+  // this.jsonEmpresaService.generarJsonEmpresa(data)
+  //   .pipe(finalize(() => this.jsonEmpresaService.descargarArchivo(jsonData, data.licenceKey)))
+  //   .subscribe({
+  //     next: (response: unknown) => {
+  //       console.log('✅ Enviado correctamente:', response);
+  //     },
+  //     error: (error: unknown) => {
+  //       console.error('❌ Error al enviar JSON:', error);
+  //     }
+  //   });
 }
 
 

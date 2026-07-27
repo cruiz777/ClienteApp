@@ -4,6 +4,11 @@ import {
   Inject,
   OnInit
 } from '@angular/core';
+
+import {
+    EventEmitter,
+   Output
+} from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -23,8 +28,8 @@ import { MatButtonModule } from '@angular/material/button';
 export interface DialogBancoNominaData {
   fechaPeriodo: string;
   idUsuario: number;
+  origen?: 'NOMINA' | 'QUINCENA' | 'DECIMO_CUARTO' | 'DECIMO_TERCERO';
 }
-
 export interface DialogBancoNominaResult {
   accion: 'ARCHIVO' | 'REPORTE';
   fechaPeriodo: string;
@@ -55,7 +60,8 @@ interface Banco {
 })
 export class DialogBancoNominaComponent implements OnInit {
   form!: FormGroup;
-
+  @Output()
+readonly archivoSolicitado = new EventEmitter<DialogBancoNominaResult>();
   readonly bancos: Banco[] = [
     {
       codBanco: 1,
@@ -95,29 +101,37 @@ export class DialogBancoNominaComponent implements OnInit {
     });
   }
 
-  generarArchivo(): void {
-    if (!this.formularioValido()) {
-      return;
-    }
-
-    this.dialogRef.close(
-      this.construirResultado('ARCHIVO')
-    );
+generarArchivo(): void {
+  if (!this.formularioValido()) {
+    return;
   }
 
-  imprimirReporte(): void {
-    if (!this.formularioValido()) {
-      return;
-    }
+  const result = this.construirResultado('ARCHIVO');
 
-    this.dialogRef.close(
-      this.construirResultado('REPORTE')
-    );
+  /*
+   * IMPORTANTE:
+   * Aquí NO se cierra el modal.
+   * Solo se emite el resultado al componente padre.
+   */
+  this.archivoSolicitado.emit(result);
+}
+
+imprimirReporte(): void {
+  if (!this.formularioValido()) {
+    return;
   }
 
-  salir(): void {
-    this.dialogRef.close(null);
-  }
+  /*
+   * El reporte sí puede cerrar el modal.
+   */
+  this.dialogRef.close(
+    this.construirResultado('REPORTE')
+  );
+}
+
+salir(): void {
+  this.dialogRef.close(null);
+}
 
   private formularioValido(): boolean {
     if (!this.form) {
@@ -146,42 +160,69 @@ export class DialogBancoNominaComponent implements OnInit {
     };
   }
 
-  private generarDescripcionDefault(): string {
-    const fecha = this.data.fechaPeriodo?.substring(0, 10);
+private generarDescripcionDefault(): string {
+  const fecha = this.data.fechaPeriodo?.substring(0, 10);
 
-    if (!fecha) {
-      return 'NOMINA';
-    }
-
-    const partes = fecha.split('-');
-
-    if (partes.length !== 3) {
-      return 'NOMINA';
-    }
-
-    const anio = Number(partes[0]);
-    const mes = Number(partes[1]);
-
-    const meses = [
-      '',
-      'ENERO',
-      'FEBRERO',
-      'MARZO',
-      'ABRIL',
-      'MAYO',
-      'JUNIO',
-      'JULIO',
-      'AGOSTO',
-      'SEPTIEMBRE',
-      'OCTUBRE',
-      'NOVIEMBRE',
-      'DICIEMBRE'
-    ];
-
-    if (!anio || mes < 1 || mes > 12) {
-      return 'NOMINA';
-    }
-
-    return `QUINCENA ${meses[mes]} ${anio}`;
+  if (!fecha) {
+    return this.obtenerDescripcionSinFecha();
   }
+
+  const partes = fecha.split('-');
+
+  if (partes.length !== 3) {
+    return this.obtenerDescripcionSinFecha();
+  }
+
+  const anio = Number(partes[0]);
+  const mes = Number(partes[1]);
+
+  const meses = [
+    '',
+    'ENERO',
+    'FEBRERO',
+    'MARZO',
+    'ABRIL',
+    'MAYO',
+    'JUNIO',
+    'JULIO',
+    'AGOSTO',
+    'SEPTIEMBRE',
+    'OCTUBRE',
+    'NOVIEMBRE',
+    'DICIEMBRE'
+  ];
+
+  if (!anio || mes < 1 || mes > 12) {
+    return this.obtenerDescripcionSinFecha();
+  }
+
+  switch (this.data.origen) {
+    case 'DECIMO_CUARTO':
+      return `DÉCIMO CUARTO ${anio}`;
+
+    case 'QUINCENA':
+      return `QUINCENA ${meses[mes]} ${anio}`;
+
+    case 'NOMINA':
+    default:
+      return `NÓMINA ${meses[mes]} ${anio}`;
+  }
+}
+
+private obtenerDescripcionSinFecha(): string {
+  switch (this.data.origen) {
+    case 'DECIMO_CUARTO':
+      return 'DÉCIMO CUARTO';
+
+    case 'DECIMO_TERCERO':
+      return 'DÉCIMO TERCERO';
+
+    case 'QUINCENA':
+      return 'QUINCENA';
+
+    case 'NOMINA':
+    default:
+      return 'NÓMINA';
+  }
+}
 }

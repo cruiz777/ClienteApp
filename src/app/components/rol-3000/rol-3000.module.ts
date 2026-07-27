@@ -96,6 +96,9 @@ import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tip
 import { MatMenuModule } from '@angular/material/menu';
 import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomina-dialog.component';
 import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-individual-dialog.component';
+import { DialogCargaGlobalRubrosFijosComponent } from './nomina/rubros-fijos/dialog-carga-global-rubros-fijo/dialog-carga-global-rubros-fijo.component';
+import { DialogBancoNominaComponent } from './nomina/dialog-banco-nomina/dialog-banco-nomina.component';
+
 @NgModule({
   declarations: [
     NavigationRolComponent,
@@ -145,7 +148,8 @@ import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-i
     FondoReservaComponent,
     UtilidadesComponent,
     PeriodosNominaDialogComponent,
-    RolIndividualDialogComponent
+    RolIndividualDialogComponent,
+    DialogCargaGlobalRubrosFijosComponent
   ],
   imports: [
     CommonModule,
@@ -193,7 +197,8 @@ import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-i
         RpBancosComponent,
         RpEmpresaComplementariaComponent,
         TipoNominaEspComponent,
-    Rol3000RoutingModule
+        DialogBancoNominaComponent,
+        Rol3000RoutingModule
   ]
 })
 export class Rol3000Module { }
