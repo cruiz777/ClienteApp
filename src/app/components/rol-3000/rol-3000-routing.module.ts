@@ -65,7 +65,7 @@ import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/li
 import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
 import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
-
+import { ExploradorEmpleadosComponent } from './empleados/explorador-empleado/explorador-empleado.component';
 const routes: Routes = [
    {
       path: '',
@@ -77,7 +77,6 @@ const routes: Routes = [
         // INICIO - libre, mismo patrón que seguridades/inicio, sic-3000/inicio-sic
         // y cg-3000/inicio-cg (sin exigir el permiso raíz por el bug de backend)
         { path: 'inicio-rol', component: InicioRolComponent },
-
         // EMPLEADO - Archivo
         {
           path: 'empleado-estructura',
@@ -459,7 +458,7 @@ const routes: Routes = [
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.configuracion.tipos.tipo-nomina-especial' }
         },
-
+        {path:'explorador-empleados',component:ExploradorEmpleadosComponent},
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },

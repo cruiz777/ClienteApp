@@ -276,82 +276,90 @@
       </div>
     </div>
 
-    <!-- CONTENEDOR DINAMICO DE GRIDS -->
+    <!-- CONTENEDOR DINÁMICO DE GRIDS -->
     <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
       <!-- GRID IZQUIERDO -->
-      <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
-  <!-- GRID IZQUIERDO -->
-  <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
-  <!-- GRID IZQUIERDO -->
-  <div class="movimientos-panel izquierdo" [style.flexBasis.px]="panelIzquierdoAncho" [style.width.px]="panelIzquierdoAncho">
-    <div class="section-title">Movimientos</div>
-    <div class="grid grid-main grid-movimientos-izq ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="movimientos"
-        [columnDefs]="colMov"
-        [defaultColDef]="defaultColDef"
-        [rowClassRules]="rowClassRules"
-        [rowSelection]="'single'"
-        (gridReady)="onGridMovReady($event)"
-        (cellValueChanged)="onMovCellValueChanged($event)"
-        (cellDoubleClicked)="onMovCellDoubleClicked($event)"
-        (cellClicked)="onMovCellClicked($event)"
-        [singleClickEdit]="true"
-        [stopEditingWhenCellsLoseFocus]="true"
-        [animateRows]="true"
-        [headerHeight]="34"
-        [rowHeight]="34"
-        [suppressMovableColumns]="true"
-        [enableBrowserTooltips]="true">
-      </ag-grid-angular>
-    </div>
-  </div>
+      <div
+        class="movimientos-panel izquierdo"
+        [style.flexBasis.px]="panelIzquierdoAncho"
+        [style.width.px]="panelIzquierdoAncho">
 
-  <!-- SEPARADOR -->
-  <div
-    class="splitter-vertical"
-    *ngIf="mostrarExcel && excelRows.length"
-    (mousedown)="iniciarResize($event)">
-  </div>
+        <div class="section-title">Movimientos</div>
 
-  <!-- GRID DERECHO -->
-  <div
-    class="movimientos-panel derecho"
-    *ngIf="mostrarExcel && excelRows.length"
-    [style.flexBasis.px]="panelDerechoAncho"
-    [style.width.px]="panelDerechoAncho">
-    <div class="section-title">Archivo Banco</div>
-    <div class="grid grid-main grid-movimientos-der ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="excelRows"
-        [columnDefs]="colExcel"
-        [defaultColDef]="defaultColDef"
-        [rowClassRules]="rowClassRulesExcel"
-        (gridReady)="onGridExcelReady($event)"
-        [animateRows]="true"
-        [headerHeight]="34"
-        [rowHeight]="32"
-        [suppressMovableColumns]="true"
-        [enableBrowserTooltips]="true">
-      </ag-grid-angular>
-    </div>
-  </div>
-</div>
-</div>
+        <div class="grid grid-main grid-movimientos-izq ag-theme-alpine">
+          <ag-grid-angular
+            [rowData]="movimientos"
+            [columnDefs]="colMov"
+            [defaultColDef]="defaultColDef"
+            [rowClassRules]="rowClassRules"
+            [rowSelection]="'single'"
+            (gridReady)="onGridMovReady($event)"
+            (cellValueChanged)="onMovCellValueChanged($event)"
+            (cellDoubleClicked)="onMovCellDoubleClicked($event)"
+            (cellClicked)="onMovCellClicked($event)"
+            [singleClickEdit]="true"
+            [stopEditingWhenCellsLoseFocus]="true"
+            [animateRows]="true"
+            [headerHeight]="34"
+            [rowHeight]="34"
+            [suppressMovableColumns]="true"
+            [enableBrowserTooltips]="true">
+          </ag-grid-angular>
+        </div>
+      </div>
+
+      <!-- SEPARADOR -->
+      <div
+        class="splitter-vertical"
+        *ngIf="mostrarExcel && excelRows.length"
+        (mousedown)="iniciarResize($event)">
+      </div>
+
+      <!-- GRID DERECHO -->
+      <div
+        class="movimientos-panel derecho"
+        *ngIf="mostrarExcel && excelRows.length"
+        [style.flexBasis.px]="panelDerechoAncho"
+        [style.width.px]="panelDerechoAncho">
+
+        <div class="section-title">Archivo Banco</div>
+
+        <div class="grid grid-main grid-movimientos-der ag-theme-alpine">
+          <ag-grid-angular
+            [rowData]="excelRows"
+            [columnDefs]="colExcel"
+            [defaultColDef]="defaultColDef"
+            [rowClassRules]="rowClassRulesExcel"
+            (gridReady)="onGridExcelReady($event)"
+            [animateRows]="true"
+            [headerHeight]="34"
+            [rowHeight]="32"
+            [suppressMovableColumns]="true"
+            [enableBrowserTooltips]="true">
+          </ag-grid-angular>
+        </div>
+      </div>
     </div>
 
     <!-- RESUMEN -->
-    <div class="section-title">Saldos por Conciliar</div>
-    <div class="grid grid-bottom ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="resumenRows"
-        [columnDefs]="colResumen"
-        [defaultColDef]="defaultColDef"
-        (gridReady)="onGridResumenReady($event)"
-        [headerHeight]="34"
-        [suppressMovableColumns]="true"
-        [rowHeight]="34">
-      </ag-grid-angular>
-    </div>
+    <!-- RESUMEN -->
+<div class="section-title">
+  Saldos por Conciliar
+</div>
+
+<div class="grid grid-bottom ag-theme-alpine">
+  <ag-grid-angular
+    style="width: 100%; height: 102px;"
+    [rowData]="resumenRows"
+    [columnDefs]="colResumen"
+    [defaultColDef]="defaultColDef"
+    [headerHeight]="34"
+    [rowHeight]="34"
+    [suppressMovableColumns]="true"
+    [suppressHorizontalScroll]="true"
+    (gridReady)="onGridResumenReady($event)"
+    (firstDataRendered)="ajustarGridResumen()">
+  </ag-grid-angular>
+</div>
   </mat-card>
 </div>
