@@ -287,9 +287,102 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  // Veririfica permisos del perfil si quiere eliminar
+  // ==================== Verificación de permisos asignados (por sistema) ====================
+  private async obtenerSistemasConPermisosAsignados(idPerfil: number): Promise<string[]> {
+    const sistemasConPermisos: string[] = [];
 
+    for (const sistema of this.sistemas) {
+      try {
+        const resp = await this.perfilesOpcionesService
+          .getResumenPerfilSistema(idPerfil, sistema.id_sistema)
+          .toPromise();
 
-  eliminarPerfil(idPerfil: number): void {
+        const data = resp?.data;
+        if (!data) continue;
+
+        const tieneEnModulos = Object.values(data.modulos ?? {}).some((m: any) => m.asignadas > 0);
+        const tieneEnMenus = Object.values(data.menus ?? {}).some((m: any) => m.asignadas > 0);
+        const tieneEnSubmenus = Object.values(data.submenus ?? {}).some((m: any) => m.asignadas > 0);
+
+        if (tieneEnModulos || tieneEnMenus || tieneEnSubmenus) {
+          sistemasConPermisos.push(sistema.nombre);
+        }
+      } catch (error) {
+        console.error(`Error verificando permisos del perfil ${idPerfil} en sistema ${sistema.id_sistema}:`, error);
+      }
+    }
+
+    return sistemasConPermisos;
+  }
+
+  // eliminarPerfil(idPerfil: number): void {
+  //   const data: MessageBoxData = {
+  //     title: '¿Eliminar perfil?',
+  //     message: '¿Estás seguro de que deseas eliminar este perfil?',
+  //     type: 'warning',
+  //     confirmText: 'Sí, eliminar',
+  //     cancelText: 'Cancelar',
+  //     showCancel: true
+  //   };
+
+  //   this.dialog.open(CustomMessageBoxComponent, {
+  //     width: '400px',
+  //     data
+  //   }).afterClosed().subscribe((confirmado: boolean) => {
+  //     if (confirmado) {
+
+  //       this.perfilesService.softDeletePerfiles(idPerfil).subscribe({
+  //         next: (resp) => {
+  //           if (resp.data === true) {
+  //             this.dialog.open(CustomMessageBoxComponent, {
+  //               width: '400px',
+  //               data: {
+  //                 title: 'Eliminado',
+  //                 message: 'El perfil fue eliminado correctamente.',
+  //                 type: 'success',
+  //                 confirmText: 'Aceptar',
+  //                 showCancel: false
+  //               }
+  //             });
+  //             this.cargarPerfiles();
+  //           }
+  //           else {
+  //             this.dialog.open(CustomMessageBoxComponent, {
+  //               width: '400px',
+  //               data: {
+  //                 title: 'No se puede eliminar',
+  //                 message: 'El perfil no puede ser eliminado porque existen usuarios asociados a él.',
+  //                 type: 'info',
+  //                 confirmText: 'Aceptar',
+  //                 showCancel: false
+  //               }
+  //             });
+  //           }
+  //         }
+  //       })
+
+  //     }
+  //   });
+  // }
+  async eliminarPerfil(idPerfil: number): Promise<void> {
+    //Verificación previa
+     const sistemasConPermisos = await this.obtenerSistemasConPermisosAsignados(idPerfil);
+
+    if (sistemasConPermisos.length > 0) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: 'No se puede eliminar',
+          message: `Este perfil tiene permisos asignados en: ${sistemasConPermisos.join(', ')}. Debes quitarlos antes de poder eliminarlo.`,
+          type: 'warning',
+          confirmText: 'Aceptar',
+          showCancel: false
+        } as MessageBoxData
+      });
+      return;
+    }
+    
     const data: MessageBoxData = {
       title: '¿Eliminar perfil?',
       message: '¿Estás seguro de que deseas eliminar este perfil?',
@@ -304,7 +397,6 @@ export class PerfilesListComponent implements OnInit {
       data
     }).afterClosed().subscribe((confirmado: boolean) => {
       if (confirmado) {
-
         this.perfilesService.softDeletePerfiles(idPerfil).subscribe({
           next: (resp) => {
             if (resp.data === true) {
@@ -334,7 +426,6 @@ export class PerfilesListComponent implements OnInit {
             }
           }
         })
-
       }
     });
   }

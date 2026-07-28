@@ -1,5 +1,4 @@
 import { NgModule } from '@angular/core';
-import { Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
@@ -15,7 +14,6 @@ import { NotaCreditoComponent } from './cxc/nota-credito/nota-credito.component'
 import { CajaComponent } from './facturacion/caja/caja.component';
 import { LisFacAnuladasComponent } from './facturacion/lis-fac-anuladas/lis-fac-anuladas.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
-import { InicioComponent } from '../inicio/inicio.component';
 import { ProveedoresListaComponent } from './proveedores/proveedores.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
@@ -40,17 +38,17 @@ const routes: Routes = [
   {
     path: '',
     component: NavigationSicComponent,
-    canActivate: [AuthGuard], // 🔐 Proteger toda la sección con autenticación
+    canActivate: [AuthGuard], // 🔐 Autenticación a nivel padre
     children: [
-      // Redirige a la ruta que sí existe
       { path: '', redirectTo: 'inicio-sic', pathMatch: 'full' },
 
-      // INICIO - Solo requiere acceso al módulo
+      // INICIO - accesible para cualquier usuario autenticado (igual que seguridades/inicio)
+      // Se quitó el PermissionGuard porque el backend, al desactivar cualquier
+      // hijo de 'sic-3000', omite el string raíz 'sic-3000' de permisos_flat
+      // (bug reportado a backend). Mientras se corrige, el inicio queda libre.
       {
         path: 'inicio-sic',
-        component: InicioSicComponent,
-        canActivate: [PermissionGuard],
-        data: { permission: 'sic-3000' } // ✅ Permiso específico
+        component: InicioSicComponent
       },
 
       // ESTRUCTURA COMERCIAL
@@ -61,29 +59,31 @@ const routes: Routes = [
         data: { permission: 'sic-3000.inventarios.estructura-comercial' }
       },
 
+      // CUENTAS POR COBRAR
       {
         path: 'registroCobros',
         component: RegistroCobrosComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.cuentas-por-cobrar.registro-cobros' }
       },
-       {
+      {
         path: 'anularCobros',
         component: AnulacionPagoComponent,
-
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.cuentas-por-cobrar.reversion-pagos' }
       },
       {
         path: 'panulados',
-        component: LisPagAnuladosComponent
-
+        component: LisPagAnuladosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.cuentas-por-cobrar.listado-pagos' }
       },
-         {
+      {
         path: 'notaCredito',
         component: NotaCreditoComponent,
-
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.notas-de-credito-debito.notas-de-credito' }
       },
-
-
 
       // FACTURACIÓN INDIVIDUAL
       {
@@ -102,72 +102,149 @@ const routes: Routes = [
       },
       {
         path: 'caja',
-        component: CajaComponent
-
-      }
-      ,
+        component: CajaComponent,
+        canActivate: [PermissionGuard],
+        // ⚠️ CONFIRMAR: no hay leaf claro para "caja" (¿parametro-caja?
+        // ¿autorización de caja?). Revisa con backend cuál corresponde.
+        data: { permission: 'sic-3000.configuracion.parametros.parametro-caja' }
+      },
       {
         path: 'fanuladas',
-        component: LisFacAnuladasComponent
-
+        component: LisFacAnuladasComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.facturas-anuladas' }
       },
-      { path: 'doc-electronicos', component: DocElectronicosComponent},
+      {
+        path: 'doc-electronicos',
+        component: DocElectronicosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.documentos-electronicos' }
+      },
+      {
+        path: 'doc-locales',
+        component: DocElecLocalesComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.comparacion-documentos-electronicos' }
+      },
+      {
+        path: 'reporte-ventas',
+        component: ReporteVentasComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.reporte-ventas' }
+      },
 
-      { path: 'doc-locales', component: DocElecLocalesComponent},
-      
-      { path: 'reporte-ventas', component: ReporteVentasComponent},
-
-      // ✅ Ruta para EDITAR producto (con ID)
+      // PRODUCTOS
       {
         path: 'productossic/:idProducto',
-        component: ProductosSicComponent
+        component: ProductosSicComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.inventarios.producto' }
       },
-      // ✅ Ruta para CREAR producto desde estructura
       {
         path: 'productossic/estructura/:idEstructura',
-        component: ProductosSicComponent
+        component: ProductosSicComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.inventarios.producto' }
       },
-      // ✅ Ruta para crear producto sin estructura (por si acaso)
       {
         path: 'productossic',
-        component: ProductosSicComponent
-      },
-            {
-        path: 'proveedores',
-        component: ProveedoresListaComponent
+        component: ProductosSicComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.inventarios.producto' }
       },
 
-       {
+      {
+        path: 'proveedores',
+        component: ProveedoresListaComponent,
+        canActivate: [PermissionGuard],
+        // ⚠️ CONFIRMAR: no existe "proveedores" en permisos_flat.
+        data: { permission: 'sic-3000' }
+      },
+
+      // CONFIGURACIÓN
+      {
         path: 'formapago',
-        component:FormaPagoListComponent
+        component: FormaPagoListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.configuracion.forma-de-pago' }
       },
-         {
+      {
         path: 'clasificacion',
-        component:ClasificacionListComponent
+        component: ClasificacionListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.configuracion.forma-de-pago.clasificacion-de-pagos' }
       },
-       {
+      {
         path: 'cajas',
-        component:AutorizacionCajaListComponent
+        component: AutorizacionCajaListComponent,
+        canActivate: [PermissionGuard],
+        // ⚠️ CONFIRMAR: "autorización de caja" no tiene leaf exacto.
+        data: { permission: 'sic-3000.configuracion.parametros.parametro-caja' }
       },
       {
         path: 'tipdocsri',
-        component:TipoDocListComponent
+        component: TipoDocListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.configuracion.tip-doc-sri' }
       },
-         {
+      {
         path: 'descuento',
-        component:DescuentoListComponent
+        component: DescuentoListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.configuracion.descuentos' }
       },
-      { path: 'reenvio-fact', component: ReenvioFacComponent},
+      {
+        path: 'reenvio-fact',
+        component: ReenvioFacComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.reenvio-documentos-electronicos' }
+      },
 
+      // ANTICIPOS
+      {
+        path: 'creacion-anticipos',
+        component: CreacionAnticiposComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.anticipos.creacion-de-anticipos' }
+      },
+      {
+        path: 'reporte-anticipos',
+        component: ReporteAnticiposComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.anticipos.reporte-de-anticipos' }
+      },
+      {
+        path: 'cierre-anticipos',
+        component: CierreAnticiposComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.facturacion.anticipos.cierre-de-anticipos' }
+      },
 
-      { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
-      { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
-      { path: 'cierre-anticipos', component: CierreAnticiposComponent},
-      { path: 'exp-estadocuenta', component: EstadocuentaclienteComponent},
-      { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent},
-      { path: 'exp-cxc-general', component: ExploradorCxcGeneralComponent},
-      { path: 'exp-estado-cuenta-general', component: EstadoCuentaGeneralComponent}
-      
+      // EXPLORADORES / REPORTES CxC
+      {
+        path: 'exp-estadocuenta',
+        component: EstadocuentaclienteComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.cuentas-por-cobrar.reportes.estado-de-cuenta-cliente' }
+      },
+      {
+        path: 'exp-cuentaxcobrar',
+        component: CuentaxcobrarComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.cuentas-por-cobrar.explorador-de-cuentas-por-cobrar' }
+      },
+      {
+        path: 'exp-cxc-general',
+        component: ExploradorCxcGeneralComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.cuentas-por-cobrar.explorador-cuentas-por-cobrar-general' }
+      },
+      {
+        path: 'exp-estado-cuenta-general',
+        component: EstadoCuentaGeneralComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'sic-3000.cuentas-por-cobrar.explorador-estados-de-cuenta-general' }
+      }
     ]
   }
 ];
