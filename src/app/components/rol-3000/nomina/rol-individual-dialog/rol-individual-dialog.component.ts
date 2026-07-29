@@ -11,7 +11,8 @@ import {
   RolIndividualRubroResponse,
   RolNominaService,
   GuardarRolIndividualRequest,
-  CalcularImpuestoRentaRequest
+  CalcularImpuestoRentaRequest,
+  EnviarRolesCorreoRequest
 } from 'src/app/services/rol/rol-nomina.service';
 
 @Component({
@@ -34,6 +35,8 @@ export class RolIndividualDialogComponent implements OnInit {
   private valorDiasTrabajadosBasePeriodo = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
   guardando = false;
+  imprimiendo = false;
+  enviandoCorreo = false;
   hayCambios = false;
   rolActualizado = false;
   recalculandoImpuesto = false;
@@ -365,6 +368,210 @@ export class RolIndividualDialogComponent implements OnInit {
     );
 
     this.liquidoRecibir = this.totalIngresos - this.totalEgresos;
+  }
+
+  imprimirRolIndividual(): void {
+    if (!this.dataRol) {
+      this.mostrarAdvertencia('No existe información del rol individual.');
+      return;
+    }
+
+    if (this.hayCambios) {
+      this.mostrarAdvertencia(
+        'Existen cambios pendientes. Debe grabar el rol antes de imprimir.'
+      );
+      return;
+    }
+
+    if (this.imprimiendo) {
+      return;
+    }
+
+    this.imprimiendo = true;
+
+    this.rolNominaService
+      .descargarRolIndividualPdf(
+        this.dataRol.idEmpleado,
+        this.dataRol.fechaPeriodo
+      )
+      .subscribe({
+        next: (blob: Blob) => {
+          this.imprimiendo = false;
+
+          if (!blob || blob.size === 0) {
+            this.mostrarAdvertencia(
+              'El backend devolvió un documento vacío.'
+            );
+            return;
+          }
+
+          const url = window.URL.createObjectURL(blob);
+          const ventana = window.open(url, '_blank');
+
+          if (!ventana) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = this.construirNombreArchivoRol();
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 30000);
+        },
+        error: (err: any) => {
+          this.imprimiendo = false;
+
+          console.error(
+            'Error generando impresión del rol individual:',
+            err
+          );
+
+          this.mostrarError(
+            err?.error?.message ??
+            'No se pudo generar la impresión del rol individual.'
+          );
+        }
+      });
+  }
+
+  enviarRolPorCorreo(): void {
+    if (!this.dataRol) {
+      this.mostrarAdvertencia('No existe información del rol individual.');
+      return;
+    }
+
+    if (this.hayCambios) {
+      this.mostrarAdvertencia(
+        'Existen cambios pendientes. Debe grabar el rol antes de enviarlo por correo.'
+      );
+      return;
+    }
+
+    if (this.enviandoCorreo) {
+      return;
+    }
+
+    const correo = (this.dataRol.email ?? '').trim();
+
+    if (!correo) {
+      this.mostrarAdvertencia(
+        'El empleado no tiene un correo electrónico registrado.'
+      );
+      return;
+    }
+
+    this.confirmarAccion(
+      'Enviar rol por correo',
+      `Se enviará el rol individual a ${correo}. ¿Desea continuar?`,
+      'Sí, enviar',
+      'Cancelar'
+    ).subscribe((confirmado: boolean) => {
+      if (confirmado !== true) {
+        return;
+      }
+
+      this.ejecutarEnvioRolIndividual();
+    });
+  }
+
+  private ejecutarEnvioRolIndividual(): void {
+    if (!this.dataRol) {
+      return;
+    }
+
+    const request: EnviarRolesCorreoRequest = {
+      fechaPeriodo: this.dataRol.fechaPeriodo,
+      idUsuario: this.usuarioActual?.id_usuario ?? 1,
+      idsEmpleados: [
+        this.dataRol.idEmpleado
+      ]
+    };
+
+    this.enviandoCorreo = true;
+
+    this.rolNominaService
+      .enviarRolesPorCorreo(request)
+      .subscribe({
+        next: resp => {
+          this.enviandoCorreo = false;
+
+          const resultado = resp.data;
+
+          if (
+            resp.type === 'Success' &&
+            resultado?.procesado === true &&
+            (resultado.totalEnviados ?? 0) > 0
+          ) {
+            this.mostrarExito(
+              resultado.mensaje ??
+              'Rol enviado por correo correctamente.'
+            );
+            return;
+          }
+
+          if ((resultado?.totalSinCorreo ?? 0) > 0) {
+            this.mostrarAdvertencia(
+              resultado?.mensaje ??
+              'El empleado no tiene un correo válido registrado.'
+            );
+            return;
+          }
+
+          if (
+            resultado?.errores &&
+            resultado.errores.length > 0
+          ) {
+            this.mostrarError(
+              resultado.errores[0]
+            );
+            return;
+          }
+
+          this.mostrarMensajePorTipo(
+            resp.type,
+            resultado?.mensaje ??
+            resp.message ??
+            'No se pudo enviar el rol por correo.'
+          );
+        },
+        error: (err: any) => {
+          this.enviandoCorreo = false;
+
+          console.error(
+            'Error enviando rol individual por correo:',
+            err
+          );
+
+          this.mostrarError(
+            err?.error?.message ??
+            err?.error?.data?.mensaje ??
+            'No se pudo enviar el rol individual por correo.'
+          );
+        }
+      });
+  }
+
+  private construirNombreArchivoRol(): string {
+    const nombreEmpleado = (
+      this.dataRol?.nombreEmpleado ??
+      `EMPLEADO_${this.data?.idEmpleado ?? 0}`
+    )
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toUpperCase();
+
+    const periodo = (
+      this.dataRol?.fechaPeriodo ??
+      this.data?.fechaPeriodo ??
+      ''
+    ).replace(/-/g, '');
+
+    return `${nombreEmpleado}_${periodo}.pdf`;
   }
 
   cerrar(): void {
