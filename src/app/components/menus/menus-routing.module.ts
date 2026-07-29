@@ -105,16 +105,18 @@ const routes: Routes = [
           },
           { 
             path: 'gerenciate', 
-            component: GerenciaEmpresasComponent
-          }
-          ,
+            component: GerenciaEmpresasComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD AGREGADO
+          },          
           { 
             path: 'datamatrix', 
-            component: Gs1ScannerComponent
+            component: Gs1ScannerComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD AGREGADO
           },
-           { 
+          { 
             path: 'gerenciafactuacion', 
-            component: DashboardFacturacionComponent
+            component: DashboardFacturacionComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD AGREGADO
           }
         ]
       },

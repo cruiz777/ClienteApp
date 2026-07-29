@@ -47,7 +47,7 @@ export class NavigationSicComponent implements OnInit{
       map(permisos => ({
         estructuraComercial: permisos.includes('sic-3000.inventarios.estructura-comercial'),
         producto: permisos.includes('sic-3000.inventarios.producto'),
-        proveedores: permisos.includes('sic-3000'), //Sin permiso propio aún, ver nota más abajo
+        proveedores: permisos.includes('sic-3000.inventarios.proveedores'),
 
         facturacionIndividual: permisos.includes('sic-3000.facturacion.facturacion-individual'),
         facturacionGlobal: permisos.includes('sic-3000.facturacion.facturacion-global'),
