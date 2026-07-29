@@ -66,6 +66,7 @@ import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol
 import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 import { ExploradorEmpleadosComponent } from './empleados/explorador-empleado/explorador-empleado.component';
+import { ExploradorNominaComponent } from './nomina/explorador-nomina/explorador-nomina.component';
 const routes: Routes = [
    {
       path: '',
@@ -459,6 +460,8 @@ const routes: Routes = [
           data: { permission: 'rol-3000.configuracion.tipos.tipo-nomina-especial' }
         },
         {path:'explorador-empleados',component:ExploradorEmpleadosComponent},
+        {path:'explorador-nomina',component:ExploradorNominaComponent},
+
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },

@@ -50,8 +50,9 @@
     <section class="filtros-section" [formGroup]="form">
       <div class="filtros-principales">
         <div class="estado-box">
-          <h2>Estado del empleado</h2>
+          
           <mat-radio-group class="estado-radio" formControlName="estado">
+            <h2>Estado del empleado</h2>
             <mat-radio-button value="TODOS">Todos</mat-radio-button>
             <mat-radio-button value="ACTIVOS">Activos</mat-radio-button>
             <mat-radio-button value="INACTIVOS">Ex empleados</mat-radio-button>

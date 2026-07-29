@@ -176,6 +176,20 @@ export class ExploradorEmpleadosComponent implements OnInit {
     { field: 'fechaNacimiento', headerName: 'Fecha nacimiento', seleccionado: false, tipo: 'date', minWidth: 155 },
     { field: 'edad', headerName: 'Edad', seleccionado: false, tipo: 'number', minWidth: 90 },
     { field: 'sueldo', headerName: 'Sueldo', seleccionado: false, tipo: 'number', minWidth: 120 },
+    {
+  field: 'banco',
+  headerName: 'Banco',
+  seleccionado: false,
+  tipo: 'text',
+  minWidth: 210
+},
+{
+  field: 'cuentaBanco',
+  headerName: 'Cuenta bancaria',
+  seleccionado: false,
+  tipo: 'text',
+  minWidth: 170
+},
     { field: 'tipoSangre', headerName: 'Tipo sangre', seleccionado: false, tipo: 'text' },
     { field: 'discapacidad', headerName: 'Discapacidad', seleccionado: false, tipo: 'boolean' },
     { field: 'terceraEdad', headerName: 'Tercera edad', seleccionado: false, tipo: 'boolean' },
@@ -185,7 +199,7 @@ export class ExploradorEmpleadosComponent implements OnInit {
     { field: 'decimos', headerName: 'Pago décimos', seleccionado: false, tipo: 'boolean', minWidth: 140 },
     { field: 'sectorial', headerName: 'Código sectorial', seleccionado: false, tipo: 'text', minWidth: 150 },
     { field: 'retencionJudicial', headerName: 'Retención judicial', seleccionado: false, tipo: 'boolean', minWidth: 160 },
-    { field: 'empresa', headerName: 'Empresa', seleccionado: false, tipo: 'text', minWidth: 180 },
+    
   ];
 
   ngOnInit(): void {

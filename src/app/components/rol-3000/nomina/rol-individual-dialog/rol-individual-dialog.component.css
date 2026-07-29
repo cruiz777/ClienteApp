@@ -186,3 +186,141 @@
   grid-template-columns: 160px 320px 350px;
   gap: 10px;
 }
+.acciones-rol-individual {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  min-height: 58px;
+
+  padding: 8px 10px;
+
+  background: #f8fafc;
+  border: 1px solid #dbe4ef;
+  border-radius: 7px;
+
+  box-sizing: border-box;
+}
+
+.acciones-secundarias,
+.acciones-principales {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* BOTONES SECUNDARIOS */
+
+.btn-accion-secundaria {
+  min-width: 105px;
+  height: 34px;
+
+  border-color: #c7d2e1 !important;
+  color: #334155 !important;
+
+  background: #ffffff !important;
+
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.btn-accion-secundaria:hover:not([disabled]) {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+.btn-accion-secundaria mat-icon {
+  margin-right: 6px;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* BOTÓN MAIL */
+
+.btn-mail {
+  color: #1d4ed8 !important;
+  border-color: #bfdbfe !important;
+  background: #eff6ff !important;
+}
+
+.btn-mail:hover:not([disabled]) {
+  background: #dbeafe !important;
+  border-color: #93c5fd !important;
+}
+
+/* BOTONES PRINCIPALES */
+
+.acciones-principales button {
+  min-width: 76px;
+  height: 34px;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  border-radius: 5px;
+}
+
+.btn-calcular {
+  color: #ffffff !important;
+  background: #4355b9 !important;
+}
+
+.btn-calcular:hover:not([disabled]) {
+  background: #35469f !important;
+}
+
+.btn-grabar {
+  min-width: 92px !important;
+  background: #2563eb !important;
+}
+
+.btn-grabar:hover:not([disabled]) {
+  background: #1d4ed8 !important;
+}
+
+.btn-grabar mat-icon {
+  margin-right: 5px;
+  font-size: 17px;
+  width: 17px;
+  height: 17px;
+}
+
+.btn-salir {
+  color: #334155 !important;
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+}
+
+.btn-salir:hover:not([disabled]) {
+  background: #f1f5f9 !important;
+}
+
+/* ESTADO DESHABILITADO */
+
+.acciones-rol-individual button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 760px) {
+  .acciones-rol-individual {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .acciones-secundarias,
+  .acciones-principales {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .acciones-secundarias button,
+  .acciones-principales button {
+    flex: 1 1 120px;
+  }
+}
