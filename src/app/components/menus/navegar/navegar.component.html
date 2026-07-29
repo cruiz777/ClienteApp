@@ -173,12 +173,12 @@
             <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
             <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionProductos)" class="lock-icon">lock</mat-icon>
           </a>
-           <a mat-list-item
-             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionProductos) ? '/codbar/reportes/datamatrix' : null"
-             
-             >
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.reportes?.datamatrix) ? '/codbar/reportes/datamatrix' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.reportes?.datamatrix)"
+            (click)="manejarClick('/codbar/reportes/datamatrix', $event)">
             <span *ngIf="isExpanded" class="menu-text">Data Matrix</span>
-            
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.datamatrix)" class="lock-icon">lock</mat-icon>
           </a>
         </mat-expansion-panel>
 
@@ -199,18 +199,19 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerencia)" class="lock-icon">lock</mat-icon>
           </a>
           <a mat-list-item
-             [routerLink]="['/codbar/reportes/gerenciate']"
-
-             (click)="manejarClick('/codbar/reportes/gerenciate', $event)">
+            [routerLink]="((menuPermisos$ | async)?.reportes?.gerenciaEmpresas) ? '/codbar/reportes/gerenciate' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.reportes?.gerenciaEmpresas)"
+            (click)="manejarClick('/codbar/reportes/gerenciate', $event)">
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Empresas</span>
-            
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerenciaEmpresas)" class="lock-icon">lock</mat-icon>
           </a>
-          <a mat-list-item
-             [routerLink]="['/codbar/reportes/gerenciafactuacion']"
 
-             (click)="manejarClick('/codbar/reportes/gerenciafactuacion', $event)">
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.reportes?.reporteFacturacion) ? '/codbar/reportes/gerenciafactuacion' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.reportes?.reporteFacturacion)"
+            (click)="manejarClick('/codbar/reportes/gerenciafactuacion', $event)">
             <span *ngIf="isExpanded" class="menu-text">Reporte Facturación</span>
-            
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.reporteFacturacion)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item

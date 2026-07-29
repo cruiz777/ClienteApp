@@ -100,14 +100,12 @@ const routes: Routes = [
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-global' }
       },
-      {
-        path: 'caja',
-        component: CajaComponent,
-        canActivate: [PermissionGuard],
-        // ⚠️ CONFIRMAR: no hay leaf claro para "caja" (¿parametro-caja?
-        // ¿autorización de caja?). Revisa con backend cuál corresponde.
-        data: { permission: 'sic-3000.configuracion.parametros.parametro-caja' }
-      },
+      // {
+      //   path: 'caja',
+      //   component: CajaComponent,
+      //   canActivate: [PermissionGuard],            
+      //   data: { permission: 'sic-3000.configuracion.parametros.parametro-caja' }
+      // },
       {
         path: 'fanuladas',
         component: LisFacAnuladasComponent,
@@ -156,9 +154,8 @@ const routes: Routes = [
       {
         path: 'proveedores',
         component: ProveedoresListaComponent,
-        canActivate: [PermissionGuard],
-        // ⚠️ CONFIRMAR: no existe "proveedores" en permisos_flat.
-        data: { permission: 'sic-3000' }
+        canActivate: [PermissionGuard],        
+        data: { permission: 'sic-3000.inventarios.proveedores' }
       },
 
       // CONFIGURACIÓN
@@ -177,8 +174,7 @@ const routes: Routes = [
       {
         path: 'cajas',
         component: AutorizacionCajaListComponent,
-        canActivate: [PermissionGuard],
-        // ⚠️ CONFIRMAR: "autorización de caja" no tiene leaf exacto.
+        canActivate: [PermissionGuard],        
         data: { permission: 'sic-3000.configuracion.parametros.parametro-caja' }
       },
       {
