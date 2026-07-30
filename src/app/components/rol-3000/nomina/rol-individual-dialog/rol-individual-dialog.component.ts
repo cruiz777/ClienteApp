@@ -370,72 +370,200 @@ export class RolIndividualDialogComponent implements OnInit {
     this.liquidoRecibir = this.totalIngresos - this.totalEgresos;
   }
 
-  imprimirRolIndividual(): void {
-    if (!this.dataRol) {
-      this.mostrarAdvertencia('No existe información del rol individual.');
-      return;
-    }
-
-    if (this.hayCambios) {
-      this.mostrarAdvertencia(
-        'Existen cambios pendientes. Debe grabar el rol antes de imprimir.'
-      );
-      return;
-    }
-
-    if (this.imprimiendo) {
-      return;
-    }
-
-    this.imprimiendo = true;
-
-    this.rolNominaService
-      .descargarRolIndividualPdf(
-        this.dataRol.idEmpleado,
-        this.dataRol.fechaPeriodo
-      )
-      .subscribe({
-        next: (blob: Blob) => {
-          this.imprimiendo = false;
-
-          if (!blob || blob.size === 0) {
-            this.mostrarAdvertencia(
-              'El backend devolvió un documento vacío.'
-            );
-            return;
-          }
-
-          const url = window.URL.createObjectURL(blob);
-          const ventana = window.open(url, '_blank');
-
-          if (!ventana) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = this.construirNombreArchivoRol();
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-          }, 30000);
-        },
-        error: (err: any) => {
-          this.imprimiendo = false;
-
-          console.error(
-            'Error generando impresión del rol individual:',
-            err
-          );
-
-          this.mostrarError(
-            err?.error?.message ??
-            'No se pudo generar la impresión del rol individual.'
-          );
-        }
-      });
+ imprimirRolIndividual(): void {
+  if (!this.dataRol) {
+    this.mostrarAdvertencia(
+      'No existe información del rol individual.'
+    );
+    return;
   }
+
+  if (
+    this.imprimiendo ||
+    this.guardando
+  ) {
+    return;
+  }
+
+  /*
+   * Recalcular exactamente los mismos valores
+   * que se muestran en pantalla.
+   */
+  if (!this.calcular()) {
+    return;
+  }
+
+  if (!this.validarLiquidoRecibir()) {
+    return;
+  }
+
+  this.guardarAntesDeImprimir();
+}
+
+
+private guardarAntesDeImprimir(): void {
+  if (!this.dataRol) {
+    return;
+  }
+
+  const payload: GuardarRolIndividualRequest = {
+    idEmpleado:
+      this.dataRol.idEmpleado,
+
+    fechaPeriodo:
+      this.dataRol.fechaPeriodo,
+
+    idUsuario:
+      this.usuarioActual?.id_usuario ?? 1,
+
+    rubros: [
+      ...this.ingresos,
+      ...this.egresos
+    ].map(x => ({
+      idRolNomina:
+        x.idRolNomina,
+
+      idIngDesc:
+        x.idIngDesc,
+
+      tipoPago:
+        x.tipoPago,
+
+      codigo:
+        x.codigo,
+
+      descripcion:
+        x.descripcion,
+
+      cantidad:
+        this.toNumber(x.cantidad),
+
+      valor:
+        this.toNumber(x.valor),
+
+      esHoraExtra:
+        x.esHoraExtra,
+
+      factorHoraExtra:
+        this.toNumber(
+          x.factorHoraExtra
+        ),
+
+      aportaIess:
+        x.aportaIess,
+
+      aplicaImpuestoRenta:
+        x.aplicaImpuestoRenta,
+
+      aplicaFondoReserva:
+        x.aplicaFondoReserva,
+
+      aplicaDecimoTercero:
+        x.aplicaDecimoTercero
+    }))
+  };
+
+  this.guardando = true;
+
+  this.rolNominaService
+    .guardarRolIndividual(payload)
+    .subscribe({
+      next: resp => {
+        this.guardando = false;
+
+        if (resp.type !== 'Success') {
+          this.mostrarMensajePorTipo(
+            resp.type,
+            resp.message
+          );
+          return;
+        }
+
+        this.hayCambios = false;
+        this.rolActualizado = true;
+
+        /*
+         * Solo después de guardar se genera el PDF.
+         */
+        this.generarPdfRolIndividual();
+      },
+
+      error: (err: any) => {
+        this.guardando = false;
+
+        console.error(
+          'Error guardando antes de imprimir:',
+          err
+        );
+
+        this.mostrarError(
+          'No se pudo guardar el rol antes de imprimir.'
+        );
+      }
+    });
+}
+
+private generarPdfRolIndividual(): void {
+  if (!this.dataRol) {
+    return;
+  }
+
+  this.imprimiendo = true;
+
+  this.rolNominaService
+    .descargarRolIndividualPdf(
+      this.dataRol.idEmpleado,
+      this.dataRol.fechaPeriodo
+    )
+    .subscribe({
+      next: (blob: Blob) => {
+        this.imprimiendo = false;
+
+        if (!blob || blob.size === 0) {
+          this.mostrarAdvertencia(
+            'El backend devolvió un documento vacío.'
+          );
+          return;
+        }
+
+        const url =
+          window.URL.createObjectURL(blob);
+
+        const ventana =
+          window.open(url, '_blank');
+
+        if (!ventana) {
+          const link =
+            document.createElement('a');
+
+          link.href = url;
+          link.download =
+            this.construirNombreArchivoRol();
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 30000);
+      },
+
+      error: (err: any) => {
+        this.imprimiendo = false;
+
+        console.error(
+          'Error generando el PDF:',
+          err
+        );
+
+        this.mostrarError(
+          'No se pudo generar el rol individual.'
+        );
+      }
+    });
+}
 
   enviarRolPorCorreo(): void {
     if (!this.dataRol) {
@@ -1127,47 +1255,99 @@ export class RolIndividualDialogComponent implements OnInit {
 
   rubroIess.cantidad = 0;
 }
+  // private recalcularFondoReserva(): void {
+  //   const rubroFondoReserva = this.ingresos.find(x =>
+  //     this.esRubroFondoReserva(x)
+  //   );
+
+  //   if (!rubroFondoReserva) {
+  //     return;
+  //   }
+
+  //   if (!this.dataRol?.tieneDerechoFondoReserva) {
+  //     rubroFondoReserva.valor = 0;
+  //     rubroFondoReserva.cantidad = 0;
+  //     return;
+  //   }
+
+  //   const porcentajeFondoReserva = this.toNumber(
+  //     this.dataRol?.porcentajeFondoReserva || 8.33
+  //   );
+
+  //   /*
+  //    * Fondo de reserva debe tomar ingresos reales.
+  //    * SUELDO se excluye porque es referencial.
+  //    * DIAS TRABAJADOS queda como base real.
+  //    */
+  //   const baseFondoReserva = this.ingresos
+  //     .filter(x => x.tipoPago === 'I')
+  //     .filter(x => x.aplicaFondoReserva === true)
+  //     .filter(x => !this.esRubroSueldo(x))
+  //     .filter(x => !this.esRubroPermisoMaternidad(x))
+  //     .filter(x => !this.esRubroFondoReserva(x))
+  //     .filter(x => !this.esRubroDecimoTercero(x))
+  //     .filter(x => !this.esRubroEnfermedad(x))
+  //     .filter(x => !this.esRubroAccidenteTrabajo(x))
+  //     .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+  //   rubroFondoReserva.valor = this.redondear(
+  //     baseFondoReserva * porcentajeFondoReserva / 100
+  //   );
+
+  //   rubroFondoReserva.cantidad = 0;
+  // }
+
   private recalcularFondoReserva(): void {
-    const rubroFondoReserva = this.ingresos.find(x =>
-      this.esRubroFondoReserva(x)
-    );
+  const rubroFondoReserva = this.ingresos.find(x =>
+    this.esRubroFondoReserva(x)
+  );
 
-    if (!rubroFondoReserva) {
-      return;
-    }
-
-    if (!this.dataRol?.tieneDerechoFondoReserva) {
-      rubroFondoReserva.valor = 0;
-      rubroFondoReserva.cantidad = 0;
-      return;
-    }
-
-    const porcentajeFondoReserva = this.toNumber(
-      this.dataRol?.porcentajeFondoReserva || 8.33
-    );
-
-    /*
-     * Fondo de reserva debe tomar ingresos reales.
-     * SUELDO se excluye porque es referencial.
-     * DIAS TRABAJADOS queda como base real.
-     */
-    const baseFondoReserva = this.ingresos
-      .filter(x => x.tipoPago === 'I')
-      .filter(x => x.aplicaFondoReserva === true)
-      .filter(x => !this.esRubroSueldo(x))
-      .filter(x => !this.esRubroPermisoMaternidad(x))
-      .filter(x => !this.esRubroFondoReserva(x))
-      .filter(x => !this.esRubroDecimoTercero(x))
-      .filter(x => !this.esRubroEnfermedad(x))
-      .filter(x => !this.esRubroAccidenteTrabajo(x))
-      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
-
-    rubroFondoReserva.valor = this.redondear(
-      baseFondoReserva * porcentajeFondoReserva / 100
-    );
-
-    rubroFondoReserva.cantidad = 0;
+  if (!rubroFondoReserva) {
+    return;
   }
+
+  if (!this.dataRol?.tieneDerechoFondoReserva) {
+    rubroFondoReserva.valor = 0;
+    rubroFondoReserva.cantidad = 0;
+    return;
+  }
+
+  const sueldo = this.toNumber(
+    this.dataRol?.sueldo
+  );
+
+  const porcentajeFondoReserva = this.toNumber(
+    this.dataRol?.porcentajeFondoReserva || 8.33
+  );
+
+  if (sueldo <= 0 || porcentajeFondoReserva <= 0) {
+    rubroFondoReserva.valor = 0;
+    rubroFondoReserva.cantidad = 0;
+    return;
+  }
+
+  /*
+   * Regla funcional:
+   *
+   * El fondo de reserva se calcula sobre el sueldo
+   * mensual completo.
+   *
+   * No se reduce por:
+   * - enfermedad;
+   * - maternidad;
+   * - accidentes;
+   * - días trabajados proporcionales.
+   *
+   * Tampoco se incrementa por bonos u horas extras.
+   */
+  rubroFondoReserva.valor = this.redondear(
+    sueldo *
+    porcentajeFondoReserva /
+    100
+  );
+
+  rubroFondoReserva.cantidad = 0;
+}
   private recalcularDecimoTercero(): void {
     /*
      * Décimo tercero debe tomar ingresos reales.
