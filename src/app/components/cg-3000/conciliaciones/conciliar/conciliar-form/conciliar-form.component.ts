@@ -822,6 +822,7 @@ colExcel: ColDef[] = [
 onNuevaConciliacion() {
   this.conciliacionPersistida = null;
   this.ultimaBusquedaConciliacionKey = '';
+  this.movimientosRequestVersion++;
   this.cargandoConciliacionExistente = false;
   this.isLocked = false;
   this.idConciliacion = null;
@@ -1257,10 +1258,38 @@ ajustarGridResumen(): void {
           }
 
           if (res.type !== 'success' || !Array.isArray(res.data)) {
-            this.notify(res.message ?? 'No se pudo cargar movimientos.', 'error', 5000);
+            this.notify(
+              res.message ?? 'No se pudo cargar movimientos.',
+              'error',
+              5000
+            );
+
             this.movimientos = [];
             this.setRowDataCompat(this.gridMovApi, []);
             this.recalcularResumenes();
+            return;
+          }
+
+          console.log('Movimientos recibidos:', {
+            idPlan,
+            codprePc,
+            fechaInicio,
+            fechaFin,
+            cantidad: res.data.length,
+            response: res,
+          });
+
+          if (res.data.length === 0) {
+            this.movimientos = [];
+            this.setRowDataCompat(this.gridMovApi, []);
+            this.recalcularResumenes();
+
+            this.notify(
+              `La API no devolvió movimientos para ${fechaInicio} hasta ${fechaFin}.`,
+              'warn',
+              5000
+            );
+
             return;
           }
 
@@ -1905,33 +1934,55 @@ ajustarGridResumen(): void {
     this.intentarBuscarConciliacionExistente();
   }
   private buscarConciliacionExistente(): void {
-    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
-    const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+    const codprePc = String(
+      this.form.get('codprePc')?.value ?? ''
+    ).trim();
 
-    if (!codprePc || !fechaInicial || isNaN(fechaInicial.getTime())) return;
+    const fechaInicial =
+      this.form.get('fechaInicial')?.value as Date | null;
 
-    const fecconcil = this.getPeriodoDesdeFecha(fechaInicial);
-    const currentKey = `${codprePc}|${fecconcil}`;
+    if (
+      !codprePc ||
+      !fechaInicial ||
+      !(fechaInicial instanceof Date) ||
+      isNaN(fechaInicial.getTime())
+    ) {
+      return;
+    }
 
-    if (this.ultimaBusquedaConciliacionKey === currentKey && this.cargandoConciliacionExistente) {
+    const fecconcil =
+      this.getPeriodoDesdeFecha(fechaInicial);
+
+    const currentKey =
+      `${codprePc}|${fecconcil}`;
+
+    if (
+      this.ultimaBusquedaConciliacionKey === currentKey &&
+      this.cargandoConciliacionExistente
+    ) {
       return;
     }
 
     this.ultimaBusquedaConciliacionKey = currentKey;
     this.cargandoConciliacionExistente = true;
 
-    // Invalida cualquier respuesta pendiente de movimientos-maestro.
+    // Invalida cualquier consulta anterior de movimientos.
     this.movimientosRequestVersion++;
 
-    this.svc.getConciliacionByPeriodoCuenta(codprePc, fecconcil)
-      .pipe(finalize(() => {
-        if (this.ultimaBusquedaConciliacionKey === currentKey) {
-          this.cargandoConciliacionExistente = false;
-        }
-      }))
+    this.svc
+      .getConciliacionByPeriodoCuenta(codprePc, fecconcil)
+      .pipe(
+        finalize(() => {
+          if (this.ultimaBusquedaConciliacionKey === currentKey) {
+            this.cargandoConciliacionExistente = false;
+          }
+        })
+      )
       .subscribe({
         next: (res) => {
-          if (this.ultimaBusquedaConciliacionKey !== currentKey) return;
+          if (this.ultimaBusquedaConciliacionKey !== currentKey) {
+            return;
+          }
 
           if (res.type === 'success' && res.data) {
             this.conciliacionPersistida = this.clonarConciliacion(res.data);
@@ -1940,31 +1991,112 @@ ajustarGridResumen(): void {
 
             this.cargarDesdeResponse(this.conciliacionPersistida);
             this.bloquearConciliacionRecuperada();
-            this.notify('La conciliación ya existe. Se cargó en modo consulta.', 'info');
+
+            this.notify(
+              'La conciliación ya existe. Se cargó en modo consulta.',
+              'info'
+            );
+
             return;
           }
 
-          this.conciliacionPersistida = null;
-          this.isLocked = false;
-          this.idConciliacion = null;
-          this.form.enable({ emitEvent: false });
-          this.planForm.enable({ emitEvent: false });
-          this.form.get('saldcontini')?.disable({ emitEvent: false });
-          this.form.get('saldcontfin')?.disable({ emitEvent: false });
+          this.prepararPeriodoNuevo(currentKey);
         },
-        error: () => {
-          if (this.ultimaBusquedaConciliacionKey !== currentKey) return;
+
+        error: (error) => {
+          if (this.ultimaBusquedaConciliacionKey !== currentKey) {
+            return;
+          }
+
+          const status = Number(error?.status ?? 0);
+
+          if (status === 404) {
+            this.prepararPeriodoNuevo(currentKey);
+            return;
+          }
+
+          console.error('Error buscando conciliación existente:', error);
 
           this.conciliacionPersistida = null;
-          this.isLocked = false;
           this.idConciliacion = null;
-          this.form.enable({ emitEvent: false });
-          this.planForm.enable({ emitEvent: false });
-          this.form.get('saldcontini')?.disable({ emitEvent: false });
-          this.form.get('saldcontfin')?.disable({ emitEvent: false });
+          this.isLocked = false;
+
+          this.notify(
+            'No se pudo verificar si existe una conciliación para el período seleccionado.',
+            'error',
+            5000
+          );
         }
       });
   }
+
+  private prepararPeriodoNuevo(requestKey: string): void {
+    if (this.ultimaBusquedaConciliacionKey !== requestKey) {
+      return;
+    }
+
+    this.conciliacionPersistida = null;
+    this.idConciliacion = null;
+    this.isLocked = false;
+
+    this.form.enable({ emitEvent: false });
+    this.planForm.enable({ emitEvent: false });
+
+    this.form.get('saldcontini')?.disable({ emitEvent: false });
+    this.form.get('saldcontfin')?.disable({ emitEvent: false });
+
+    this.movimientos = [];
+    this.setRowDataCompat(this.gridMovApi, []);
+
+    this.saldosConciliados = {
+      salconini: 0,
+      salcondep: 0,
+      salconchq: 0,
+      salconnc: 0,
+      salconnd: 0,
+      salconbanc: 0,
+      salcondif: 0,
+    };
+
+    this.resumenRows = [
+      {
+        tipo: 'Conciliados',
+        saldoContable: 0,
+        deposito: 0,
+        cheques: 0,
+        notasDebito: 0,
+        notasCredito: 0,
+        saldoBancario: 0,
+        diferencia: 0,
+      },
+      {
+        tipo: 'No Conciliados',
+        saldoContable: 0,
+        deposito: 0,
+        cheques: 0,
+        notasDebito: 0,
+        notasCredito: 0,
+        saldoBancario: 0,
+        diferencia: 0,
+      },
+    ];
+
+    this.setRowDataCompat(this.gridSaldosApi, [this.saldosConciliados]);
+    this.setRowDataCompat(this.gridResumenApi, this.resumenRows);
+
+    this.cargarSaldoContableInicial();
+    this.cargarSaldoContableFinal();
+
+    setTimeout(() => {
+      if (
+        !this.isLocked &&
+        this.ultimaBusquedaConciliacionKey === requestKey
+      ) {
+        this.cargarMovimientosDetalleDesdeMaestro();
+      }
+    }, 0);
+  }
+
   private getPeriodoDesdeFecha(fecha: Date): string {
     const yyyy = fecha.getFullYear();
     const mm = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -2419,20 +2551,35 @@ ajustarGridResumen(): void {
     this.imprimirDesdeBase('CONCILIADOS');
   }
   onFechaChange(): void {
-    const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
-    const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
+    if (this.isLocked) {
+      return;
+    }
 
-    if (this.isLocked) return;
+    const fechaInicial =
+      this.form.get('fechaInicial')?.value as Date | null;
 
-    if (!fechaInicial || !fechaFinal) return;
-    if (!(fechaInicial instanceof Date) || isNaN(fechaInicial.getTime())) return;
-    if (!(fechaFinal instanceof Date) || isNaN(fechaFinal.getTime())) return;
+    const fechaFinal =
+      this.form.get('fechaFinal')?.value as Date | null;
 
-    // Primero verifica si el período ya fue conciliado.
-    // No cargamos movimientos-maestro aquí porque esa llamada podía terminar
-    // después y sobrescribir los detalles históricos recuperados desde la base.
-    this.onBlurDatosCabecera();
+    if (
+      !fechaInicial ||
+      !fechaFinal ||
+      !(fechaInicial instanceof Date) ||
+      !(fechaFinal instanceof Date) ||
+      isNaN(fechaInicial.getTime()) ||
+      isNaN(fechaFinal.getTime())
+    ) {
+      return;
+    }
+
+    this.movimientosRequestVersion++;
+
+    this.movimientos = [];
+    this.setRowDataCompat(this.gridMovApi, []);
+
+    this.intentarBuscarConciliacionExistente();
   }
+
   private validarRangoMensualCompleto(): { ok: boolean; mensaje: string } {
     const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
     const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
@@ -3273,4 +3420,3 @@ private onResizeMouseUp = (): void => {
   }, 50);
 };
 }
-
