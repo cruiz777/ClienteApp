@@ -52,17 +52,23 @@ export class DecimosService {
   existe(
     numPatronal: string,
     periodo: string,
-    idTipoNomEsp: number
+    idTipoNomEsp: number,
+    idRegimen?: number | null
   ): Observable<ApiResponse<boolean>> {
+    const params: any = {
+      numPatronal,
+      periodo,
+      idTipoNomEsp
+    };
+
+    // Solo agregar el param si tiene valor — HttpParams no acepta null/undefined
+    if (idRegimen !== null && idRegimen !== undefined) {
+      params.idRegimen = idRegimen;
+    }
+
     return this.http.get<ApiResponse<boolean>>(
       `${this.baseUrl}/existe`,
-      {
-        params: {
-          numPatronal,
-          periodo,
-          idTipoNomEsp
-        }
-      }
+      { params }
     );
   }
 
@@ -78,17 +84,22 @@ export class DecimosService {
   recuperar(
     numPatronal: string,
     periodo: string,
-    idTipoNomEsp: number
+    idTipoNomEsp: number,
+    idRegimen?: number | null
   ): Observable<ApiResponse<DecimosEmpleadoResponse[]>> {
+    const params: any = {
+      numPatronal,
+      periodo,
+      idTipoNomEsp
+    };
+
+    if (idRegimen !== null && idRegimen !== undefined) {
+      params.idRegimen = idRegimen;
+    }
+
     return this.http.get<ApiResponse<DecimosEmpleadoResponse[]>>(
       `${this.baseUrl}/recuperar`,
-      {
-        params: {
-          numPatronal,
-          periodo,
-          idTipoNomEsp
-        }
-      }
+      { params }
     );
   }
 

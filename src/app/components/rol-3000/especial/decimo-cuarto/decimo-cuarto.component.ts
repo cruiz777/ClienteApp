@@ -26,7 +26,7 @@ import {
   DialogBancoNominaComponent,
   DialogBancoNominaResult
 } from '../../nomina/dialog-banco-nomina/dialog-banco-nomina.component';
-
+import { PeriodoNominaResponse } from 'src/app/interfaces/responses/periodo-nomina-response';
 
 
 
@@ -280,7 +280,8 @@ export class DecimoCuartoComponent implements OnInit {
     this.decimosService.existe(
       empresaSeleccionada.numPatronal,
       periodo,
-      this.idTipoNomEsp
+      this.idTipoNomEsp,
+      this.form.value.idRegimen
     ).subscribe({
       next: (resp) => {
         if (resp.data) {
@@ -386,7 +387,8 @@ export class DecimoCuartoComponent implements OnInit {
       this.decimosService.existe(
         empresaSeleccionada!.numPatronal!,
         periodo,
-        this.idTipoNomEsp
+        this.idTipoNomEsp,
+        this.form.value.idRegimen
       ).subscribe({
         next: (resp) => {
           if (resp.data) {
@@ -421,7 +423,8 @@ export class DecimoCuartoComponent implements OnInit {
       forzar,
       idUsuario: this.idUsuario,
       fechaHasta: fechaHasta.toISOString().split('T')[0],
-      empleados: this.rowData
+      empleados: this.rowData,
+      idRegimen: this.form.value.idRegimen
     }).subscribe({
       next: (resp) => {
         if (resp.type === 'ERROR') {
@@ -486,7 +489,8 @@ export class DecimoCuartoComponent implements OnInit {
     const request: GenerarArchivoPichinchaRequest = {
       numPatronal: empresaSeleccionada!.numPatronal!,
       periodo: fechaHasta.getFullYear().toString(),
-      idTipoNomEsp: this.idTipoNomEsp
+      idTipoNomEsp: this.idTipoNomEsp,
+      idRegimen: this.form.value.idRegimen 
     };
 
     this.decimosService.generarArchivoPichincha(request).subscribe({
@@ -531,7 +535,13 @@ export class DecimoCuartoComponent implements OnInit {
     if (value == null) return '$0.00';
     return '$' + Number(value).toFixed(2);
   }
-
+  private construirFechaHastaDesdePeriodo(p: PeriodoNominaResponse): Date {
+    const esSierra = p.regimen?.toUpperCase().includes('SIERRA') ?? true;
+    const anio = parseInt(p.periodo, 10);
+    return esSierra
+      ? new Date(anio, 6, 31)   // 31 de julio (mes 6 = julio, 0-indexed)
+      : new Date(anio, 1, 28);  // 28 de febrero (mes 1 = febrero, 0-indexed)
+  }
   private showError(message: string): void {
     this.dialog.open(CustomMessageBoxComponent, {
       data: { title: 'Error', message, type: 'error', confirmText: 'Aceptar', showCancel: false } as MessageBoxData
@@ -598,7 +608,8 @@ export class DecimoCuartoComponent implements OnInit {
       this.decimosService.recuperar(
         empresaSeleccionada.numPatronal!,
         p.periodo,
-        p.idTipoNomEsp
+        p.idTipoNomEsp,
+        p.idRegimen
       ).subscribe({
         next: (resp) => {
           if (resp.type === 'ERROR') {
@@ -610,11 +621,16 @@ export class DecimoCuartoComponent implements OnInit {
           this.datosDesdeDB = true;
           this.mostrarPeriodo = true;
 
+          // Sincronizar el formulario con el régimen y período cargados
+          this.form.patchValue({
+            idRegimen: p.idRegimen,
+            fechaHasta: this.construirFechaHastaDesdePeriodo(p)
+          });
+
           const esSierra = p.regimen?.toUpperCase().includes('SIERRA') ?? true;
           this.periodoLabel = esSierra
             ? `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`
             : `01/03/${parseInt(p.periodo) - 1} — 28/02/${p.periodo}`;
-          // Para D14 Sierra: this.periodoLabel = `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`;
 
           this.gridApi?.setGridOption('rowData', this.rowData);
           this.calcularSubtotales();

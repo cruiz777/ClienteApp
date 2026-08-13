@@ -15,4 +15,5 @@ export interface GrabarDecimosRequest {
   idUsuario: number;
   fechaHasta: string;
   empleados: DecimosEmpleadoResponse[];
+  idRegimen?: number; 
 }
