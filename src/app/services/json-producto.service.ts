@@ -20,35 +20,14 @@ export class JsonProductoService {
     dapiP: string;
     capiP: string;
   }): void {
-    let codigobar = '';
-    let tipoG = '';
+    const codigobar = this.normalizarGtin14(data.gtin);
+    const tipoG = this.obtenerTipoLicencia(data.gtin);
 
-    // Normaliza el GTIN
-    const gtinRaw = (data.gtin ?? '').toString().trim();
-    const longitud = gtinRaw.length;
-
-    if (longitud === 13) {
-      codigobar = `0${gtinRaw}`;
-      tipoG = 'GCP';
-    } else if (longitud === 12) {
-      codigobar = `00${gtinRaw}`;
-      tipoG = 'GTIN';
-    } else if (longitud === 8) {
-      codigobar = `000000${gtinRaw}`;
-      tipoG = 'GTIN';
-    } else {
-      // Conserva el valor si ya tiene 14 dígitos
-      // o no coincide con las longitudes anteriores.
-      codigobar = gtinRaw;
-    }
-
-    // Obtiene el código Brick
     const gpcCategoryCode =
       typeof data.brick === 'string'
         ? data.brick.trim()
         : (data.brick?.brick ?? '').toString().trim();
 
-    // Obtiene el código de unidad
     const unitCode =
       typeof data.unidad === 'string'
         ? data.unidad.trim()
@@ -108,12 +87,106 @@ export class JsonProductoService {
 
     this.http.post(urlApi, vjson, { headers }).subscribe({
       next: (response: unknown) => {
-        console.log('✅ JSON enviado correctamente:', response);
+        console.log('JSON enviado correctamente:', response);
       },
       error: (error: unknown) => {
-        console.error('❌ Error al enviar el JSON:', error);
+        console.error('Error al enviar JSON:', error);
       }
     });
+  }
+
+  eliminarProductoVerify(data: {
+    gtin: string;
+    dapiP: string;
+    capiP: string;
+  }): void {
+    const codigobar = this.normalizarGtin14(data.gtin);
+
+    if (!codigobar || codigobar.length !== 14) {
+      console.error('GTIN inválido. Debe enviarse en formato GTIN-14.');
+      return;
+    }
+
+    /*
+     * Body requerido por Verified para eliminar:
+     * [
+     *   "07861008900234"
+     * ]
+     */
+    const vjson = [
+      codigobar
+    ];
+
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      APIKey: (data.capiP ?? '').toString().trim()
+    });
+
+    const urlApi = (data.dapiP ?? '').toString().trim();
+
+    this.http.delete(urlApi, {
+      headers,
+      body: vjson
+    }).subscribe({
+      next: (response: unknown) => {
+        console.log('Producto eliminado correctamente en Verified:', response);
+      },
+      error: (error: unknown) => {
+        console.error('Error al eliminar producto en Verified:', error);
+      }
+    });
+  }
+
+  generarJsonEliminacion(gtin: string): string[] {
+    return [
+      this.normalizarGtin14(gtin)
+    ];
+  }
+
+  private normalizarGtin14(gtin: string): string {
+    const gtinRaw = (gtin ?? '')
+      .toString()
+      .trim()
+      .replace(/\D/g, '');
+
+    if (gtinRaw.length === 14) {
+      return gtinRaw;
+    }
+
+    if (gtinRaw.length === 13) {
+      return `0${gtinRaw}`;
+    }
+
+    if (gtinRaw.length === 12) {
+      return `00${gtinRaw}`;
+    }
+
+    if (gtinRaw.length === 8) {
+      return `000000${gtinRaw}`;
+    }
+
+    return gtinRaw;
+  }
+
+  private obtenerTipoLicencia(gtin: string): string {
+    const gtinRaw = (gtin ?? '')
+      .toString()
+      .trim()
+      .replace(/\D/g, '');
+
+    if (gtinRaw.length === 13) {
+      return 'GCP';
+    }
+
+    if (gtinRaw.length === 12) {
+      return 'GTIN';
+    }
+
+    if (gtinRaw.length === 8) {
+      return 'GTIN';
+    }
+
+    return '';
   }
 }
 

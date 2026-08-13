@@ -93,7 +93,9 @@ export class PermissionsService {
     '/codbar/validacion/validacionsri': 'codbar.validacion.validacion-sri',
     '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licencias-verified',
     '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos-verified',
-
+    '/codbar/validacion/eliminar-productos': 'codbar.validacion.validacion-productos-verified',
+    '/codbar/validacion/editar-licenses': 'codbar.validacion.validacion-productos-verified',
+     '/codbar/validacion/eliminar-bloque': 'codbar.validacion.validacion-productos-verified',
     // Reportes
     '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-clientes',
     '/codbar/reportes/gerencia': 'codbar.reportes.reporte-gerencia-clientes',

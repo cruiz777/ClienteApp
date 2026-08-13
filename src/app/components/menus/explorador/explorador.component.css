@@ -84,3 +84,54 @@ table {
 .selected-row {
   background-color: #cde4ff !important;
 }
+
+/* Columna # Prefijo */
+::ng-deep .header-n-prefijo {
+  background: #e3f2fd !important;
+  color: #0d47a1 !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+::ng-deep .cell-n-prefijo {
+  background: #f1f8ff !important;
+  color: #0d47a1 !important;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Columna Prefijo */
+::ng-deep .header-check-prefijo {
+  background: #e8f5e9 !important;
+  color: #1b5e20 !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+::ng-deep .cell-check-prefijo {
+  background: #f1f8e9 !important;
+}
+
+/* Columna Guía */
+::ng-deep .header-check-guia {
+  background: #fff3e0 !important;
+  color: #e65100 !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+::ng-deep .cell-check-guia {
+  background: #fff8e1 !important;
+}
+
+/* Columna Otros */
+::ng-deep .header-check-otros {
+  background: #fce4ec !important;
+  color: #880e4f !important;
+  font-weight: 700 !important;
+  text-align: center;
+}
+
+::ng-deep .cell-check-otros {
+  background: #fceef5 !important;
+}

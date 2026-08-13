@@ -158,20 +158,173 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionSri)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item
-             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionLicenses) ? '/codbar/validacion/validacion-licenses' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionLicenses)"
-             (click)="manejarClick('/codbar/validacion/validacion-licenses', $event)">
-            <span *ngIf="isExpanded" class="menu-text">Validar Licencia Verified</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionLicenses)" class="lock-icon">lock</mat-icon>
-          </a>
+          <mat-accordion class="sub-accordion">
 
-          <a mat-list-item
-             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionProductos) ? '/codbar/validacion/validacion-productos' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionProductos)"
-             (click)="manejarClick('/codbar/validacion/validacion-productos', $event)">
-            <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionProductos)" class="lock-icon">lock</mat-icon>
+  <mat-expansion-panel>
+
+    <!-- ===================================================== -->
+    <!-- CABECERA VERIFIED -->
+    <!-- ===================================================== -->
+
+    <mat-expansion-panel-header class="sub-header">
+
+      <mat-panel-title>
+
+        <span
+          *ngIf="isExpanded"
+          class="menu-text">
+
+          Verified
+
+        </span>
+
+      </mat-panel-title>
+
+    </mat-expansion-panel-header>
+
+
+    <!-- ===================================================== -->
+    <!-- VALIDAR LICENCIA VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a
+      mat-list-item
+
+      [routerLink]="
+        ((menuPermisos$ | async)?.validacion?.validacionLicenses)
+          ? '/codbar/validacion/validacion-licenses'
+          : null
+      "
+
+      [class.disabled]="
+        !((menuPermisos$ | async)?.validacion?.validacionLicenses)
+      "
+
+      (click)="
+        manejarClick(
+          '/codbar/validacion/validacion-licenses',
+          $event
+        )
+      ">
+
+      <span
+        *ngIf="isExpanded"
+        class="menu-text">
+
+        Validar Licencia
+
+      </span>
+
+      <mat-icon
+        *ngIf="
+          !((menuPermisos$ | async)?.validacion?.validacionLicenses)
+        "
+        class="lock-icon">
+
+        lock
+
+      </mat-icon>
+
+    </a>
+
+
+    <!-- ===================================================== -->
+    <!-- INACTIVAR LICENCIA VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a
+      mat-list-item
+
+      [routerLink]="[
+        '/codbar/validacion',
+        'editar-licenses'
+      ]">
+
+      <span
+        *ngIf="isExpanded"
+        class="menu-text">
+
+        Inactivar Licencia
+
+      </span>
+
+    </a>
+
+
+    <!-- ===================================================== -->
+    <!-- VALIDAR PRODUCTOS VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a
+      mat-list-item
+
+      [routerLink]="
+        ((menuPermisos$ | async)?.validacion?.validacionProductos)
+          ? '/codbar/validacion/validacion-productos'
+          : null
+      "
+
+      [class.disabled]="
+        !((menuPermisos$ | async)?.validacion?.validacionProductos)
+      "
+
+      (click)="
+        manejarClick(
+          '/codbar/validacion/validacion-productos',
+          $event
+        )
+      ">
+
+      <span
+        *ngIf="isExpanded"
+        class="menu-text">
+
+        Validar Productos
+
+      </span>
+
+      <mat-icon
+        *ngIf="
+          !((menuPermisos$ | async)?.validacion?.validacionProductos)
+        "
+        class="lock-icon">
+
+        lock
+
+      </mat-icon>
+
+    </a>
+
+
+    <!-- ===================================================== -->
+    <!-- ELIMINAR PRODUCTOS VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a
+      mat-list-item
+
+      [routerLink]="[
+        '/codbar/validacion',
+        'eliminar-productos'
+      ]">
+
+      <span
+        *ngIf="isExpanded"
+        class="menu-text">
+
+        Eliminar Productos
+
+      </span>
+
+    </a>
+
+
+  </mat-expansion-panel>
+
+</mat-accordion>
+
+          <a mat-list-item [routerLink]="['/codbar/validacion', 'eliminar-bloque']">
+            <span *ngIf="isExpanded" class="menu-text">Borrar en Bloque</span>
           </a>
           <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.reportes?.datamatrix) ? '/codbar/reportes/datamatrix' : null"
