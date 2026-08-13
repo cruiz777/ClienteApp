@@ -20,7 +20,8 @@ import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.compo
 import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/validador-sri-list/validador-sri-list.component';
 import { LicenseValidatorComponent } from '../pages/validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from '../pages/validacion/validador-products/validador-products.component';
-
+import { EliminarProductsComponent } from '../pages/validacion/eliminar-products/eliminar-products.component';  
+import { EditarLicensesComponent } from '../pages/validacion/editar-licenses/editar-licenses.component';
 // 🆕 Componentes de PAGES integrados
 import { DashboardComponent } from '../pages/dashboard/dashboard.component';
 import { ClientesComponent } from '../pages/clientes/clientes.component';
@@ -32,7 +33,7 @@ import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-produc
 import { GerenciaEmpresasComponent } from './gerencia-empresas/gerencia-empresas.component';
 import { Gs1ScannerComponent } from './gs1-scanner/gs1-scanner.component';
 import { DashboardFacturacionComponent } from './dashboard-facturacion/dashboard-facturacion.component';
-
+import { EliminarProductosBloqueComponent } from './eliminar-productos-bloque/eliminar-productos-bloque.component';
 const routes: Routes = [
   {
     path: '', 
@@ -162,6 +163,21 @@ const routes: Routes = [
           { 
             path: 'validacion-productos', 
             component: ProductsLicenseValidator,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'eliminar-productos', 
+            component: EliminarProductsComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'editar-licenses', 
+            component: EditarLicensesComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'eliminar-bloque', 
+            component: EliminarProductosBloqueComponent,
             canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
           }
         ]
