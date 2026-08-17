@@ -93,9 +93,9 @@ export class PermissionsService {
     '/codbar/validacion/validacionsri': 'codbar.validacion.validacion-sri',
     '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licencias-verified',
     '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos-verified',
-    '/codbar/validacion/eliminar-productos': 'codbar.validacion.validacion-productos-verified',
-    '/codbar/validacion/editar-licenses': 'codbar.validacion.validacion-productos-verified',
-     '/codbar/validacion/eliminar-bloque': 'codbar.validacion.validacion-productos-verified',
+    '/codbar/validacion/editar-licenses': 'codbar.validacion.inactivar-licencias-verified',
+    '/codbar/validacion/eliminar-productos': 'codbar.validacion.eliminar-productos-verified',
+    '/codbar/validacion/eliminar-bloque': 'codbar.validacion.borrar-en-bloque',
     // Reportes
     '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-clientes',
     '/codbar/reportes/gerencia': 'codbar.reportes.reporte-gerencia-clientes',
@@ -460,7 +460,10 @@ export class PermissionsService {
             modulo: permisos.includes('codbar.validacion') || permisos.includes('codbar'),
             validacionSri: permisos.includes('codbar.validacion.validacion-sri'),
             validacionLicenses: permisos.includes('codbar.validacion.validacion-licencias-verified'),
-            validacionProductos: permisos.includes('codbar.validacion.validacion-productos-verified')
+            validacionProductos: permisos.includes('codbar.validacion.validacion-productos-verified'),
+            inactivarLicencias: permisos.includes('codbar.validacion.inactivar-licencias-verified'),
+            eliminarProductos: permisos.includes('codbar.validacion.eliminar-productos-verified'),
+            borrarEnBloque: permisos.includes('codbar.validacion.borrar-en-bloque')
           },
           reportes: {
             modulo: permisos.includes('codbar.reportes') || permisos.includes('codbar'),

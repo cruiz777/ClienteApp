@@ -355,13 +355,20 @@
 
 
           
-          <!-- Subgrupo: Bancos -->
+          <!-- Subgrupo: Acumulados -->
           
-          <a mat-list-item [routerLink]="['/rol-3000', 'explorador-nomina']">
+          <a mat-list-item
+            [routerLink]="((menuRol$ | async)?.acumulados) ? ['/rol-3000', 'explorador-nomina'] : null"
+            [class.disabled]="!((menuRol$ | async)?.acumulados)">
             <span *ngIf="isExpanded" class="menu-text">Acumulados</span>
+            <mat-icon *ngIf="!((menuRol$ | async)?.acumulados)" class="lock-icon">lock</mat-icon>
           </a>
-          <a mat-list-item [routerLink]="['/rol-3000', 'explorador-empleados']">
+
+          <a mat-list-item
+            [routerLink]="((menuRol$ | async)?.exploradorEmpleados) ? ['/rol-3000', 'explorador-empleados'] : null"
+            [class.disabled]="!((menuRol$ | async)?.exploradorEmpleados)">
             <span *ngIf="isExpanded" class="menu-text">Explorador Empleados</span>
+            <mat-icon *ngIf="!((menuRol$ | async)?.exploradorEmpleados)" class="lock-icon">lock</mat-icon>
           </a>
          
 
