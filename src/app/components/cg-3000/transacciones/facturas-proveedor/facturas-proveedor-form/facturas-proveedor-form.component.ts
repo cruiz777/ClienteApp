@@ -2079,16 +2079,25 @@ export class FacturasProveedorFormComponent implements OnInit {
 
       const detallesActuales = this.rowData() ?? [];
 
-      const detallesConFecha = detallesActuales.map((d) => {
-        const fechaIng = d.fechaingreso && d.fechaingreso !== '' ? normalizeToLocalIso(d.fechaingreso) : nowIso;
+      const detallesConFecha = detallesActuales.map((d, index) => {
+        // IMPORTANTE:
+        // La fecha de transacción del detalle SIEMPRE debe ser la misma
+        // que la fecha de transacción seleccionada en la cabecera.
         const fechaTransDet = fechaTransaccionSoloFecha;
+
+        // La fecha de ingreso representa el momento real del guardado.
+        // Se fuerza la misma fecha/hora para cabecera y todos los detalles.
+        const fechaIng = nowIso;
 
         return {
           ...d,
-          anio: d.anio && d.anio !== '' ? d.anio : anioTransaccion,
+          IdDetMaestro: 0,
+          IdCabMaestro: 0,
+          numlinea: index + 1,
+          anio: anioTransaccion,
           fechatransaccion: fechaTransDet,
           fechaingreso: fechaIng,
-          hora: d.hora && d.hora !== '' ? d.hora : getTimeFromInput(fechaIng),
+          hora: getTimeFromInput(fechaIng),
           fechacierre: d.fechacierre || '',
         } as DetalleAsientoResponse;
       });
@@ -2123,7 +2132,23 @@ export class FacturasProveedorFormComponent implements OnInit {
       numdoc: esNuevo ? 0 : rawForm.numdoc ?? 0,
       totdebe: this.totDebe(),
       tothaber: this.totHaber(),
-      detalles: detallesConRelacionados,
+      // Protección final:
+      // en NUEVO / PLANTILLA se vuelve a forzar la fecha contable del detalle
+      // a la misma fecha de la cabecera antes de normalizar y enviar al backend.
+      detalles: detallesConRelacionados.map((d, index) => ({
+        ...d,
+        ...(esNuevo
+          ? {
+              IdDetMaestro: 0,
+              IdCabMaestro: 0,
+              numlinea: index + 1,
+              anio: anioTransaccion,
+              fechatransaccion: fechaTransaccionSoloFecha,
+              fechaingreso: nowIso,
+              hora: getTimeFromInput(nowIso),
+            }
+          : {}),
+      })) as DetalleAsientoResponse[],
     };
 
     const payload = this.normalizarParaBackend(header);
@@ -2853,6 +2878,8 @@ export class FacturasProveedorFormComponent implements OnInit {
       const det: any = { ...d };
 
       //det.fechatransaccion = det.fechatransaccion ? normalizeToLocalDate(det.fechatransaccion) : null;
+      // Mantener fecha de transacción del detalle normalizada.
+      // En guardar() ya fue sincronizada con la cabecera.
       det.fechatransaccion = det.fechatransaccion ? dateOnlySafe(det.fechatransaccion) : null;
       det.fechacierre = det.fechacierre ? normalizeToLocalDate(det.fechacierre) : null;
       det.fechaconciliado = det.fechaconciliado ? normalizeToLocalDate(det.fechaconciliado) : null;
