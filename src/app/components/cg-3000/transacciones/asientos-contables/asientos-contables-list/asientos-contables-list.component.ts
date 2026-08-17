@@ -445,41 +445,60 @@ export class AsientoContableComponent implements OnInit {
  * Prepara el asiento original para usarlo como plantilla
  * Limpia los campos que el usuario debe ingresar manualmente
  */
-  private prepararPlantillaEstandar(asientoOriginal: AsientoContableResponse): AsientoContableResponse {
-    const hoy = new Date();
-    const fechaHoy = hoy.toISOString().substring(0, 10); // YYYY-MM-DD
-    const horaHoy = hoy.toISOString(); // ISO completo
+  private prepararPlantillaEstandar(
+    asientoOriginal: AsientoContableResponse
+  ): AsientoContableResponse {
+    const ahora = new Date();
+
+    // Usar fecha LOCAL, no toISOString() para evitar corrimientos por UTC.
+    const fechaHoy = toInputDate(ahora);               // yyyy-MM-dd local
+    const fechaIngresoActual = toLocalDateTime(ahora); // yyyy-MM-ddTHH:mm:ss local
 
     return {
       ...asientoOriginal,
 
-      // Campos que se resetean (usuario los editará)
-      IdCabMaestro: 0,                    // Nuevo asiento
-      numdoc: 0,                          // Se auto-generará
-      beneficiario: '',                   // Usuario lo ingresará
-      observacion: '',                    // Usuario lo ingresará (concepto)
-      fechatransaccion: fechaHoy,         // Fecha actual (editable)
-      fechaingreso: horaHoy,              // Fecha/hora actual
+      // Nuevo asiento
+      IdCabMaestro: 0,
+      numdoc: 0,
 
-      //  Campo especial: marcar como transacción estándar
-      modulo: 0,                          //  Transacción estándar
+      // Campos que el usuario ingresará nuevamente
+      beneficiario: '',
+      observacion: '',
 
-      //  Campos que se mantienen de la plantilla
-      // idTipoAsiento, idZona, idEmpresa, tipdoc, etc. vienen en ...asientoOriginal
+      // Valores iniciales. La fecha de transacción definitiva será la
+      // que el usuario seleccione y guardar() la impondrá también
+      // en TODOS los detalles.
+      fechatransaccion: fechaHoy,
+      fechaingreso: fechaIngresoActual,
 
-      //  Detalles/Líneas se copian COMPLETOS (cuentas, montos, todo)
+      // cargarPlantilla() lo establecerá en 5
+      modulo: 0,
+
+      // Copiar estructura como NUEVAS líneas
       detalles: (asientoOriginal.detalles || []).map((detalle, index) => ({
         ...detalle,
-        IdDetMaestro: 0,                  //  Nueva línea
-        IdCabMaestro: 0,                  //  Se asignará al guardar
-        numlinea: index + 1,              //  Re-numerar
-        fechatransaccion: fechaHoy,       //  Actualizar fecha
-        fechaingreso: horaHoy,            //  Actualizar fecha/hora
-        beneficiario: '',                 //  Se tomará de la cabecera
+        IdDetMaestro: 0,
+        IdCabMaestro: 0,
+        numlinea: index + 1,
+
+        // Valores iniciales; guardar() los vuelve a sincronizar
+        // con la cabecera justo antes de enviar al backend.
+        fechatransaccion: fechaHoy,
+        fechaingreso: fechaIngresoActual,
+
+        beneficiario: '',
         comentario: detalle.comentario || '',
+
+        // Se mantiene el comportamiento original de la duplicación
         debe: 0,
         haber: 0,
-      }))
+
+        estadoIngreso: true,
+        transferido: false,
+        fechatransferido: '',
+        idPorIva: null,
+        porcentaje: null,
+      })),
     };
   }
 
@@ -1494,4 +1513,14 @@ function toInputDate(d: Date): string {
   const m = (d.getMonth() + 1).toString().padStart(2, '0');
   const day = d.getDate().toString().padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function toLocalDateTime(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${y}-${m}-${day}T${hh}:${mi}:${ss}`;
 }

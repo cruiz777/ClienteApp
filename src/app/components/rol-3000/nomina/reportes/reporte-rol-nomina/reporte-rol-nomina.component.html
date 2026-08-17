@@ -1,94 +1,283 @@
-<div class="rol-page">
-  <div class="rol-card">
+<div
+  class="rol-container"
+  [formGroup]="form">
 
-    <!-- HEADER -->
-    <div class="card-header">
-      <h2>Reporte ROL Nómina</h2>
+  <!-- =====================================================
+       CABECERA
+  ====================================================== -->
+  <div class="page-header">
+    <div>
+      <h2>
+        Consulta de Roles Mensuales
+      </h2>
+
+      <p>
+        Consulte las nóminas mensuales previamente generadas.
+      </p>
     </div>
+  </div>
 
-    <!-- FILTROS -->
-    <div class="filters">
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha Inicial</mat-label>
-        <input matInput type="date" [(ngModel)]="fechaInicial" />
-      </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha Final</mat-label>
-        <input matInput type="date" [(ngModel)]="fechaFinal" />
-      </mat-form-field>
-    </div>
+  <!-- =====================================================
+       CONTENIDO PRINCIPAL
+  ====================================================== -->
+  <div class="main-layout">
 
-    <!-- TABLA -->
-    <div class="table-container">
-      <table mat-table [dataSource]="dataSource" class="custom-table">
+    <div class="card right-panel">
 
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row">{{ row.id }}</td>
-        </ng-container>
+      <!-- =================================================
+           TITULO DEL PANEL
+      ================================================== -->
+      <div class="panel-header">
 
-        <ng-container matColumnDef="cedula">
-          <th mat-header-cell *matHeaderCellDef>Cédula</th>
-          <td mat-cell *matCellDef="let row">{{ row.cedula }}</td>
-        </ng-container>
+        <mat-icon>
+          table_view
+        </mat-icon>
 
-        <ng-container matColumnDef="codigo">
-          <th mat-header-cell *matHeaderCellDef>Código</th>
-          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-        </ng-container>
+        <span>
+          Detalle del Rol
+        </span>
 
-        <ng-container matColumnDef="trabajador">
-          <th mat-header-cell *matHeaderCellDef>Trabajador</th>
-          <td mat-cell *matCellDef="let row">{{ row.trabajador }}</td>
-        </ng-container>
+      </div>
 
-        <ng-container matColumnDef="local">
-          <th mat-header-cell *matHeaderCellDef>Local</th>
-          <td mat-cell *matCellDef="let row">{{ row.local }}</td>
-        </ng-container>
 
-        <ng-container matColumnDef="departamento">
-          <th mat-header-cell *matHeaderCellDef>Departamento</th>
-          <td mat-cell *matCellDef="let row">{{ row.departamento }}</td>
-        </ng-container>
+      <!-- =================================================
+           BARRA SUPERIOR DE CONSULTA
+           Se mueve aquí Periodo + botones
+      ================================================== -->
+      <div class="actions-card actions-card-top">
 
-        <ng-container matColumnDef="cargo">
-          <th mat-header-cell *matHeaderCellDef>Cargo</th>
-          <td mat-cell *matCellDef="let row">{{ row.cargo }}</td>
-        </ng-container>
+        <div class="actions-left">
 
-        <ng-container matColumnDef="dias">
-          <th mat-header-cell *matHeaderCellDef>Días</th>
-          <td mat-cell *matCellDef="let row">{{ row.dias }}</td>
-        </ng-container>
+          <!-- =============================================
+               PERIODO
+          ============================================== -->
+          <div class="periodo-inline">
 
-        <ng-container matColumnDef="sueldo">
-          <th mat-header-cell *matHeaderCellDef>Sueldo</th>
-          <td mat-cell *matCellDef="let row">{{ row.sueldo | number:'1.2-2' }}</td>
-        </ng-container>
+            <label>
+              Periodo
+            </label>
 
-        <ng-container matColumnDef="ingimp">
-          <th mat-header-cell *matHeaderCellDef>Ing. Imput</th>
-          <td mat-cell *matCellDef="let row">{{ row.ingimp | number:'1.2-2' }}</td>
-        </ng-container>
+            <mat-form-field
+              appearance="outline"
+              class="fecha-field">
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              <mat-label>
+                Periodo
+              </mat-label>
 
-      </table>
-    </div>
+              <input
+                matInput
+                [matDatepicker]="pickerPeriodo"
+                formControlName="fechaPeriodo"
+                [matDatepickerFilter]="soloUltimoDiaMes"
+                readonly />
 
-    <!-- ACCIONES -->
-    <div class="actions">
-      <button mat-flat-button color="primary" (click)="consultar()">
-        Consultar
-      </button>
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="pickerPeriodo">
+              </mat-datepicker-toggle>
 
-      <button mat-stroked-button (click)="exportar()">
-        Exportar
-      </button>
+              <mat-datepicker
+                #pickerPeriodo>
+              </mat-datepicker>
+
+              <mat-error
+                *ngIf="
+                  form
+                    .get('fechaPeriodo')
+                    ?.hasError('fechaInvalida')
+                ">
+
+                Solo puede seleccionar el último día del mes.
+
+              </mat-error>
+
+            </mat-form-field>
+
+          </div>
+
+
+          <!-- =============================================
+               CONSULTAR
+          ============================================== -->
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+
+            class="action-button action-consultar"
+
+            [disabled]="cargando"
+
+            (click)="consultar()">
+
+            <mat-icon>
+              search
+            </mat-icon>
+
+            <span *ngIf="!cargando">
+              Consultar
+            </span>
+
+            <span *ngIf="cargando">
+              Consultando...
+            </span>
+
+          </button>
+
+
+          <!-- =============================================
+               MAIL
+          ============================================== -->
+          <button
+            mat-stroked-button
+            type="button"
+
+            class="action-button action-mail"
+
+            [disabled]="
+              detalleRol.length === 0 ||
+              enviandoCorreos
+            "
+
+            (click)="enviarPdfEmpleadosSeleccionados()">
+
+            <mat-icon>
+              mail
+            </mat-icon>
+
+            <span *ngIf="!enviandoCorreos">
+              Mail
+            </span>
+
+            <span *ngIf="enviandoCorreos">
+              Enviando...
+            </span>
+
+          </button>
+
+
+          <!-- =============================================
+               EXCEL
+          ============================================== -->
+          <button
+            mat-stroked-button
+            type="button"
+
+            class="action-button action-excel"
+
+            [disabled]="
+              detalleRol.length === 0 ||
+              exportandoExcel
+            "
+
+            (click)="exportarRolExcel()">
+
+            <mat-icon>
+              description
+            </mat-icon>
+
+            <span *ngIf="!exportandoExcel">
+              Excel
+            </span>
+
+            <span *ngIf="exportandoExcel">
+              Exportando...
+            </span>
+
+          </button>
+
+
+          <!-- =============================================
+               CANCELAR
+          ============================================== -->
+          <button
+            mat-stroked-button
+            type="button"
+
+            class="action-button action-cancelar"
+
+            (click)="cancelar()">
+
+            <mat-icon>
+              close
+            </mat-icon>
+
+            Cancelar
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           MENSAJE MODO CONSULTA
+      ================================================== -->
+      <div class="consulta-banner">
+
+        <mat-icon>
+          visibility
+        </mat-icon>
+
+        <span>
+          Modo consulta. La nómina no puede ser modificada desde esta pantalla.
+        </span>
+
+      </div>
+
+
+      <!-- =================================================
+           GRID
+      ================================================== -->
+      <div class="tabla-wrapper">
+
+        <ag-grid-angular
+          class="ag-theme-alpine rol-grid"
+
+          [rowData]="detalleRol"
+
+          [columnDefs]="columnDefs"
+
+          [defaultColDef]="defaultColDef"
+
+          [pinnedBottomRowData]="pinnedBottomRowData"
+
+          rowSelection="multiple"
+
+          [suppressRowClickSelection]="true"
+
+          (gridReady)="onGridReady($event)"
+
+          (gridSizeChanged)="onGridSizeChanged()"
+
+          (firstDataRendered)="onFirstDataRendered()">
+
+        </ag-grid-angular>
+
+
+        <!-- SIN DATOS -->
+        <div
+          class="sin-datos"
+
+          *ngIf="
+            !cargando &&
+            (
+              !detalleRol ||
+              detalleRol.length === 0
+            )
+          ">
+
+          Seleccione el periodo y presione Consultar.
+
+        </div>
+
+      </div>
+
     </div>
 
   </div>
+
 </div>

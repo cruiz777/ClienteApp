@@ -917,26 +917,41 @@ export class AsientosContablesFormComponent implements OnInit {
    * Mantiene toda la estructura pero permite editar solo campos específicos
   */
   private cargarPlantilla(plantilla: AsientoContableResponse): void {
-    // Setear la cabecera (con beneficiario y observación vacíos)
+    // Cargar cabecera de la plantilla
     this.setFormFromHeader(plantilla);
 
-    // Asegurar que modulo = 5
+    // La duplicación se guarda como módulo 5
     this.form.patchValue({ modulo: 5 }, { emitEvent: false });
 
+    // Mantener estos datos según la plantilla original
     this.form.get('idZona')?.disable();
     this.form.get('idTipoAsiento')?.disable();
 
-    // Cargar las líneas del detalle
-    this.rowData.set(plantilla.detalles ?? []);
+    // Cargar detalles como líneas NUEVAS.
+    // La fecha definitiva NO se decide aquí: guardar() la sincroniza
+    // obligatoriamente con la fecha de transacción de la cabecera.
+    const detalles = (plantilla.detalles ?? []).map((d, index) => ({
+      ...d,
+      IdDetMaestro: 0,
+      IdCabMaestro: 0,
+      numlinea: index + 1,
+      idPorIva: null,
+      porcentaje: null,
+    }) as DetalleAsientoResponse);
 
-    // Sincronizar usuario y empresa
+    this.rowData.set(detalles);
+
+    // Nuevo asiento: usuario y empresa actuales
     this.syncUsuarioEmpresa();
 
-    // Forzar refresco del grid
     this.refreshGrid();
 
-    console.log('✅ Plantilla cargada con modulo=5');
+    console.log('✅ Plantilla cargada para duplicación', {
+      fechaCabecera: this.form.get('fechatransaccion')?.value,
+      detalles: this.rowData().length,
+    });
   }
+
   private cargarLocales(): void {
     this.localesService.getAll().subscribe({
       next: (res) => {
@@ -1169,21 +1184,27 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   guardar(): void {
-    
-    ///validacion hr solo de lectura
+
+    // ============================================================
+    // VALIDAR SOLO LECTURA
+    // ============================================================
     if (this.isViewOnly()) {
-       const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
-        this.snack.open(msg, 'Cerrar', {
-          duration: 5000,
-          horizontalPosition: 'right',
-          verticalPosition: 'top',
+      const msg =
+        this.motivoSoloLectura().trim() ||
+        'Este asiento está en modo solo lectura.';
+
+      this.snack.open(msg, 'Cerrar', {
+        duration: 5000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
       });
       return;
     }
-    
-    
+
+    // Evitar doble guardado
     if (this.saving() || this.loading()) return;
 
+    // Validar cabecera
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.snack.open('Revisa los campos obligatorios', 'OK', {
@@ -1194,26 +1215,28 @@ export class AsientosContablesFormComponent implements OnInit {
       return;
     }
 
-    if (!this.validarDetalle()) {
-      return;
-    }
+    // Validar detalle
+    if (!this.validarDetalle()) return;
 
-    // const esNuevo = this.modo() === 'nuevo';
-
+    // Nuevo y plantilla se guardan como asiento nuevo
     const esNuevo = this.modo() === 'nuevo' || this.modo() === 'plantilla';
 
+    // Momento REAL de creación/guardado
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
 
+    // Fecha CONTABLE seleccionada por el usuario en cabecera
     const fechaTransControl = this.form.get('fechatransaccion')!.value;
-    const fechaTransaccionDateOnly = normalizeToDateOnly(fechaTransControl || ahora); //fechaTransControl
-      //? normalizeToDateOnly(fechaTransControl)
-      //: normalizeToDateOnly(ahora); estaba antes
+    const fechaTransaccionDateOnly = normalizeToDateOnly(
+      fechaTransControl || ahora
+    );
 
     const anioTransaccion = getYearFromInput(fechaTransaccionDateOnly);
-    const fechaTransaccionBackend = dateOnlyToLocalMidnightIso(fechaTransaccionDateOnly);
+    const fechaTransaccionBackend = dateOnlyToLocalMidnightIso(
+      fechaTransaccionDateOnly
+    );
 
-
+    // Sincronizar cabecera en formulario
     this.form.patchValue(
       {
         anio: anioTransaccion,
@@ -1222,7 +1245,11 @@ export class AsientosContablesFormComponent implements OnInit {
       { emitEvent: false }
     );
 
+    // ============================================================
+    // NUEVO / DUPLICACIÓN
+    // ============================================================
     if (esNuevo) {
+      // La fecha de ingreso es la fecha/hora REAL del guardado
       this.form.patchValue(
         {
           fechaingreso: nowIso,
@@ -1233,38 +1260,44 @@ export class AsientosContablesFormComponent implements OnInit {
 
       const detallesActuales = this.rowData() ?? [];
 
-      const detallesConFecha = detallesActuales.map((d) => {
-        const fechaIng =
-          d.fechaingreso && d.fechaingreso !== ''
-            ? normalizeToLocalIso(d.fechaingreso)
-            : nowIso;
-
+      const detallesConFecha = detallesActuales.map((d, index) => {
         /*
-        const fechaTransDet =
-          d.fechatransaccion && d.fechatransaccion !== ''
-            ? normalizeToDateOnly(d.fechatransaccion)
-            : fechaTransaccionDateOnly;
-        */
-        const fechaTransDetDateOnly =
-          d.fechatransaccion && d.fechatransaccion !== ''
-          ? normalizeToDateOnly(d.fechatransaccion)
-          : fechaTransaccionDateOnly;
-
-        const fechaTransDet = dateOnlyToLocalMidnightIso(fechaTransDetDateOnly);
-
+         * CORRECCIÓN PRINCIPAL DE LA DUPLICACIÓN:
+         * La fecha de transacción del detalle NO se conserva desde
+         * la plantilla. SIEMPRE se fuerza a la fecha seleccionada
+         * en la cabecera.
+         *
+         * Esto evita casos como:
+         * CABECERA = 2026-02-05
+         * DETALLE  = 2026-07-21
+         */
         return {
           ...d,
-          anio: d.anio && d.anio !== '' ? d.anio : anioTransaccion,
-          fechatransaccion: fechaTransDet,
-          fechaingreso: fechaIng,
-          hora: d.hora && d.hora !== '' ? d.hora : getTimeFromInput(fechaIng),
-          fechacierre: d.fechacierre || '',
+
+          // Al crear/duplicar siempre son registros nuevos
+          IdDetMaestro: 0,
+          IdCabMaestro: 0,
+          numlinea: index + 1,
+
+          // Año y fecha contable SIEMPRE iguales a cabecera
+          anio: anioTransaccion,
+          fechatransaccion: fechaTransaccionBackend,
+
+          // Trazabilidad: momento real del guardado
+          fechaingreso: nowIso,
+          hora: getTimeFromInput(nowIso),
+
+          // Campos propios de una nueva línea
+          fechacierre: '',
           autorizacionRelacionado: '',
           fechaCadRelacionado: '',
-          // PORCENTAJE Siempre enviar null en estos campos al crear
+          transferido: false,
+          fechatransferido: '',
+          estadoIngreso: true,
+
+          // Porcentaje IVA: al crear siempre NULL
           idPorIva: null,
           porcentaje: null,
-
         } as DetalleAsientoResponse;
       });
 
@@ -1273,25 +1306,66 @@ export class AsientosContablesFormComponent implements OnInit {
 
     const rawForm = this.form.value as AsientoContableResponse;
 
+    // ============================================================
+    // OBJETO FINAL QUE SE ENVÍA AL BACKEND
+    // ============================================================
     const header: AsientoContableResponse = {
       ...rawForm,
-      modulo: this.modo() === 'plantilla' ? 5 : (rawForm.modulo ?? 0),
-      idZona: this.form.get('idZona')?.value ?? rawForm.idZona,
-      idTipoAsiento: this.form.get('idTipoAsiento')?.value ?? rawForm.idTipoAsiento,
-      tipdoc: this.form.get('tipdoc')?.value ?? rawForm.tipdoc,
-      fechatransaccion: fechaTransaccionBackend, //fechaTransaccionDateOnly, estaba antes
-      fechaingreso: esNuevo ? nowIso : normalizeToLocalIso(rawForm.fechaingreso),
+
+      modulo:
+        this.modo() === 'plantilla'
+          ? 5
+          : (rawForm.modulo ?? 0),
+
+      idZona:
+        this.form.get('idZona')?.value ??
+        rawForm.idZona,
+
+      idTipoAsiento:
+        this.form.get('idTipoAsiento')?.value ??
+        rawForm.idTipoAsiento,
+
+      tipdoc:
+        this.form.get('tipdoc')?.value ??
+        rawForm.tipdoc,
+
+      anio: anioTransaccion,
+
+      // Fecha contable de cabecera
+      fechatransaccion: fechaTransaccionBackend,
+
+      // Fecha/hora real de ingreso
+      fechaingreso: esNuevo
+        ? nowIso
+        : normalizeToLocalIso(rawForm.fechaingreso),
+
       fechacierre: esNuevo ? '' : rawForm.fechacierre,
       numdoc: esNuevo ? 0 : rawForm.numdoc ?? 0,
+
       totdebe: this.totDebe(),
       tothaber: this.totHaber(),
-      //detalles: this.rowData(), ESTABA ANTES AHORA ESTA CON PORCENTAJE NULL
-      detalles: (this.rowData() ?? []).map((d) => ({
+
+      // Segunda protección: al crear/duplicar se vuelve a forzar
+      // la fecha de detalle para que SIEMPRE coincida con cabecera.
+      detalles: (this.rowData() ?? []).map((d, index) => ({
         ...d,
+        ...(esNuevo
+          ? {
+              IdDetMaestro: 0,
+              IdCabMaestro: 0,
+              numlinea: index + 1,
+              anio: anioTransaccion,
+              fechatransaccion: fechaTransaccionBackend,
+              fechaingreso: nowIso,
+              hora: getTimeFromInput(nowIso),
+            }
+          : {}),
         idPorIva: null,
         porcentaje: null,
       }) as DetalleAsientoResponse),
     };
+
+    // Log temporal para verificar que cabecera y detalle salen iguales
     console.log('🔍 Guardando asiento:', {
       modo: this.modo(),
       esNuevo,
@@ -1299,8 +1373,17 @@ export class AsientosContablesFormComponent implements OnInit {
       idZona: header.idZona,
       idTipoAsiento: header.idTipoAsiento,
       beneficiario: header.beneficiario,
-      observacion: header.observacion
+      observacion: header.observacion,
+      fechaTransaccionCabecera: header.fechatransaccion,
+      fechaIngresoCabecera: header.fechaingreso,
+      fechaTransaccionDetalles: header.detalles?.map(
+        (d) => d.fechatransaccion
+      ),
+      fechaIngresoDetalles: header.detalles?.map(
+        (d) => d.fechaingreso
+      ),
     });
+
     this.saving.set(true);
 
     let save$: import('rxjs').Observable<ApiResponse<number | boolean>>;
@@ -1334,9 +1417,7 @@ export class AsientosContablesFormComponent implements OnInit {
           const ok =
             typeof resp.data === 'number' ? resp.data > 0 : !!resp.data;
 
-          if (!ok) {
-            throw resp;
-          }
+          if (!ok) throw resp;
           return true;
         }),
         catchError((err: any) => {
@@ -1356,39 +1437,40 @@ export class AsientosContablesFormComponent implements OnInit {
             horizontalPosition: 'right',
             verticalPosition: 'top',
           });
+
           console.error('Error backend asiento:', err);
           return of(false);
         }),
         finalize(() => this.saving.set(false))
       )
       .subscribe((ok) => {
-        if (ok) {
-          const msg = this.numdocGenerado
-            ? `Guardado correctamente. Numdoc: ${this.numdocGenerado}`
-            : 'Guardado correctamente';
+        if (!ok) return;
 
-          this.snack.open(msg, 'OK', {
-            duration: 2000,
-            horizontalPosition: 'right',
-            verticalPosition: 'top',
-          });
+        const msg = this.numdocGenerado
+          ? `Guardado correctamente. Numdoc: ${this.numdocGenerado}`
+          : 'Guardado correctamente';
 
-          const dlg = this.mostrarMensaje({
-            title: 'Imprimir asiento',
-            message: '¿Desea imprimir el asiento?',
-            type: 'info',
-            confirmText: 'Sí',
-            cancelText: 'No',
-            showCancel: true,
-          });
+        this.snack.open(msg, 'OK', {
+          duration: 2000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+        });
 
-          dlg.afterClosed().subscribe((imprimir) => {
-            if (imprimir) {
-              this.imprimirAsiento();
-            }
-            this.dialogRef.close(true);
-          });
-        }
+        const dlg = this.mostrarMensaje({
+          title: 'Imprimir asiento',
+          message: '¿Desea imprimir el asiento?',
+          type: 'info',
+          confirmText: 'Sí',
+          cancelText: 'No',
+          showCancel: true,
+        });
+
+        dlg.afterClosed().subscribe((imprimir) => {
+          if (imprimir) {
+            this.imprimirAsiento();
+          }
+          this.dialogRef.close(true);
+        });
       });
   }
 
