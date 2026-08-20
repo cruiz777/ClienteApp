@@ -472,8 +472,18 @@ const routes: Routes = [
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.configuracion.tipos.tipo-nomina-especial' }
         },
-        {path:'explorador-empleados',component:ExploradorEmpleadosComponent},
-        {path:'explorador-nomina',component:ExploradorNominaComponent},
+        {
+          path: 'explorador-nomina',
+          component: ExploradorNominaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.acumulados.acumulados' }
+        },
+        {
+          path: 'explorador-empleados',
+          component: ExploradorEmpleadosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.acumulados.explorador-de-empleados' }
+        },
 
         { path: '**', redirectTo: 'inicio-rol' },
       ],

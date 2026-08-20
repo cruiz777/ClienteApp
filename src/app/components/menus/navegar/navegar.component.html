@@ -232,22 +232,12 @@
     <!-- INACTIVAR LICENCIA VERIFIED -->
     <!-- ===================================================== -->
 
-    <a
-      mat-list-item
-
-      [routerLink]="[
-        '/codbar/validacion',
-        'editar-licenses'
-      ]">
-
-      <span
-        *ngIf="isExpanded"
-        class="menu-text">
-
-        Inactivar Licencia
-
-      </span>
-
+    <a mat-list-item
+      [routerLink]="((menuPermisos$ | async)?.validacion?.inactivarLicencias) ? '/codbar/validacion/editar-licenses' : null"
+      [class.disabled]="!((menuPermisos$ | async)?.validacion?.inactivarLicencias)"
+      (click)="manejarClick('/codbar/validacion/editar-licenses', $event)">
+      <span *ngIf="isExpanded" class="menu-text">Inactivar Licencia</span>
+      <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.inactivarLicencias)" class="lock-icon">lock</mat-icon>
     </a>
 
 
@@ -300,31 +290,24 @@
     <!-- ELIMINAR PRODUCTOS VERIFIED -->
     <!-- ===================================================== -->
 
-    <a
-      mat-list-item
-
-      [routerLink]="[
-        '/codbar/validacion',
-        'eliminar-productos'
-      ]">
-
-      <span
-        *ngIf="isExpanded"
-        class="menu-text">
-
-        Eliminar Productos
-
-      </span>
-
+    <a mat-list-item
+      [routerLink]="((menuPermisos$ | async)?.validacion?.eliminarProductos) ? '/codbar/validacion/eliminar-productos' : null"
+      [class.disabled]="!((menuPermisos$ | async)?.validacion?.eliminarProductos)"
+      (click)="manejarClick('/codbar/validacion/eliminar-productos', $event)">
+      <span *ngIf="isExpanded" class="menu-text">Eliminar Productos</span>
+      <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.eliminarProductos)" class="lock-icon">lock</mat-icon>
     </a>
-
 
   </mat-expansion-panel>
 
 </mat-accordion>
 
-          <a mat-list-item [routerLink]="['/codbar/validacion', 'eliminar-bloque']">
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.validacion?.borrarEnBloque) ? '/codbar/validacion/eliminar-bloque' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.validacion?.borrarEnBloque)"
+            (click)="manejarClick('/codbar/validacion/eliminar-bloque', $event)">
             <span *ngIf="isExpanded" class="menu-text">Borrar en Bloque</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.borrarEnBloque)" class="lock-icon">lock</mat-icon>
           </a>
           <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.reportes?.datamatrix) ? '/codbar/reportes/datamatrix' : null"

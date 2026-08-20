@@ -107,7 +107,11 @@ export class NavigationRolComponent implements OnInit{
         decimoTercero: permisos.includes('rol-3000.nomina-especial.nomina-especial.decimo-tercero'),
         fondoReserva: permisos.includes('rol-3000.nomina-especial.nomina-especial.fondos-reserva'),
         utilidades: permisos.includes('rol-3000.nomina-especial.nomina-especial.utilidades'),
-
+        
+        // Acumulados
+        acumulados: permisos.includes('rol-3000.acumulados.acumulados'),
+        exploradorEmpleados: permisos.includes('rol-3000.acumulados.explorador-de-empleados'),
+        
         // Configuración
         cargos: permisos.includes('rol-3000.configuracion.cargos'),
         tipoEmp: permisos.includes('rol-3000.configuracion.tipos.tipo-empleado'),

@@ -22,7 +22,7 @@ export const environment = {
     rucUlr:'https://system.gs1ec.net/api/ruc/',
     cedulaUrl:'https://system.gs1ec.net/api/cedula/',
   docsLocal: 'https://system.gs1ec.net/api/docs-local/api',
-      apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
+      // apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
       anexoTransaccionalUrl: 'https://system.gs1ec.net/api/anexo/api',
       cxpUrl:'https://system.gs1ec.net/api/cxp/api',
       conciliacionUrl:'https://system.gs1ec.net/api/conciliacion/api',
