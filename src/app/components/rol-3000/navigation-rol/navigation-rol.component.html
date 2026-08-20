@@ -79,6 +79,9 @@
             <a mat-list-item routerLink="/rol-3000/terminacion-contrato">
               <span *ngIf="isExpanded" class="menu-text">R.Terminación del Contrato</span>
             </a>
+            <a mat-list-item routerLink="/rol-3000/listado-gastos-personales">
+              <span *ngIf="isExpanded" class="menu-text">R.Gastos Personales</span>
+            </a>
             <a mat-list-item routerLink="/rol-3000/tipo-contrato">
               <span *ngIf="isExpanded" class="menu-text">R.Tipo Contrato</span>
             </a>
@@ -266,7 +269,7 @@
             <a mat-list-item [routerLink]="['/rol-3000', 'generacion-aviso-nuevo-sueldo-iess']">
               <span *ngIf="isExpanded" class="menu-text">Aviso Nuevo Sueldo</span>
             </a>
-            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-extra']">
               <span *ngIf="isExpanded" class="menu-text">Aviso Valores Extras IESS</span>
             </a>
           </mat-expansion-panel>

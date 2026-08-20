@@ -73,6 +73,7 @@ import { EmpleadosExcluidosNominaActualComponent } from './nomina/reportes/emple
 import { ResumenInecComponent } from './nomina/reportes/resumen-inec/resumen-inec.component';
 import { PersonalOcupadoComponent } from './nomina/reportes/personal-ocupado/personal-ocupado.component';
 import { GeneracionAvisoNuevoSueldoIessComponent } from './nomina/generacion/generacion-aviso-nuevo-sueldo-iess/generacion-aviso-nuevo-sueldo-iess.component';
+import { AvisoValoresExtrasComponent } from './nomina/generacion/aviso-valores-extras/aviso-valores-extras.component';
 import { DecimoCuartoComponent } from './especial/decimo-cuarto/decimo-cuarto.component';
 import { DecimoTerceroComponent } from './especial/decimo-tercero/decimo-tercero.component';
 import { FondoReservaComponent } from './especial/fondo-reserva/fondo-reserva.component';
@@ -98,7 +99,7 @@ import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomin
 import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-individual-dialog.component';
 import { DialogCargaGlobalRubrosFijosComponent } from './nomina/rubros-fijos/dialog-carga-global-rubros-fijo/dialog-carga-global-rubros-fijo.component';
 import { DialogBancoNominaComponent } from './nomina/dialog-banco-nomina/dialog-banco-nomina.component';
-
+import { GastosPersonalesComponent } from './empleados/reportes/gastos-personales/gastos-personales.component';
 @NgModule({
   declarations: [
     NavigationRolComponent,
@@ -143,12 +144,14 @@ import { DialogBancoNominaComponent } from './nomina/dialog-banco-nomina/dialog-
     ResumenInecComponent,
     PersonalOcupadoComponent,
     GeneracionAvisoNuevoSueldoIessComponent,
+   
     DecimoCuartoComponent,
     DecimoTerceroComponent,
     FondoReservaComponent,
     UtilidadesComponent,
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,
+    GastosPersonalesComponent,
     DialogCargaGlobalRubrosFijosComponent
   ],
   imports: [

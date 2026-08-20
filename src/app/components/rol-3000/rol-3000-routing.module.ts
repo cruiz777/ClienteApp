@@ -67,6 +67,8 @@ import { RpEmpresaComplementariaComponent } from './configuracion/empresa-comple
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 import { ExploradorEmpleadosComponent } from './empleados/explorador-empleado/explorador-empleado.component';
 import { ExploradorNominaComponent } from './nomina/explorador-nomina/explorador-nomina.component';
+import { AvisoValoresExtrasComponent } from './nomina/generacion/aviso-valores-extras/aviso-valores-extras.component';
+import { GastosPersonalesComponent } from './empleados/reportes/gastos-personales/gastos-personales.component';
 const routes: Routes = [
    {
       path: '',
@@ -128,6 +130,11 @@ const routes: Routes = [
           component: ListadoFondosReservaComponent,
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.empleado.reportes.fondos-de-reserva' }
+        },
+        {
+          path: 'listado-gastos-personales',
+          component: GastosPersonalesComponent
+         
         },
         {
           path: 'terminacion-contrato',
@@ -334,6 +341,12 @@ const routes: Routes = [
           component: GeneracionAvisoNuevoSueldoIessComponent,
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.nomina.generacion-archivo.aviso-nuevo-sueldo' }
+        },
+
+        {
+          path: 'generacion-extra',
+          component: AvisoValoresExtrasComponent,
+         
         },
 
         // NÓMINA ESPECIAL

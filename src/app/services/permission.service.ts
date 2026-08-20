@@ -55,6 +55,9 @@ export class PermissionsService {
     '/seguridades/inicio': 'seguridades',
 
     // Ficha de Cliente
+
+
+    
     '/codbar/ficha-de-cliente/nuevo-cliente': 'codbar.ficha-de-cliente.nuevo-cliente',  // Agregar codbar
     '/codbar/ficha-de-cliente/listado-clientes': 'codbar.ficha-de-cliente.listado-clientes',
     '/codbar/ficha-de-cliente/consulta-verified': 'codbar.ficha-de-cliente.consulta-verified',

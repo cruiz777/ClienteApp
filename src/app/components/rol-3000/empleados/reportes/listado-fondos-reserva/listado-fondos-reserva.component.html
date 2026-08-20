@@ -1,22 +1,153 @@
 <div class="reporte-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Listado de Fondos de Reserva</h2>
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+    <div class="header-section">
+
+      <div class="header-icon">
+        <mat-icon>
+          savings
+        </mat-icon>
+      </div>
+
+      <div class="header-text">
+
+        <h2>
+          Listado de Fondos de Reserva
+        </h2>
+
+        <p>
+          Seleccione el mes y año del reporte.
+        </p>
+
+      </div>
+
+    </div>
 
     <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha</mat-label>
-        <input matInput type="date" formControlName="fecha" />
+
+      <!-- MES -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Mes
+        </mat-label>
+
+        <mat-select
+          formControlName="mes">
+
+          <mat-option
+            *ngFor="let mes of meses"
+            [value]="mes.valor">
+
+            {{ mes.nombre }}
+
+          </mat-option>
+
+        </mat-select>
+
+        <mat-error
+          *ngIf="
+            form.get('mes')?.hasError('required')
+          ">
+          El mes es obligatorio
+        </mat-error>
+
       </mat-form-field>
+
+      <!-- AÑO -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Año
+        </mat-label>
+
+        <mat-select
+          formControlName="anio">
+
+          <mat-option
+            *ngFor="let anio of anios"
+            [value]="anio">
+
+            {{ anio }}
+
+          </mat-option>
+
+        </mat-select>
+
+        <mat-error
+          *ngIf="
+            form.get('anio')?.hasError('required')
+          ">
+          El año es obligatorio
+        </mat-error>
+
+      </mat-form-field>
+
+    </div>
+
+    <div
+      class="periodo-info"
+      *ngIf="periodoSeleccionado">
+
+      <mat-icon>
+        calendar_month
+      </mat-icon>
+
+      <span>
+        Período seleccionado:
+        <strong>
+          {{ periodoSeleccionado }}
+        </strong>
+      </span>
+
     </div>
 
     <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
-        Aceptar
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="generando"
+        (click)="aceptar()">
+
+        <mat-icon>
+          picture_as_pdf
+        </mat-icon>
+
+        <span
+          *ngIf="!generando">
+          Generar Reporte
+        </span>
+
+        <span
+          *ngIf="generando">
+          Generando...
+        </span>
+
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="generando"
+        (click)="cancelar()">
+
+        <mat-icon>
+          close
+        </mat-icon>
+
         Cancelar
+
       </button>
+
     </div>
+
   </div>
+
 </div>

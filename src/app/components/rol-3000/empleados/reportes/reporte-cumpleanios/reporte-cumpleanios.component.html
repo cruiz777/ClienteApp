@@ -1,27 +1,250 @@
 <div class="reporte-page">
   <div class="form-card" [formGroup]="form">
-    <h2>Reporte de Cumpleaños</h2>
 
-    <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha Inicial</mat-label>
-        <input matInput type="date" formControlName="fechaInicial" />
-      </mat-form-field>
+    <div class="header">
+      <div class="header-icon">
+        <mat-icon>cake</mat-icon>
+      </div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha Final</mat-label>
-        <input matInput type="date" formControlName="fechaFinal" />
-      </mat-form-field>
+      <div>
+        <h2>Reporte de Cumpleaños</h2>
+        <p>Seleccione el mes y día inicial y final para consultar los cumpleaños.</p>
+      </div>
+    </div>
+
+    <div class="fechas-grid">
+
+      <div class="fecha-grupo">
+        <div class="fecha-titulo">Desde</div>
+
+        <div class="fecha-controles">
+          <mat-form-field appearance="outline">
+            <mat-label>Mes Inicial</mat-label>
+
+            <mat-select
+              formControlName="mesInicial"
+              (selectionChange)="onMesInicialChange()">
+
+              <mat-option
+                *ngFor="let mes of meses"
+                [value]="mes.valor">
+                {{ mes.nombre }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error *ngIf="form.get('mesInicial')?.hasError('required')">
+              El mes es obligatorio
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Día Inicial</mat-label>
+
+            <mat-select formControlName="diaInicial">
+              <mat-option
+                *ngFor="let dia of diasDelMes(form.get('mesInicial')?.value)"
+                [value]="dia">
+                {{ dia }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error *ngIf="form.get('diaInicial')?.hasError('required')">
+              El día es obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="fecha-grupo">
+        <div class="fecha-titulo">Hasta</div>
+
+        <div class="fecha-controles">
+          <mat-form-field appearance="outline">
+            <mat-label>Mes Final</mat-label>
+
+            <mat-select
+              formControlName="mesFinal"
+              (selectionChange)="onMesFinalChange()">
+
+              <mat-option
+                *ngFor="let mes of meses"
+                [value]="mes.valor">
+                {{ mes.nombre }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error *ngIf="form.get('mesFinal')?.hasError('required')">
+              El mes es obligatorio
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Día Final</mat-label>
+
+            <mat-select formControlName="diaFinal">
+              <mat-option
+                *ngFor="let dia of diasDelMes(form.get('mesFinal')?.value)"
+                [value]="dia">
+                {{ dia }}
+              </mat-option>
+            </mat-select>
+
+            <mat-error *ngIf="form.get('diaFinal')?.hasError('required')">
+              El día es obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
     </div>
 
     <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
-        Aceptar
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="consultando"
+        (click)="aceptar()">
+
+        <mat-icon>search</mat-icon>
+
+        <span *ngIf="!consultando">Aceptar</span>
+        <span *ngIf="consultando">Consultando...</span>
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="empleados.length === 0 || consultando"
+        (click)="exportarExcel()">
+
+        <mat-icon>description</mat-icon>
+        Excel
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="consultando"
+        (click)="cancelar()">
+
+        <mat-icon>close</mat-icon>
         Cancelar
       </button>
     </div>
+
+    <div class="resultado" *ngIf="empleados.length > 0">
+
+      <div class="resultado-header">
+        <div class="resultado-titulo">
+          <mat-icon>cake</mat-icon>
+          <span>Cumpleaños encontrados: {{ empleados.length }}</span>
+        </div>
+
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="exportarExcel()">
+
+          <mat-icon>description</mat-icon>
+          Exportar Excel
+        </button>
+      </div>
+
+      <div class="tabla-container">
+        <table class="tabla-cumpleanios">
+
+          <thead>
+            <tr>
+              <th>Cédula</th>
+              <th>Empleado</th>
+              <th>Fecha Nacimiento</th>
+              <th>Edad</th>
+              <th>Local</th>
+              <th>Cargo</th>
+              <th>Zona</th>
+              <th>Tipo</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let empleado of empleadosPaginados">
+              <td>{{ empleado.cedula }}</td>
+              <td class="empleado">{{ empleado.empleado }}</td>
+              <td>{{ empleado.fechaNacimiento | date:'dd/MM/yyyy':'UTC' }}</td>
+              <td class="text-center">{{ empleado.edad }}</td>
+              <td>{{ empleado.local }}</td>
+              <td>{{ empleado.cargo }}</td>
+              <td>{{ empleado.zona }}</td>
+              <td>{{ empleado.tipoEmpleado }}</td>
+            </tr>
+          </tbody>
+
+        </table>
+      </div>
+
+      <div class="paginacion">
+        <div class="paginacion-info">
+          Mostrando {{ registroDesde }} - {{ registroHasta }} de {{ empleados.length }}
+        </div>
+
+        <div class="paginacion-controles">
+          <label>Registros por página:</label>
+
+          <select
+            [value]="tamanioPagina"
+            (change)="cambiarTamanioPagina($any($event.target).value)">
+
+            <option
+              *ngFor="let opcion of opcionesPagina"
+              [value]="opcion">
+              {{ opcion }}
+            </option>
+          </select>
+
+          <button
+            mat-icon-button
+            type="button"
+            [disabled]="paginaActual === 1"
+            (click)="primeraPagina()">
+            <mat-icon>first_page</mat-icon>
+          </button>
+
+          <button
+            mat-icon-button
+            type="button"
+            [disabled]="paginaActual === 1"
+            (click)="paginaAnterior()">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
+
+          <button
+            mat-icon-button
+            type="button"
+            [disabled]="paginaActual === totalPaginas"
+            (click)="paginaSiguiente()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+          <button
+            mat-icon-button
+            type="button"
+            [disabled]="paginaActual === totalPaginas"
+            (click)="ultimaPagina()">
+            <mat-icon>last_page</mat-icon>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <div
+      class="sin-datos"
+      *ngIf="!consultando && empleados.length === 0">
+      No existen resultados para mostrar.
+    </div>
+
   </div>
 </div>

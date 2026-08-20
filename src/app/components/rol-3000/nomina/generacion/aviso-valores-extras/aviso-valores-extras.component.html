@@ -1,0 +1,192 @@
+<div class="reporte-page">
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+    <!-- CABECERA -->
+    <div class="header-section">
+
+      <div class="header-icon">
+        <mat-icon>
+          account_balance
+        </mat-icon>
+      </div>
+
+      <div class="header-text">
+
+        <h2>
+          Generación Valores Extras IESS
+        </h2>
+
+        <p>
+          Seleccione el período correspondiente para generar los valores extras del IESS.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- CONTENIDO -->
+    <div class="content-block">
+
+      <mat-form-field
+        appearance="outline"
+        class="periodo-field">
+
+        <mat-label>
+          Período a generar
+        </mat-label>
+
+        <input
+          matInput
+          [matDatepicker]="pickerPeriodo"
+          formControlName="periodo"
+          readonly />
+
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="pickerPeriodo">
+        </mat-datepicker-toggle>
+
+        <mat-datepicker
+          #pickerPeriodo>
+        </mat-datepicker>
+
+        <mat-error
+          *ngIf="
+            form
+              .get('periodo')
+              ?.hasError('required')
+          ">
+
+          El período es obligatorio.
+
+        </mat-error>
+
+      </mat-form-field>
+
+    </div>
+
+
+    <!-- ACCIONES -->
+    <div class="actions">
+
+      <!-- ARCHIVO -->
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+
+        [disabled]="
+          generandoArchivo ||
+          generandoDetalle ||
+          generandoTotales
+        "
+
+        (click)="generarArchivo()">
+
+        <mat-icon>
+          description
+        </mat-icon>
+
+        <span *ngIf="!generandoArchivo">
+          Generar Archivo IESS
+        </span>
+
+        <span *ngIf="generandoArchivo">
+          Generando...
+        </span>
+
+      </button>
+
+
+      <!-- REPORTE DETALLADO -->
+      <button
+        mat-stroked-button
+        type="button"
+
+        class="btn-reporte"
+
+        [disabled]="
+          generandoArchivo ||
+          generandoDetalle ||
+          generandoTotales
+        "
+
+        (click)="generarReporteDetallado()">
+
+        <mat-icon>
+          picture_as_pdf
+        </mat-icon>
+
+        <span *ngIf="!generandoDetalle">
+          Reporte Detallado
+        </span>
+
+        <span *ngIf="generandoDetalle">
+          Generando...
+        </span>
+
+      </button>
+
+
+      <!-- REPORTE TOTALES -->
+      <button
+        mat-stroked-button
+        type="button"
+
+        class="btn-totales"
+
+        [disabled]="
+          generandoArchivo ||
+          generandoDetalle ||
+          generandoTotales
+        "
+
+        (click)="generarReporteTotales()">
+
+        <mat-icon>
+          summarize
+        </mat-icon>
+
+        <span *ngIf="!generandoTotales">
+          Reporte Totales
+        </span>
+
+        <span *ngIf="generandoTotales">
+          Generando...
+        </span>
+
+      </button>
+
+
+      <!-- CANCELAR -->
+      <button
+        mat-stroked-button
+        type="button"
+
+        class="btn-cancelar"
+
+        [disabled]="
+          generandoArchivo ||
+          generandoDetalle ||
+          generandoTotales
+        "
+
+        (click)="cancelar()">
+
+        <mat-icon>
+          close
+        </mat-icon>
+
+        Cancelar
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

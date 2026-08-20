@@ -1,84 +1,295 @@
 <div class="reporte-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Reporte de Empleados</h2>
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+    <div class="header-section">
+
+      <div class="header-icon">
+        <mat-icon>
+          groups
+        </mat-icon>
+      </div>
+
+      <div class="header-text">
+
+        <h2>
+          Reporte de Empleados
+        </h2>
+
+        <p>
+          Seleccione los filtros para consultar empleados.
+        </p>
+
+      </div>
+
+    </div>
+
 
     <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Área Inicial</mat-label>
-        <mat-select formControlName="areaInicial">
-          <mat-option *ngFor="let item of areas" [value]="item">
-            {{ item }}
+
+      <!-- ÁREA / LOCAL INICIAL -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Área Inicial
+        </mat-label>
+
+        <mat-select
+          formControlName="areaInicial">
+
+          <mat-option
+            [value]="null">
+            Todas
           </mat-option>
-        </mat-select>
-      </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Cargo Inicial</mat-label>
-        <mat-select formControlName="cargoInicial">
-          <mat-option *ngFor="let item of cargos" [value]="item">
-            {{ item }}
+          <mat-option
+            *ngFor="let item of locales"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
           </mat-option>
+
         </mat-select>
+
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Área Final</mat-label>
-        <mat-select formControlName="areaFinal">
-          <mat-option *ngFor="let item of areas" [value]="item">
-            {{ item }}
+
+      <!-- CARGO INICIAL -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Cargo Inicial
+        </mat-label>
+
+        <mat-select
+          formControlName="cargoInicial">
+
+          <mat-option
+            [value]="null">
+            Todos
           </mat-option>
-        </mat-select>
-      </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Cargo Final</mat-label>
-        <mat-select formControlName="cargoFinal">
-          <mat-option *ngFor="let item of cargos" [value]="item">
-            {{ item }}
+          <mat-option
+            *ngFor="let item of cargos"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
           </mat-option>
+
         </mat-select>
+
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Agrupado por</mat-label>
-        <mat-select formControlName="agrupadoPor">
-          <mat-option value="Departamento">Departamento</mat-option>
-          <mat-option value="Cargo">Cargo</mat-option>
-          <mat-option value="Zona">Zona</mat-option>
-          <mat-option value="TipoEmpleado">Tipo de Empleado</mat-option>
+
+      <!-- ÁREA / LOCAL FINAL -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Área Final
+        </mat-label>
+
+        <mat-select
+          formControlName="areaFinal">
+
+          <mat-option
+            [value]="null">
+            Todas
+          </mat-option>
+
+          <mat-option
+            *ngFor="let item of locales"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
+          </mat-option>
+
         </mat-select>
+
       </mat-form-field>
 
+
+      <!-- CARGO FINAL -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Cargo Final
+        </mat-label>
+
+        <mat-select
+          formControlName="cargoFinal">
+
+          <mat-option
+            [value]="null">
+            Todos
+          </mat-option>
+
+          <mat-option
+            *ngFor="let item of cargos"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
+
+      <!-- AGRUPADO POR -->
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Agrupado por
+        </mat-label>
+
+        <mat-select
+          formControlName="agrupadoPor">
+
+          <mat-option
+            *ngFor="let item of agrupaciones"
+            [value]="item.codigo">
+
+            {{ item.nombre }}
+
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
+
+      <!-- ZONAS -->
       <div class="zona-box">
-        <label class="section-label">Zona:</label>
+
+        <label class="section-label">
+          Zonas:
+        </label>
+
         <div class="checks-inline">
-          <mat-checkbox formControlName="zonaQuito">Quito</mat-checkbox>
-          <mat-checkbox formControlName="zonaGuayaquil">Guayaquil</mat-checkbox>
-          <mat-checkbox formControlName="zonaCuenca">Cuenca</mat-checkbox>
+
+          <mat-checkbox
+            *ngFor="let zona of zonas"
+
+            [checked]="
+              zonaSeleccionada(
+                zona.id
+              )
+            "
+
+            (change)="
+              toggleZona(
+                zona.id,
+                $event.checked
+              )
+            ">
+
+            {{ zona.nombre }}
+
+          </mat-checkbox>
+
         </div>
+
       </div>
+
     </div>
 
+
+    <!-- TIPOS DE EMPLEADOS -->
     <div class="tipos-section">
-      <label class="section-label">Tipo de Empleados:</label>
+
+      <label class="section-label">
+        Tipo de Empleados:
+      </label>
 
       <div class="checks-grid">
-        <mat-checkbox formControlName="tipoExempleados">Exempleados</mat-checkbox>
-        <mat-checkbox formControlName="tipoHonorarios">Honorarios</mat-checkbox>
-        <mat-checkbox formControlName="tipoFijos">Fijos</mat-checkbox>
-        <mat-checkbox formControlName="tipoPorHoras">Por Horas</mat-checkbox>
-        <mat-checkbox formControlName="tipoTemporalBecario">Temporal / Becario</mat-checkbox>
+
+        <mat-checkbox
+          *ngFor="
+            let tipo
+            of tiposEmpleado
+          "
+
+          [checked]="
+            tipoEmpleadoSeleccionado(
+              tipo.id
+            )
+          "
+
+          (change)="
+            toggleTipoEmpleado(
+              tipo.id,
+              $event.checked
+            )
+          ">
+
+          {{ tipo.nombre }}
+
+        </mat-checkbox>
+
       </div>
+
     </div>
 
+
+    <!-- ACCIONES -->
     <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
-        Aceptar
+
+      <button
+  mat-flat-button
+  color="primary"
+  type="button"
+  [disabled]="
+    generando ||
+    cargandoCatalogos
+  "
+  (click)="aceptar()">
+
+  <mat-icon>
+    picture_as_pdf
+  </mat-icon>
+
+  <span *ngIf="!generando">
+    Aceptar
+  </span>
+
+  <span *ngIf="generando">
+    Generando...
+  </span>
+
+</button>
+
+
+      <button
+        mat-stroked-button
+        type="button"
+
+        [disabled]="
+          generando
+        "
+
+        (click)="cancelar()">
+
+        <mat-icon>
+          close
+        </mat-icon>
+
+        Cancelar
+
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
-        Cancelar
-      </button>
     </div>
+
   </div>
+
 </div>
