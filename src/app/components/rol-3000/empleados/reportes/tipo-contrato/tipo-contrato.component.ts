@@ -1,112 +1,737 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import {
+  Component,
+  OnInit
+} from '@angular/core';
 
-interface TipoContratoEmpleado {
+import {
+  FormBuilder,
+  FormGroup
+} from '@angular/forms';
+
+import {
+  HttpErrorResponse
+} from '@angular/common/http';
+
+import {
+  debounceTime,
+  distinctUntilChanged
+} from 'rxjs/operators';
+
+import {
+  ColDef,
+  GridApi,
+  GridReadyEvent
+} from 'ag-grid-community';
+
+import * as XLSX from 'xlsx';
+
+import {
+  ReportesEmpleadosService,
+  EmpleadoTipoContratoResponse,
+  ContratoEmpleadoResponse
+} from 'src/app/services/rol/reportes-empleados.service';
+
+
+/* ============================================================
+   FILA AG GRID
+============================================================ */
+
+interface TipoContratoEmpleadoFila {
+
   secuencia: number;
-  codigo: number;
+
+  idEmpleado: number;
+
   cedula: string;
+
   nombre: string;
+
   cargo: string;
+
+  nroContrato: number;
+
   tipoContrato: string;
-  fechaInicial: string;
+
+  fechaIngreso: string | null;
+
+  fechaSalida: string | null;
+
+  fechaTerminacion: string | null;
 }
 
+
 @Component({
+
   selector: 'app-tipo-contrato',
-  templateUrl: './tipo-contrato.component.html',
-  styleUrls: ['./tipo-contrato.component.css']
+
+  templateUrl:
+    './tipo-contrato.component.html',
+
+  styleUrls: [
+    './tipo-contrato.component.css'
+  ]
+
 })
-export class TipoContratoComponent implements OnInit {
+export class TipoContratoComponent
+  implements OnInit {
+
   form!: FormGroup;
 
-  displayedColumns: string[] = [
-    'secuencia',
-    'codigo',
-    'cedula',
-    'nombre',
-    'cargo',
-    'tipoContrato',
-    'fechaInicial'
-  ];
+  cargando = false;
 
-  empleados: TipoContratoEmpleado[] = [];
-  empleadosFiltrados: TipoContratoEmpleado[] = [];
+  private gridApi!: GridApi;
 
-  constructor(private fb: FormBuilder) {}
 
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      buscarNombre: ['']
-    });
+  /* ============================================================
+     DATOS
+  ============================================================ */
 
-    this.cargarMock();
-    this.filtrar();
+  empleados:
+    EmpleadoTipoContratoResponse[] = [];
 
-    this.form.get('buscarNombre')?.valueChanges.subscribe(() => {
-      this.filtrar();
-    });
-  }
+  filas:
+    TipoContratoEmpleadoFila[] = [];
 
-  cargarMock(): void {
-    this.empleados = [
-      {
-        secuencia: 2,
-        codigo: 1321,
-        cedula: '1721532513',
-        nombre: 'Abendaño Anilema Bryan Jordan',
-        cargo: 'Tecnologo',
-        tipoContrato: '01 - A Prueba Tiempo Completo',
-        fechaInicial: '02/06/2020'
-      },
-      {
-        secuencia: 3,
-        codigo: 1422,
-        cedula: '1312209966',
-        nombre: 'Abril Macias José Francisco',
-        cargo: 'Médico Emergenciólogo',
-        tipoContrato: '01 - A Prueba Tiempo Completo',
-        fechaInicial: '21/12/2019'
-      },
-      {
-        secuencia: 4,
-        codigo: 738,
-        cedula: '1721864484',
-        nombre: 'Acaro Pérez Carmen Delicia',
-        cargo: 'Directora General',
-        tipoContrato: '06 - Indefinido Tiempo Completo',
-        fechaInicial: '01/04/2021'
-      },
-      {
-        secuencia: 5,
-        codigo: 100,
-        cedula: '1102765177',
-        nombre: 'Acevedo Collantes Byron Ramiro',
-        cargo: 'Directora General',
-        tipoContrato: '06 - Indefinido Tiempo Completo',
-        fechaInicial: '01/10/2019'
-      },
-      {
-        secuencia: 6,
-        codigo: 737,
-        cedula: '0201841707',
-        nombre: 'Alban Martínez Wilson',
-        cargo: 'Auxiliar 1 - Aux. Mant. Aseo',
-        tipoContrato: '06 - Indefinido Tiempo Completo',
-        fechaInicial: '26/03/2022'
-      }
-    ];
-  }
 
-  filtrar(): void {
-    const texto = (this.form.get('buscarNombre')?.value || '').toLowerCase().trim();
+  /* ============================================================
+     COLUMNAS AG GRID
+  ============================================================ */
 
-    if (!texto) {
-      this.empleadosFiltrados = [...this.empleados];
-      return;
+  columnDefs:
+    ColDef<TipoContratoEmpleadoFila>[] = [
+
+    {
+      headerName: '#',
+      field: 'secuencia',
+      width: 65,
+      minWidth: 65,
+      maxWidth: 75,
+      pinned: 'left'
+    },
+
+    {
+      headerName: 'Código',
+      field: 'idEmpleado',
+      width: 90,
+      minWidth: 90
+    },
+
+    {
+      headerName: 'Cédula',
+      field: 'cedula',
+      width: 120,
+      minWidth: 120
+    },
+
+    {
+      headerName: 'Nombre',
+      field: 'nombre',
+      minWidth: 260,
+      flex: 2
+    },
+
+    {
+      headerName: 'Cargo',
+      field: 'cargo',
+      minWidth: 220,
+      flex: 1.5
+    },
+
+    {
+      headerName: 'Nro.',
+      field: 'nroContrato',
+      width: 80,
+      minWidth: 80
+    },
+
+    {
+      headerName: 'Tipo de Contrato',
+      field: 'tipoContrato',
+      minWidth: 250,
+      flex: 1.6
+    },
+
+    {
+      headerName: 'Fecha Ingreso',
+      field: 'fechaIngreso',
+      width: 130,
+
+      valueFormatter: params =>
+        this.formatearFecha(
+          params.value
+        )
+    },
+
+    {
+      headerName: 'Fecha Salida',
+      field: 'fechaSalida',
+      width: 130,
+
+      valueFormatter: params =>
+        this.formatearFecha(
+          params.value
+        )
+    },
+
+    {
+      headerName: 'Terminación',
+      field: 'fechaTerminacion',
+      width: 130,
+
+      valueFormatter: params =>
+        this.formatearFecha(
+          params.value
+        )
     }
 
-    this.empleadosFiltrados = this.empleados.filter(item =>
-      item.nombre.toLowerCase().includes(texto)
+  ];
+
+
+  /* ============================================================
+     CONFIGURACIÓN GENERAL COLUMNAS
+  ============================================================ */
+
+  defaultColDef:
+    ColDef<TipoContratoEmpleadoFila> = {
+
+      sortable: true,
+
+      filter: true,
+
+      resizable: true,
+
+      suppressMovable: false
+
+    };
+
+
+  constructor(
+
+    private readonly fb:
+      FormBuilder,
+
+    private readonly reportesService:
+      ReportesEmpleadosService
+
+  ) {}
+
+
+  /* ============================================================
+     INIT
+  ============================================================ */
+
+  ngOnInit(): void {
+
+    this.form =
+      this.fb.group({
+
+        buscarNombre: ['']
+
+      });
+
+
+    /* ==========================================================
+       CARGA INICIAL
+    ========================================================== */
+
+    this.cargar();
+
+
+    /* ==========================================================
+       BÚSQUEDA AUTOMÁTICA
+    ========================================================== */
+
+    this.form
+      .get('buscarNombre')
+      ?.valueChanges
+      .pipe(
+
+        debounceTime(400),
+
+        distinctUntilChanged()
+
+      )
+      .subscribe(
+        valor => {
+
+          this.cargar(
+            valor
+          );
+
+        }
+      );
+  }
+
+
+  /* ============================================================
+     GRID READY
+  ============================================================ */
+
+  onGridReady(
+    event: GridReadyEvent
+  ): void {
+
+    this.gridApi =
+      event.api;
+
+    this.gridApi.sizeColumnsToFit();
+  }
+
+
+  /* ============================================================
+     CARGAR API
+  ============================================================ */
+
+  cargar(
+    nombre?: string | null
+  ): void {
+
+    this.cargando = true;
+
+
+    this.reportesService
+      .consultarTiposContratoEmpleados(
+        nombre
+      )
+      .subscribe({
+
+        next: (
+          response:
+            EmpleadoTipoContratoResponse[]
+        ) => {
+
+          this.empleados =
+            response ?? [];
+
+
+          this.construirFilas();
+
+
+          this.cargando = false;
+
+        },
+
+
+        error: (
+          error:
+            HttpErrorResponse
+        ) => {
+
+          this.cargando = false;
+
+          this.empleados = [];
+
+          this.filas = [];
+
+
+          console.error(
+            'Error consultando tipos de contrato:',
+            error
+          );
+
+        }
+
+      });
+  }
+
+
+  /* ============================================================
+     CONSTRUIR FILAS
+
+     1 empleado con 3 contratos
+     =
+     3 filas AG Grid
+  ============================================================ */
+
+  private construirFilas(): void {
+
+    const resultado:
+      TipoContratoEmpleadoFila[] = [];
+
+
+    let secuencia = 1;
+
+
+    for (
+      const empleado
+      of this.empleados
+    ) {
+
+      if (
+        !empleado.contratos ||
+        empleado.contratos.length === 0
+      ) {
+
+        continue;
+
+      }
+
+
+      for (
+        const contrato
+        of empleado.contratos
+      ) {
+
+        resultado.push(
+          this.crearFila(
+
+            secuencia++,
+
+            empleado,
+
+            contrato
+
+          )
+        );
+
+      }
+
+    }
+
+
+    this.filas =
+      resultado;
+
+  }
+
+
+  /* ============================================================
+     CREAR FILA
+  ============================================================ */
+
+  private crearFila(
+
+    secuencia: number,
+
+    empleado:
+      EmpleadoTipoContratoResponse,
+
+    contrato:
+      ContratoEmpleadoResponse
+
+  ): TipoContratoEmpleadoFila {
+
+    return {
+
+      secuencia:
+        secuencia,
+
+      idEmpleado:
+        empleado.idEmpleado,
+
+      cedula:
+        empleado.cedula ?? '',
+
+      nombre:
+        empleado.empleado ?? '',
+
+      cargo:
+        empleado.cargo ?? '',
+
+      nroContrato:
+        contrato.nroContrato,
+
+      tipoContrato:
+        contrato.tipoContrato ?? '',
+
+      fechaIngreso:
+        contrato.fechaIngreso,
+
+      fechaSalida:
+        contrato.fechaSalida,
+
+      fechaTerminacion:
+        contrato.fechaTerminacionContrato
+
+    };
+
+  }
+
+
+  /* ============================================================
+     BUSCAR
+  ============================================================ */
+
+  buscar(): void {
+
+    const nombre =
+      this.form
+        .get('buscarNombre')
+        ?.value;
+
+
+    this.cargar(
+      nombre
     );
   }
-} 
+
+
+  /* ============================================================
+     LIMPIAR
+  ============================================================ */
+
+  limpiar(): void {
+
+    this.form.reset({
+      buscarNombre: ''
+    });
+
+  }
+
+
+  /* ============================================================
+     EXPORTAR EXCEL
+
+     Exporta lo que está actualmente visible en AG Grid,
+     respetando filtros y ordenamiento.
+  ============================================================ */
+
+  exportarExcel(): void {
+
+    if (
+      !this.gridApi
+    ) {
+
+      return;
+
+    }
+
+
+    const datos: any[] = [];
+
+
+    /* ==========================================================
+       OBTENER FILAS DESPUÉS DE FILTROS Y ORDENAMIENTO
+    ========================================================== */
+
+    this.gridApi
+      .forEachNodeAfterFilterAndSort(
+        node => {
+
+          if (!node.data) {
+            return;
+          }
+
+
+          const fila =
+            node.data as
+              TipoContratoEmpleadoFila;
+
+
+          datos.push({
+
+            'Nro.':
+              fila.secuencia,
+
+            'Código':
+              fila.idEmpleado,
+
+            'Cédula':
+              fila.cedula,
+
+            'Nombre':
+              fila.nombre,
+
+            'Cargo':
+              fila.cargo,
+
+            'Nro. Contrato':
+              fila.nroContrato,
+
+            'Tipo de Contrato':
+              fila.tipoContrato,
+
+            'Fecha Ingreso':
+              this.formatearFecha(
+                fila.fechaIngreso
+              ),
+
+            'Fecha Salida':
+              this.formatearFecha(
+                fila.fechaSalida
+              ),
+
+            'Terminación':
+              this.formatearFecha(
+                fila.fechaTerminacion
+              )
+
+          });
+
+        }
+      );
+
+
+    if (
+      datos.length === 0
+    ) {
+
+      alert(
+        'No existen datos para exportar.'
+      );
+
+      return;
+
+    }
+
+
+    /* ==========================================================
+       CREAR HOJA
+    ========================================================== */
+
+    const worksheet =
+      XLSX.utils.json_to_sheet(
+        datos
+      );
+
+
+    /* ==========================================================
+       ANCHO COLUMNAS
+    ========================================================== */
+
+    worksheet['!cols'] = [
+
+      { wch: 7 },
+
+      { wch: 10 },
+
+      { wch: 14 },
+
+      { wch: 38 },
+
+      { wch: 32 },
+
+      { wch: 14 },
+
+      { wch: 38 },
+
+      { wch: 15 },
+
+      { wch: 15 },
+
+      { wch: 15 }
+
+    ];
+
+
+    /* ==========================================================
+       CREAR LIBRO
+    ========================================================== */
+
+    const workbook =
+      XLSX.utils.book_new();
+
+
+    XLSX.utils.book_append_sheet(
+
+      workbook,
+
+      worksheet,
+
+      'TIPO_CONTRATO'
+
+    );
+
+
+    /* ==========================================================
+       NOMBRE ARCHIVO
+    ========================================================== */
+
+    const hoy =
+      new Date();
+
+
+    const fechaArchivo =
+      (
+        hoy.getFullYear()
+        +
+        String(
+          hoy.getMonth() + 1
+        ).padStart(
+          2,
+          '0'
+        )
+        +
+        String(
+          hoy.getDate()
+        ).padStart(
+          2,
+          '0'
+        )
+      );
+
+
+    XLSX.writeFile(
+
+      workbook,
+
+      `REPORTE_TIPO_CONTRATO_${fechaArchivo}.xlsx`
+
+    );
+  }
+
+
+  /* ============================================================
+     FORMATEAR FECHA
+
+     API:
+     2026-08-27
+
+     Pantalla / Excel:
+     27/08/2026
+  ============================================================ */
+
+  formatearFecha(
+    fecha:
+      string |
+      null |
+      undefined
+  ): string {
+
+    if (!fecha) {
+
+      return '';
+
+    }
+
+
+    /*
+     * Si viene:
+     *
+     * 2026-08-27
+     *
+     * evitamos:
+     * new Date(...)
+     *
+     * para no tener problemas de zona horaria.
+     */
+
+    const valor =
+      fecha.substring(
+        0,
+        10
+      );
+
+
+    const partes =
+      valor.split('-');
+
+
+    if (
+      partes.length !== 3
+    ) {
+
+      return fecha;
+
+    }
+
+
+    return (
+      `${partes[2]}/` +
+      `${partes[1]}/` +
+      `${partes[0]}`
+    );
+
+  }
+
+}

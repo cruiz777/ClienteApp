@@ -2730,5 +2730,13 @@ private setObservacionConGrupo(): void {
   // No dispares valueChanges si no lo necesitas
   ctrl.setValue(nuevo, { emitEvent: false });
 }
+quitarSaltosLinea(event: Event): void {
+  const textarea = event.target as HTMLTextAreaElement;
+  const valorSinSaltos = textarea.value.replace(/[\r\n]+/g, ' ');
 
+  if (textarea.value !== valorSinSaltos) {
+    textarea.value = valorSinSaltos;
+    this.formCaja.get('observacion')?.setValue(valorSinSaltos);
+  }
+}
 }

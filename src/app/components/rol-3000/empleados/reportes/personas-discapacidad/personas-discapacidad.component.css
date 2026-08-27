@@ -58,3 +58,14 @@
     gap: 10px;
   }
 }
+.loading {
+
+  margin-top: 25px;
+
+  text-align: center;
+
+  color: #52647d;
+
+  font-size: 13px;
+
+}

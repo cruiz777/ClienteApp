@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
+
 
 /* ============================================================
    TIPOS REPORTE GENERAL
@@ -313,10 +315,187 @@ export interface ReporteGastosPersonalesResponse {
   enfermedadCatastroficaProyectado: number;
   enfermedadCatastroficaReal: number;
 }
+
+/* ============================================================
+   TERMINACIÓN DE CONTRATO - RESPONSE
+============================================================ */
+
+export interface EmpleadoTerminacionContratoResponse {
+  idEmpleado: number;
+  cedula: string;
+  apellidos: string;
+  nombres: string;
+
+  nroContrato: number;
+  idTipoContrato: number | null;
+  tipoContrato: string | null;
+
+  fechaIngreso: string | null;
+  fechaSalida: string | null;
+  fechaTerminacionContrato: string | null;
+}
+
 /* ============================================================
    SERVICE
 ============================================================ */
+/* ============================================================
+   REPORTE INGRESO / SALIDA EMPLEADOS
+============================================================ */
 
+export interface EmpleadoIngresoSalidaResponse {
+  idEmpleado: number;
+
+  cedula: string;
+  apellidos: string;
+  nombres: string;
+  empleado: string;
+
+  nroContrato: number;
+
+  idTipoContrato: number | null;
+  tipoContrato: string | null;
+
+  fechaIngreso: string | null;
+  fechaSalida: string | null;
+  fechaTerminacionContrato: string | null;
+
+  idLocal: number | null;
+  idZona: number | null;
+
+  idCargo: number;
+  idTipoEmpleado: number;
+
+  sueldo: number | null;
+}
+
+/* ============================================================
+   TIPOS DE CONTRATO POR EMPLEADO
+============================================================ */
+
+export interface ContratoEmpleadoResponse {
+  idCronologia: number;
+  nroContrato: number;
+
+  idTipoContrato: number | null;
+  tipoContrato: string;
+
+  fechaIngreso: string | null;
+  fechaSalida: string | null;
+  fechaTerminacionContrato: string | null;
+
+  numContrato: number | null;
+  horasContrato: number | null;
+}
+
+
+export interface EmpleadoTipoContratoResponse {
+  idEmpleado: number;
+
+  cedula: string;
+
+  apellidos: string;
+
+  nombres: string;
+
+  empleado: string;
+
+  idCargo: number;
+
+  cargo: string;
+
+  totalContratos: number;
+
+  contratos: ContratoEmpleadoResponse[];
+}
+
+export interface EmpleadoDiscapacidadResponse {
+
+  idEmpleado: number;
+
+  cedula: string;
+
+  apellidos: string;
+
+  nombres: string;
+
+  empleado: string;
+
+  carnetConadis: string;
+
+  porcentajeDiscapacidad: string;
+
+  idTipoDiscapacidad: number | null;
+
+  tipoDiscapacidad: string;
+
+  codigoTipoDiscapacidad: string;
+
+  codigoCondicionDiscapacidad: string;
+
+  descripcionDiscapacidad: string;
+
+  cedulaDis: string;
+
+  nombreDis: string;
+
+  activo: boolean;
+
+  estado: string;
+}
+export interface FichaActualizacionEmpleadoResponse {
+
+  idEmpleado: number;
+
+  cedula: string;
+
+  nombres: string;
+
+  apellidos: string;
+
+  estadoCivil: string;
+
+  sexo: string;
+
+  fechaNacimiento: string | null;
+
+  ciudad: string;
+
+  direccion: string;
+
+  telefono: string;
+
+  celular: string;
+
+  mail: string;
+
+  tipoSangre: string;
+
+  codigoSectorial: string;
+
+  tipoEmpleado: string;
+
+  cargo: string;
+
+  departamento: string;
+
+  local: string;
+
+  banco: string;
+
+  tipoCuenta: string;
+
+  cuenta: string;
+
+  tipoContrato: string;
+
+  fechaIngreso: string | null;
+
+  nivelInstruccion: string;
+
+  conyuge: string;
+
+  numeroCargas: number;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -471,59 +650,282 @@ export class ReportesEmpleadosService {
    EMPLEADOS PARA REPORTES
 ========================================================== */
 
-obtenerEmpleadosReporte():
-  Observable<
-    ApiResponse<
-      CatalogoEmpleadoReporte[]
-    >
-  > {
+  obtenerEmpleadosReporte():
+    Observable<
+      ApiResponse<
+        CatalogoEmpleadoReporte[]
+      >
+    > {
 
-  return this.http.get<
-    ApiResponse<
-      CatalogoEmpleadoReporte[]
-    >
-  >(
-    `${this.baseUrl}/empleados`
-  );
-}
+    return this.http.get<
+      ApiResponse<
+        CatalogoEmpleadoReporte[]
+      >
+    >(
+      `${this.baseUrl}/empleados`
+    );
+  }
 
-/* ==========================================================
-   GASTOS PERSONALES - CONSULTA
-========================================================== */
+  /* ==========================================================
+     GASTOS PERSONALES - CONSULTA
+  ========================================================== */
 
-consultarGastosPersonales(
-  request:
-    ReporteGastosPersonalesRequest
-): Observable<
-  ApiResponse<
-    ReporteGastosPersonalesResponse[]
-  >
-> {
-
-  return this.http.post<
+  consultarGastosPersonales(
+    request:
+      ReporteGastosPersonalesRequest
+  ): Observable<
     ApiResponse<
       ReporteGastosPersonalesResponse[]
     >
-  >(
-    `${this.baseUrl}/gastos-personales`,
-    request
-  );
-}
+  > {
 
-/* ==========================================================
-   GASTOS PERSONALES - PDF
+    return this.http.post<
+      ApiResponse<
+        ReporteGastosPersonalesResponse[]
+      >
+    >(
+      `${this.baseUrl}/gastos-personales`,
+      request
+    );
+  }
+
+  /* ==========================================================
+     GASTOS PERSONALES - PDF
+  ========================================================== */
+
+  generarGastosPersonalesPdf(
+    request:
+      ReporteGastosPersonalesRequest
+  ): Observable<Blob> {
+
+    return this.http.post(
+      `${this.baseUrl}/gastos-personales/pdf`,
+      request,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
+
+
+  /* ==========================================================
+     TERMINACIÓN DE CONTRATO - CONSULTA
+  ========================================================== */
+
+  consultarTerminacionContrato(
+    mes: number,
+    anio: number,
+    idTipoContrato: number | null
+  ): Observable<EmpleadoTerminacionContratoResponse[]> {
+
+    let params = new HttpParams()
+      .set('mes', mes.toString())
+      .set('anio', anio.toString());
+
+    if (idTipoContrato !== null) {
+      params = params.set(
+        'idTipoContrato',
+        idTipoContrato.toString()
+      );
+    }
+
+    return this.http.get<EmpleadoTerminacionContratoResponse[]>(
+      `${this.baseUrl}/terminacion-contrato`,
+      { params }
+    );
+  }
+
+  /* ==========================================================
+     TERMINACIÓN DE CONTRATO - PDF
+  ========================================================== */
+
+  generarTerminacionContratoPdf(
+    mes: number,
+    anio: number,
+    idTipoContrato: number | null
+  ): Observable<Blob> {
+
+    let params = new HttpParams()
+      .set('mes', mes.toString())
+      .set('anio', anio.toString());
+
+    if (idTipoContrato !== null) {
+      params = params.set(
+        'idTipoContrato',
+        idTipoContrato.toString()
+      );
+    }
+
+    return this.http.get(
+      `${this.baseUrl}/terminacion-contrato/pdf`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
+  /* ==========================================================
+   EMPLEADOS INGRESO / SALIDA - CONSULTA
 ========================================================== */
 
-generarGastosPersonalesPdf(
-  request:
-    ReporteGastosPersonalesRequest
-): Observable<Blob> {
+  consultarEmpleadosIngresoSalida(
+    fechaDesde: string,
+    fechaHasta: string,
+    tipoFecha: number
+  ): Observable<EmpleadoIngresoSalidaResponse[]> {
 
-  return this.http.post(
-    `${this.baseUrl}/gastos-personales/pdf`,
-    request,
+    const params = new HttpParams()
+      .set(
+        'fechaDesde',
+        fechaDesde
+      )
+      .set(
+        'fechaHasta',
+        fechaHasta
+      )
+      .set(
+        'tipoFecha',
+        tipoFecha.toString()
+      );
+
+    return this.http.get<
+      EmpleadoIngresoSalidaResponse[]
+    >(
+      `${this.baseUrl}/empleados-ingreso-salida`,
+      {
+        params
+      }
+    );
+  }
+
+
+  /* ==========================================================
+     EMPLEADOS INGRESO / SALIDA - PDF
+  ========================================================== */
+
+  generarEmpleadosIngresoSalidaPdf(
+    fechaDesde: string,
+    fechaHasta: string,
+    tipoFecha: number
+  ): Observable<Blob> {
+
+    const params = new HttpParams()
+      .set(
+        'fechaDesde',
+        fechaDesde
+      )
+      .set(
+        'fechaHasta',
+        fechaHasta
+      )
+      .set(
+        'tipoFecha',
+        tipoFecha.toString()
+      );
+
+    return this.http.get(
+      `${this.baseUrl}/empleados-ingreso-salida/pdf`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
+  /* ==========================================================
+     TIPOS DE CONTRATO POR EMPLEADO
+  ========================================================== */
+
+  consultarTiposContratoEmpleados(
+    nombre?: string | null
+  ): Observable<EmpleadoTipoContratoResponse[]> {
+
+    let params = new HttpParams();
+
+    const filtro =
+      nombre?.trim();
+
+    if (filtro) {
+      params = params.set(
+        'nombre',
+        filtro
+      );
+    }
+
+    return this.http.get<
+      EmpleadoTipoContratoResponse[]
+    >(
+      `${this.baseUrl}/tipos-contrato-empleados`,
+      {
+        params
+      }
+    );
+  }
+  consultarEmpleadosDiscapacidad(
+    activos: boolean,
+    exEmpleados: boolean
+  ): Observable<EmpleadoDiscapacidadResponse[]> {
+
+    const params = new HttpParams()
+      .set('activos', activos.toString())
+      .set('exEmpleados', exEmpleados.toString());
+
+    return this.http.get<EmpleadoDiscapacidadResponse[]>(
+      `${this.baseUrl}/empleados-discapacidad`,
+      { params }
+    );
+  }
+
+
+  generarEmpleadosDiscapacidadPdf(
+    activos: boolean,
+    exEmpleados: boolean
+  ): Observable<Blob> {
+
+    const params = new HttpParams()
+      .set('activos', activos.toString())
+      .set('exEmpleados', exEmpleados.toString());
+
+    return this.http.get(
+      `${this.baseUrl}/empleados-discapacidad/pdf`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
+  consultarFichaActualizacionEmpleado(
+  general: boolean,
+  idEmpleado: number | null
+): Observable<FichaActualizacionEmpleadoResponse[]> {
+
+  let params =
+    new HttpParams()
+      .set(
+        'general',
+        general.toString()
+      );
+
+
+  if (
+    !general &&
+    idEmpleado !== null
+  ) {
+
+    params =
+      params.set(
+        'idEmpleado',
+        idEmpleado.toString()
+      );
+
+  }
+
+
+  return this.http.get<
+    FichaActualizacionEmpleadoResponse[]
+  >(
+    `${this.baseUrl}/ficha-actualizacion-empleado`,
     {
-      responseType: 'blob'
+      params
     }
   );
 }

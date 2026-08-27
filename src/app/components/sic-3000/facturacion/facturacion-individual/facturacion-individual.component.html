@@ -116,8 +116,8 @@
             <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
               <mat-option value="">Seleccione…</mat-option>
               <mat-option *ngFor="let p of prefijos; trackBy: trackByPrefijoId" [value]="p.id_prefijos">
-  {{ p.codpre }} <span *ngIf="p.fechaVista">--- {{ p.fechaVista }}</span>
-</mat-option>
+                {{ p.codpre }} <span *ngIf="p.fechaVista">--- {{ p.fechaVista }}</span>
+              </mat-option>
 
             </mat-select>
 
@@ -347,22 +347,24 @@
           <div class="field-group">
             <label class="field-label">Orden Compra:</label>
             <div class="input-wrapper">
-              <input type="text" class="text-input" formControlName="ordenCompra" placeholder="044555">
+              <input type="text" class="text-input campo-normal" formControlName="ordenCompra" >
             </div>
           </div>
 
           <div class="field-group">
             <label class="field-label">Guía Remisión:</label>
             <div class="input-wrapper">
-              <input type="text" class="text-input" formControlName="guiaRemision" placeholder="9820777">
+              <input type="text" class="text-input campo-normal" formControlName="guiaRemision" >
             </div>
           </div>
 
           <div class="field-group field-observacion">
-            <label class="field-label">Observación:</label>
+            <label class="field-label" for="observacion">Observación:</label>
+
             <div class="input-wrapper">
-              <textarea class="text-area" rows="1" formControlName="observacion" placeholder="Observación"
-                (input)="autoGrow($event)"></textarea>
+              <textarea id="observacion" class="text-area" rows="3" formControlName="observacion"
+                placeholder="Ingrese una observación" (keydown.enter)="$event.preventDefault()"
+                (input)="quitarSaltosLinea($event)"></textarea>
             </div>
           </div>
         </div>

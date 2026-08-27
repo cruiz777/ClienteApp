@@ -1,31 +1,128 @@
 <div class="reporte-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Terminación de Contrato</h2>
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+    <h2>
+      Terminación de Contrato
+    </h2>
 
     <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha</mat-label>
-        <input matInput type="date" formControlName="fecha" />
-      </mat-form-field>
+
+      <!-- MES -->
 
       <mat-form-field appearance="outline">
-        <mat-label>Tipo de Contrato</mat-label>
-        <mat-select formControlName="tipoContrato">
-          <mat-option *ngFor="let item of tiposContrato" [value]="item">
-            {{ item }}
+
+        <mat-label>Mes</mat-label>
+
+        <mat-select
+          formControlName="mes">
+
+          <mat-option
+            *ngFor="let item of meses"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
           </mat-option>
+
         </mat-select>
+
       </mat-form-field>
+
+
+      <!-- AÑO -->
+
+      <mat-form-field appearance="outline">
+
+        <mat-label>Año</mat-label>
+
+        <mat-select
+          formControlName="anio">
+
+          <mat-option
+            *ngFor="let item of anios"
+            [value]="item">
+
+            {{ item }}
+
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
+
+      <!-- TIPO CONTRATO -->
+
+      <mat-form-field appearance="outline">
+
+        <mat-label>
+          Tipo de Contrato
+        </mat-label>
+
+        <mat-select
+          formControlName="idTipoContrato"
+          [disabled]="cargandoTiposContrato">
+
+          <!-- TODOS -->
+
+          <mat-option [value]="null">
+            Todos
+          </mat-option>
+
+
+          <!-- DATOS DESDE API -->
+
+          <mat-option
+            *ngFor="let item of tiposContrato"
+            [value]="item.idTipoContrato">
+
+            {{ item.descripcion }}
+
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
     </div>
+
 
     <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
-        Aceptar
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="
+          cargando ||
+          cargandoTiposContrato
+        "
+        (click)="aceptar()">
+
+        {{
+          cargando
+            ? 'Generando...'
+            : 'Aceptar'
+        }}
+
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="cargando"
+        (click)="cancelar()">
+
         Cancelar
+
       </button>
+
     </div>
+
   </div>
+
 </div>

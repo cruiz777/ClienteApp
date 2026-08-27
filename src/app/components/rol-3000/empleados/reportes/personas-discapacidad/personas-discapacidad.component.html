@@ -1,24 +1,82 @@
 <div class="reporte-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Personas con Discapacidad</h2>
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+    <h2>
+      Personas con Discapacidad
+    </h2>
+
 
     <div class="section-block">
-      <label class="section-label">Actividad:</label>
+
+      <label class="section-label">
+        Actividad:
+      </label>
+
 
       <div class="checks-row">
-        <mat-checkbox formControlName="activos">Activos</mat-checkbox>
-        <mat-checkbox formControlName="exempleados">Exempleados</mat-checkbox>
+
+        <mat-checkbox
+          formControlName="activos">
+
+          Activos
+
+        </mat-checkbox>
+
+
+        <mat-checkbox
+          formControlName="exEmpleados">
+
+          Ex-empleados
+
+        </mat-checkbox>
+
       </div>
+
     </div>
+
+
+    <div
+      class="loading"
+      *ngIf="cargando">
+
+      Generando reporte...
+
+    </div>
+
 
     <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
-        Aceptar
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="cargando"
+        (click)="aceptar()">
+
+        <mat-icon>
+          picture_as_pdf
+        </mat-icon>
+
+        Generar PDF
+
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="cargando"
+        (click)="cancelar()">
+
         Cancelar
+
       </button>
+
     </div>
+
   </div>
+
 </div>

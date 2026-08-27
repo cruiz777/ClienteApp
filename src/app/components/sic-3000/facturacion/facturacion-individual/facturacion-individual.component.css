@@ -2385,11 +2385,10 @@ label[for="secuencial"]{ padding-left: 0 !important; }
   .invoice-header{ flex-direction:column; align-items:flex-start; }
   .invoice-fields-row{ margin-top:8px; gap:20px; flex-wrap:wrap; }
 }
-.refs-row{
-  display:flex;
-  align-items:flex-end;  /* alinea por la base */
-  gap:32px;
-  margin-top:16px;
+.refs-row .field-label {
+  min-height: 18px;
+  margin: 0 0 6px;
+  display: block;
 }
 
 .field-group{ display:flex; flex-direction:column; }
@@ -2819,6 +2818,276 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 /* Responsive: apila en pantallas pequeñas */
 @media (max-width: 768px){
   .invoice-header{
+    grid-template-columns: 1fr;
+  }
+}
+.field-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+}
+
+.text-input {
+  font-size: 17px;
+  font-weight: 700;
+  color: #000;
+  opacity: 1;
+}
+.field-observacion {
+  flex: 1;
+  min-width: 350px;
+}
+
+.field-observacion .input-wrapper {
+  width: 100%;
+}
+
+.field-observacion .text-area {
+  width: 100%;
+  min-height: 80px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #000;
+  opacity: 1;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.field-observacion {
+  flex: 2;
+  min-width: 350px;
+}
+
+.field-observacion .text-area {
+  width: 100%;
+  min-height: 80px;
+}
+/* Observación ocupa todo el espacio disponible */
+.refs-row .field-group.field-observacion {
+  flex: 1 1 350px;
+  min-width: 280px;
+}
+
+/* Mayor especificidad para sobrescribir el width: 180px */
+.refs-row .field-group.field-observacion .input-wrapper {
+  width: 100%;
+  height: auto;
+  min-height: 72px;
+  padding: 0;
+}
+
+/* Evita la línea inferior creada para los inputs normales */
+.refs-row .field-observacion .input-wrapper::after {
+  display: none;
+}
+
+.refs-row .field-observacion .text-area {
+  display: block;
+  width: 100%;
+  min-height: 72px;
+  max-height: 180px;
+  padding: 10px 12px;
+
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #002c6c;
+
+  background: #fff;
+  border: 1px solid #ccd5e2;
+  border-radius: 6px;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.refs-row .field-observacion .text-area::placeholder {
+  color: #8095b5;
+}
+
+.refs-row .field-observacion .text-area:focus {
+  border-color: #f26334;
+  box-shadow: 0 0 0 3px rgba(242, 99, 52, 0.12);
+}
+
+@media (max-width: 768px) {
+  .refs-row .field-group.field-observacion {
+    flex-basis: 100%;
+    min-width: 100%;
+  }
+}
+/* ==================================================
+   ORDEN COMPRA, GUÍA REMISIÓN Y OBSERVACIÓN
+   ================================================== */
+
+.refs-row {
+  display: grid;
+  grid-template-columns: 140px 140px minmax(250px, 1fr);
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
+/* Contenedores de los campos */
+.refs-row > .field-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Etiquetas alineadas en la misma fila */
+.refs-row .field-label {
+  display: block;
+  min-height: 18px;
+  margin: 0 0 6px;
+  padding: 0;
+
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  color: #000;
+}
+
+/* Input wrapper de Orden Compra y Guía Remisión */
+.refs-row > .field-group:not(.field-observacion) .input-wrapper {
+  position: relative;
+  width: 100%;
+  height: 28px;
+  padding: 0 0 6px;
+  box-sizing: border-box;
+}
+
+/* Línea inferior de los inputs normales */
+.refs-row > .field-group:not(.field-observacion)
+  .input-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  height: 1px;
+  background-color: #ccd5e2;
+  transition:
+    height 0.15s ease,
+    background-color 0.15s ease;
+}
+
+/* Línea cuando el input está seleccionado */
+.refs-row > .field-group:not(.field-observacion)
+  .input-wrapper:focus-within::after {
+  height: 2px;
+  background-color: #f26334;
+}
+
+/* Inputs normales */
+.refs-row .campo-normal {
+  position: static;
+  display: block;
+  width: 100%;
+  height: 22px;
+  padding: 2px 6px;
+
+  font-family: Inter, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #002c6c;
+
+  background-color: transparent;
+  border: 0;
+  outline: 0;
+  box-sizing: border-box;
+}
+
+.refs-row .campo-normal::placeholder {
+  color: #8095b5;
+}
+
+/* ==================================================
+   OBSERVACIÓN
+   ================================================== */
+
+.refs-row > .field-group.field-observacion {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Sobrescribe el width y height global de input-wrapper */
+.refs-row
+  > .field-group.field-observacion
+  > .input-wrapper {
+  position: relative;
+  width: 100%;
+  height: auto;
+  min-height: 72px;
+  padding: 0;
+}
+
+/* Observación no utiliza la línea inferior de los inputs */
+.refs-row
+  > .field-group.field-observacion
+  > .input-wrapper::after {
+  display: none;
+}
+
+/* Área de observación */
+.refs-row .field-observacion .text-area {
+  position: static;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  max-height: 180px;
+  padding: 10px 12px;
+
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #002c6c;
+
+  background-color: #fff;
+  border: 1px solid #ccd5e2;
+  border-radius: 6px;
+  outline: none;
+  resize: vertical;
+  overflow: auto;
+  box-sizing: border-box;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.refs-row .field-observacion .text-area::placeholder {
+  color: #8095b5;
+}
+
+.refs-row .field-observacion .text-area:focus {
+  border-color: #f26334;
+  box-shadow: 0 0 0 3px rgba(242, 99, 52, 0.12);
+}
+
+/* Mantiene los tres campos en una fila en el tamaño mostrado */
+@media (max-width: 620px) {
+  .refs-row {
+    grid-template-columns: 110px 110px minmax(200px, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Solamente se apilan en pantallas pequeñas */
+@media (max-width: 480px) {
+  .refs-row {
     grid-template-columns: 1fr;
   }
 }

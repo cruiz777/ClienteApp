@@ -1148,7 +1148,7 @@ ngOnInit(): void {
         condicionTrabajador: [''],
         idTipoDiscapacidad: [null],
         porcentajeDiscapacidad: [''],
-        discapacitadoSustituto: [false],
+         enfermedadCatastrofica: [false],
         descripcionDiscapacidad: [''],
         tipoIdentidad: [''],
         identificacion: [''],
@@ -1435,10 +1435,12 @@ cargarFichaEmpleado(idEmpleado?: number): void {
           empleado: nombreCompleto,
           identificacion: emp.documento ?? '',
           discapacitado: emp.discap === true,
+            enfermedadCatastrofica:
+    emp.enfcatastro === true,
           beneficioGalapagos: emp.galapagos === true
         }
       });
-
+      
       // Estas líneas deben estar DENTRO del next,
       // porque aquí sí existe la variable emp.
       this.idCiudadPendiente =
@@ -1569,7 +1571,7 @@ cargarFichaEmpleado(idEmpleado?: number): void {
         condicionTrabajador: '',
         idTipoDiscapacidad: null,
         porcentajeDiscapacidad: '',
-        discapacitadoSustituto: false,
+        enfermedadCatastrofica: false,
         descripcionDiscapacidad: '',
         tipoIdentidad: '',
         identificacion: '',
@@ -2176,6 +2178,7 @@ cargarFichaEmpleado(idEmpleado?: number): void {
         empleado: '',
         identificacion: '',
         discapacitado: false,
+          enfermedadCatastrofica: false,  
         beneficioGalapagos: false
       }
     }, { emitEvent: false });
@@ -2229,8 +2232,11 @@ cargarFichaEmpleado(idEmpleado?: number): void {
       discap: de.discapacitado === true,
       teredad: da.terceraEdad === true,
 
-      galapagos: de.beneficioGalapagos === true,
-      enfcatastro: false,
+      galapagos:
+  de.beneficioGalapagos === true,
+
+enfcatastro:
+  de.enfermedadCatastrofica === true,
 
       retJudicial: ds.retencionJudicial === true,
       valorRetencionJ: ds.valoresRetencion ? Number(ds.valoresRetencion) : null,
@@ -2523,48 +2529,190 @@ cargarFichaEmpleado(idEmpleado?: number): void {
     this.form.get('datosGenerales.empleadoBusqueda')?.setValue('');
     this.empleadosFiltrados = [];
   }
-  cargarDiscapacidadEmpleado(idEmpleado: number): void {
-    this.empleadoDiscapacidadService.getByEmpleado(idEmpleado).subscribe({
+ cargarDiscapacidadEmpleado(
+  idEmpleado: number
+): void {
+
+  this.empleadoDiscapacidadService
+    .getByEmpleado(idEmpleado)
+    .subscribe({
+
       next: (resp) => {
 
+        // =====================================================
+        // SI NO EXISTEN DATOS DE DISCAPACIDAD
+        // =====================================================
+
         if (!resp.data) {
+
+          this.form.patchValue(
+            {
+              datosEspeciales: {
+
+                residenciaTrabajador: '',
+                aplicaConvenio: '',
+                sistemaSalarioNeto: '',
+                paisResidencia: '',
+
+                carnetConadis: '',
+                condicionTrabajador: '',
+                idTipoDiscapacidad: null,
+                porcentajeDiscapacidad: '',
+                descripcionDiscapacidad: '',
+                
+                identificacion: '',
+                nombreDiscapacidad: '',
+
+                ingresosAgraviados: '',
+                aportePersonalIess: '',
+                valorImpuestoRetenido: '',
+                compensacionEconomicaDigna: ''
+
+                /*
+                 * IMPORTANTE:
+                 *
+                 * NO tocar:
+                 * discapacitado
+                 *
+                 * Ese valor viene de:
+                 * RpMaeEmp.discap
+                 */
+              }
+            },
+            {
+              emitEvent: false
+            }
+          );
+
           return;
         }
 
-        const dis = resp.data;
 
-        this.form.patchValue({
-          datosEspeciales: {
-            residenciaTrabajador: dis.recidenciaEmp ?? '',
-            aplicaConvenio: dis.convenioEmp ?? '',
-            sistemaSalarioNeto: dis.sisSalNetEmp ?? '',
-            paisResidencia: dis.pais ?? '',
+        const dis =
+          resp.data;
 
-            carnetConadis: dis.carnetConadis ?? '',
-            condicionTrabajador: dis.codCondDiscap ?? '',
-            idTipoDiscapacidad: dis.idTipoDiscapacidad
-              ? Number(dis.idTipoDiscapacidad)
-              : null,
-            porcentajeDiscapacidad: dis.porcentajeDiscap ?? '',
-            descripcionDiscapacidad: dis.descripcionDiscap ?? '',
 
-            identificacion: dis.cedulaDis ?? '',
-            nombreDiscapacidad: dis.nombreDis ?? '',
+        // =====================================================
+        // CARGAR INFORMACIÓN ADICIONAL
+        // =====================================================
 
-            discapacitado: !!dis.idTipoDiscapacidad,
-            ingresosAgraviados: dis.ingresosGravOtroEmp ? String(dis.ingresosGravOtroEmp) : '',
-            aportePersonalIess: dis.aporteIessOtroEmp ? String(dis.aporteIessOtroEmp) : '',
-            valorImpuestoRetenido: dis.impuestoRetOtroEmp ? String(dis.impuestoRetOtroEmp) : '',
-            compensacionEconomicaDigna: dis.compEconSalarioDigno ? String(dis.compEconSalarioDigno) : '',
+        this.form.patchValue(
+          {
+            datosEspeciales: {
 
+              residenciaTrabajador:
+                dis.recidenciaEmp ?? '',
+
+              aplicaConvenio:
+                dis.convenioEmp ?? '',
+
+              sistemaSalarioNeto:
+                dis.sisSalNetEmp ?? '',
+
+              paisResidencia:
+                dis.pais ?? '',
+
+
+              // ===============================================
+              // DISCAPACIDAD
+              // ===============================================
+
+              carnetConadis:
+                dis.carnetConadis ?? '',
+
+              condicionTrabajador:
+                dis.codCondDiscap ?? '',
+
+              idTipoDiscapacidad:
+                dis.idTipoDiscapacidad
+                  ? Number(
+                      dis.idTipoDiscapacidad
+                    )
+                  : null,
+
+              porcentajeDiscapacidad:
+                dis.porcentajeDiscap ?? '',
+
+              descripcionDiscapacidad:
+                dis.descripcionDiscap ?? '',
+
+
+              // ===============================================
+              // PERSONA / SUSTITUTO
+              // ===============================================
+
+              identificacion:
+                dis.cedulaDis ?? '',
+
+              nombreDiscapacidad:
+                dis.nombreDis ?? '',
+
+
+              // ===============================================
+              // OTROS DATOS
+              // ===============================================
+
+              ingresosAgraviados:
+                dis.ingresosGravOtroEmp !== null &&
+                dis.ingresosGravOtroEmp !== undefined
+                  ? String(
+                      dis.ingresosGravOtroEmp
+                    )
+                  : '',
+
+              aportePersonalIess:
+                dis.aporteIessOtroEmp !== null &&
+                dis.aporteIessOtroEmp !== undefined
+                  ? String(
+                      dis.aporteIessOtroEmp
+                    )
+                  : '',
+
+              valorImpuestoRetenido:
+                dis.impuestoRetOtroEmp !== null &&
+                dis.impuestoRetOtroEmp !== undefined
+                  ? String(
+                      dis.impuestoRetOtroEmp
+                    )
+                  : '',
+
+              compensacionEconomicaDigna:
+                dis.compEconSalarioDigno !== null &&
+                dis.compEconSalarioDigno !== undefined
+                  ? String(
+                      dis.compEconSalarioDigno
+                    )
+                  : ''
+
+              /*
+               * NO agregar:
+               *
+               * discapacitado: !!dis.idTipoDiscapacidad
+               *
+               * porque eso vuelve a marcar el checkbox.
+               */
+            }
+          },
+          {
+            emitEvent: false
           }
-        });
+        );
+
       },
+
+
       error: (err) => {
-        console.error('Error cargando discapacidad', err);
+
+        console.error(
+          'Error cargando discapacidad',
+          err
+        );
+
       }
+
     });
-  }
+
+}
   private toNumberOrNull(value: any): number | null {
     if (value === null || value === undefined || value === '') {
       return null;

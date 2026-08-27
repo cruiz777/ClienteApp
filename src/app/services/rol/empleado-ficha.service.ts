@@ -27,6 +27,7 @@ export interface EmpleadoFichaResponse {
   cargo?: string;
   zona?: string;
   documento?: string;
+  enfermedadCatastrofica?: boolean;
   ctaCble?: string;
   fecIngreso?: string;
   idTipemp: number;
@@ -76,6 +77,7 @@ export interface EmpleadoFichaResponse {
   idSectorial?: number;
   idEmpresaComplementaria?: number;
   galapagos?: boolean;
+   enfcatastro: boolean | null;
 }
 
 @Injectable({
