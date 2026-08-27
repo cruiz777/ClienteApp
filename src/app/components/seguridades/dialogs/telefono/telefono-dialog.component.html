@@ -1,0 +1,104 @@
+<h2 mat-dialog-title>
+  {{ modoEdicion ? 'Gestionar Teléfonos' : 'Agregar Teléfonos' }}
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  
+  <!-- FORMULARIO PARA AGREGAR/EDITAR -->
+  <div class="form-section">
+    <h3>{{ editandoIndex !== null ? 'Editar Teléfono' : 'Agregar Nuevo Teléfono' }}</h3>
+    
+    <form [formGroup]="telefonoForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          <mat-option *ngFor="let tipo of tiposTelefono" [value]="tipo">
+            {{ tipo }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="mostrarError('tipo')">
+          {{ obtenerMensajeError('tipo') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Número</mat-label>
+        <input matInput formControlName="numero" type="tel" maxlength="15">
+        <mat-error *ngIf="mostrarError('numero')">
+          {{ obtenerMensajeError('numero') }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="guardarTelefono()"
+          type="button">
+          {{ editandoIndex !== null ? 'Actualizar' : 'Agregar' }}
+        </button>
+        
+        <button 
+          mat-button 
+          *ngIf="editandoIndex !== null"
+          (click)="cancelarEdicion()"
+          type="button">
+          Cancelar Edición
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <mat-divider class="divider"></mat-divider>
+
+  <!-- LISTA DE TELÉFONOS -->
+  <div class="list-section">
+    <h3>Teléfonos Agregados ({{ telefonos.length }})</h3>
+    
+    <div *ngIf="telefonos.length === 0" class="empty-state">
+      <mat-icon>phone</mat-icon>
+      <p>No hay teléfonos agregados</p>
+    </div>
+
+    <div *ngIf="telefonos.length > 0" class="telefonos-list">
+      <mat-card *ngFor="let telefono of telefonos; let i = index" class="telefono-item">
+        <mat-card-content>
+          <div class="telefono-info">
+            <div class="telefono-details">
+              <span class="tipo-badge">{{ telefono.tipo }}</span>
+              <span class="numero">{{ telefono.numero }}</span>
+            </div>
+            <div class="telefono-actions">
+              <button 
+                mat-icon-button 
+                color="primary" 
+                (click)="editarTelefono(i)"
+                matTooltip="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="eliminarTelefono(i)"
+                matTooltip="Eliminar">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="cerrar()"
+    [disabled]="telefonos.length === 0">
+    Guardar ({{ telefonos.length }})
+  </button>
+</mat-dialog-actions>

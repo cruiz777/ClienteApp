@@ -1,47 +1,52 @@
 <body>
   <div class="login-container">
-    
-    <!-- LOGO -->
-    <div class="logo">
-      <img src="assets/GS1-logo.png" alt="GS1 Logo">
-    </div>
+    <form [formGroup]="formLogin" (ngSubmit)="onLogin()" class="login-form">
+      <div class="login-card">
+        <div class="header-container">
+          <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo" class="logo-image" />
+          <h1 class="welcome-text">Bienvenido</h1>
+        </div>
 
-    <!-- TÍTULO -->
-    <h3>Bienvenido</h3>
+        <!-- Usuario -->
+        <div class="form-group">
+          <label for="username" class="field-label">Usuario:</label>
+          <input type="email" id="username" class="input-field" placeholder="Correo o nombre de usuario"
+            formControlName="email" required />
+        </div>
 
-    <!-- INPUT USUARIO -->
-    <div class="form-group">
-      <div class="input-group">
-        <label for="usuario">Usuario:</label>
-        <img src="assets/person-icon.png" alt="Usuario">
-        <input type="email" id="usuario" placeholder="gs1@gs1.com">
+        <!-- Contraseña -->
+        <div class="form-group password-group">
+          <label for="password" class="field-label">Contraseña:</label>
+          <input [type]="showPassword ? 'text' : 'password'" id="password" class="input-field" placeholder="Contraseña"
+            formControlName="password" required />
+          <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+            <img [src]="showPassword ? 'assets/icons/eye-open.png' : 'assets/icons/eye-closed.png'"
+              alt="Mostrar/ocultar contraseña" />
+          </button>
+        </div>
+
+        <!-- Olvidaste contraseña -->
+        <div class="forgot-password">
+          <a routerLink="/recuperar-clave">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <!-- Botón Login -->
+        <div class="login-button-container">
+          <button class="login-button" type="submit" [disabled]="loading">
+            <ng-container *ngIf="!loading">Iniciar Sesión</ng-container>
+            <ng-container *ngIf="loading">
+              <span class="spinner"></span> Validando...
+            </ng-container>
+          </button>
+        </div>
+
+
+        <!-- Footer -->
+        <div class="footer-container">
+          <span class="footer-text">Desarrollado por</span>
+          <img src="assets/logo/logo-gap.png" class="footer-logo" alt="Logo empresa" />
+        </div>
       </div>
-    </div>
-    
-    <!-- INPUT CLAVE -->
-    <div class="form-group">
-      <div class="input-group">
-        <label for="clave">Clave:</label>
-        <img src="assets/hidden-icon.png" alt="Mostrar/Ocultar" id="toggleClave" style="cursor: pointer;">
-        <input type="password" id="clave" placeholder="**************">
-      </div>
-    </div>
-    
-    
-
-    <!-- OLVIDÓ CLAVE -->
-    <div class="forgot">¿Has olvidado su contraseña?</div>
-
-    <!-- BOTONES -->
-    <div class="btn-group">
-      <button class="btn siguiente" routerLink="/menus/">Iniciar Sesión</button>
-      
-    </div>
-
-    <!-- PIE -->
-    <div class="footer">
-      Copyright © 2025
-      <img src="assets/logo-tipo-3.png" alt="GAP System">
-    </div>
+    </form>
   </div>
 </body>

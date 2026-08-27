@@ -1,0 +1,87 @@
+<div class="page">
+
+  <div class="card">
+
+    <h2>Personal Ocupado</h2>
+
+    <!-- FILTROS -->
+    <div class="filters">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Mes</mat-label>
+        <mat-select [(ngModel)]="mes">
+          <mat-option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
+            {{ m }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Año</mat-label>
+        <mat-select [(ngModel)]="anio">
+          <mat-option *ngFor="let y of [2024,2025,2026]" [value]="y">
+            {{ y }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="radio-group">
+        <label>Agrupar por:</label>
+
+        <mat-radio-group [(ngModel)]="agrupadoPor">
+          <mat-radio-button value="contrato">Contrato</mat-radio-button>
+          <mat-radio-button value="edad">Edad</mat-radio-button>
+          <mat-radio-button value="horas">Horas-Salario</mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <div class="actions-top">
+        <button mat-flat-button color="primary" (click)="generar()">Generar</button>
+        <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        <button mat-stroked-button (click)="exportar()">Exportar</button>
+      </div>
+
+    </div>
+
+    <!-- TABLA -->
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource">
+
+        <ng-container matColumnDef="grupo">
+          <th mat-header-cell *matHeaderCellDef>Grupo</th>
+          <td mat-cell *matCellDef="let row">{{ row.grupo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sdh">
+          <th mat-header-cell *matHeaderCellDef>Hombres</th>
+          <td mat-cell *matCellDef="let row">{{ row.sinDiscapacidadH }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sdm">
+          <th mat-header-cell *matHeaderCellDef>Mujeres</th>
+          <td mat-cell *matCellDef="let row">{{ row.sinDiscapacidadM }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cdh">
+          <th mat-header-cell *matHeaderCellDef>Hombres</th>
+          <td mat-cell *matCellDef="let row">{{ row.conDiscapacidadH }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cdm">
+          <th mat-header-cell *matHeaderCellDef>Mujeres</th>
+          <td mat-cell *matCellDef="let row">{{ row.conDiscapacidadM }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="ph">
+          <th mat-header-cell *matHeaderCellDef>Permanente</th>
+          <td mat-cell *matCellDef="let row">{{ row.permanenteH }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+      </table>
+    </div>
+
+  </div>
+</div>

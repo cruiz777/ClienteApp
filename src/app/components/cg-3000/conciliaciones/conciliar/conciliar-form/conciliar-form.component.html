@@ -1,0 +1,365 @@
+<div class="wrap">
+  <div class="sub-title">
+    <div class="h1">Conciliación Bancaria</div>
+
+    <div class="h2 h2-proceso" *ngIf="!isLocked">EN PROCESO</div>
+    <div class="h2 h2-ok" *ngIf="isLocked">
+      CONCILIADO <span *ngIf="idConciliacion"> • Id: {{ idConciliacion }}</span>
+    </div>
+  </div>
+
+  <mat-card class="card">
+    <!-- BARRA SUPERIOR -->
+    <div class="top-actions">
+      <div class="actions-left">
+        <button mat-stroked-button class="btn btn-main" (click)="onNuevaConciliacion()" [disabled]="loading">
+          <mat-icon>add</mat-icon>
+          Nueva
+        </button>
+
+        <button
+          mat-raised-button
+          color="primary"
+          class="btn btn-save"
+          [matMenuTriggerFor]="menuGuardar"
+          [disabled]="loading || isLocked || !canAbrirMenuGuardar">
+          <mat-icon>save</mat-icon>
+          Guardar
+          <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn btn-print"
+          (click)="onImprimir()"
+          [disabled]="loading || movimientos.length === 0">
+          <mat-icon>print</mat-icon>
+          Imprimir
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn btn-print"
+          (click)="onImprimirMarcados()"
+          [disabled]="loading || movimientos.length === 0">
+          <mat-icon>fact_check</mat-icon>
+          Imprimir marcados
+        </button>
+      </div>
+
+      <div class="actions-right">
+        <button mat-stroked-button color="warn" class="btn btn-cancel" (click)="onCancelar()" [disabled]="loading">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+      </div>
+    </div>
+
+    <mat-menu #menuGuardar="matMenu">
+      <button mat-menu-item (click)="onGuardarParcial()" [disabled]="loading || isLocked || !canGuardarParcial">
+        <mat-icon>save_as</mat-icon>
+        Conciliación parcial
+      </button>
+
+      <button mat-menu-item (click)="onGuardarTotal()" [disabled]="loading || isLocked || !canGuardarTotal">
+        <mat-icon>check_circle</mat-icon>
+        Conciliación total
+      </button>
+    </mat-menu>
+
+    <mat-divider></mat-divider>
+
+    <!-- CABECERA -->
+    <form [formGroup]="form" class="cabecera">
+      <!-- FILA 1 -->
+      <div class="grid-3">
+        <div [formGroup]="planForm">
+          <mat-form-field appearance="fill" class="ff compact">
+            <mat-label>Plan de Cuenta</mat-label>
+
+            <input
+              matInput
+              type="text"
+              formControlName="planCuentaBuscar"
+              [matAutocomplete]="autoPlan"
+              [disabled]="isLocked"
+              placeholder="Buscar por id, cuenta o nombre..." />
+
+            <mat-autocomplete
+              #autoPlan="matAutocomplete"
+              [displayWith]="displayPlanCuenta"
+              (optionSelected)="onPlanCuentaSelected($event.option.value)">
+
+              <mat-option *ngIf="loadingPlan" disabled>Cargando...</mat-option>
+
+              <mat-option *ngFor="let p of planCuentasFiltradas" [value]="p">
+                <b>#{{ p.IdPlanCuentas }}</b>
+                &nbsp;•&nbsp; {{ p.CuentaPresentacion }}
+                &nbsp;—&nbsp; {{ p.NombreCuenta || p.Descripcion }}
+              </mat-option>
+
+              <mat-option *ngIf="!loadingPlan && planCuentasFiltradas.length === 0" disabled>
+                Sin resultados
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="fill" class="ff compact">
+          <mat-label>Cuenta Bancaria</mat-label>
+          <input
+            matInput
+            formControlName="codprePc"
+            [disabled]="isLocked"
+            placeholder="110102-001"
+            (blur)="onBlurDatosCabecera()" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="ff compact">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="descripcion" [disabled]="isLocked" />
+        </mat-form-field>
+      </div>
+
+      <!-- FILA 2 -->
+      <div class="cabecera-row-2" [class.con-excel]="mostrarExcel && excelRows.length">
+        <!-- IZQUIERDA -->
+        <div class="fechas-box">
+          <div class="grid-2">
+            <mat-form-field appearance="fill" class="ff compact">
+              <mat-label>Fecha Inicial</mat-label>
+              <input
+                matInput
+                [matDatepicker]="dpIni"
+                formControlName="fechaInicial"
+                [disabled]="isLocked"
+                (dateChange)="onFechaChange()"
+                (blur)="onBlurDatosCabecera()" />
+              <mat-datepicker-toggle matSuffix [for]="dpIni"></mat-datepicker-toggle>
+              <mat-datepicker #dpIni></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="ff compact">
+              <mat-label>Fecha Final</mat-label>
+              <input
+                matInput
+                [matDatepicker]="dpFin"
+                formControlName="fechaFinal"
+                [disabled]="isLocked"
+                (dateChange)="onFechaChange()"
+                (blur)="onBlurDatosCabecera()" />
+              <mat-datepicker-toggle matSuffix [for]="dpFin"></mat-datepicker-toggle>
+              <mat-datepicker #dpFin></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <div class="grid-4 saldos-grid">
+            <mat-form-field appearance="fill" class="ff compact ff-saldo">
+              <mat-label>Saldo Contable Inicial</mat-label>
+              <input matInput type="number" formControlName="saldcontini" [readonly]="true" />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="ff compact ff-saldo">
+              <mat-label>Saldo Contable Final</mat-label>
+              <input matInput type="number" formControlName="saldcontfin" [readonly]="true" />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="ff compact ff-saldo">
+              <mat-label>Saldo Bancario Inicial</mat-label>
+              <input matInput type="number" formControlName="saldbancini" [disabled]="isLocked" />
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="ff compact ff-saldo">
+              <mat-label>Saldo Bancario Final</mat-label>
+              <input matInput type="number" formControlName="saldbancfin" [disabled]="isLocked" />
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- DERECHA: BOTONES SIEMPRE VISIBLES -->
+        <div class="excel-panel">
+          <div class="excel-toolbar">
+            <button
+              type="button"
+              class="btn btn-primary"
+              *ngIf="esCuentaPichincha"
+              (click)="fileInputPichincha.click()">
+              Cargar Excel Pichincha
+            </button>
+
+            <input
+              #fileInputPichincha
+              type="file"
+              accept=".xlsx,.xls"
+              hidden
+              (change)="onExcelSeleccionadoPichincha($event)" />
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              *ngIf="esCuentaProdubanco"
+              (click)="fileInputProdubanco.click()">
+              Cargar Excel Produbanco
+            </button>
+
+            <input
+              #fileInputProdubanco
+              type="file"
+              accept=".xlsx,.xls"
+              hidden
+              (change)="onExcelSeleccionadoProdubanco($event)" />
+
+            <button
+              type="button"
+              class="btn btn-primary"
+              *ngIf="!esCuentaPichincha && !esCuentaProdubanco"
+              disabled>
+              Archivo
+            </button>
+
+            <div class="excel-file-name" *ngIf="nombreArchivoExcel">
+              {{ nombreArchivoExcel }}
+            </div>
+          </div>
+
+          <!-- GRID DERECHO SOLO CUANDO ESTE EXTENDIDO -->
+          
+        </div>
+      </div>
+    </form>
+
+    <!-- SALDOS CONCILIADOS -->
+    <div class="section-title">Saldos Conciliados</div>
+    <div class="grid grid-small ag-theme-alpine">
+      <ag-grid-angular
+        [rowData]="[saldosConciliados]"
+        [columnDefs]="colSaldos"
+        [defaultColDef]="defaultColDef"
+        (gridReady)="onGridSaldosReady($event)"
+        [suppressMovableColumns]="true"
+        [headerHeight]="34"
+        [rowHeight]="34">
+      </ag-grid-angular>
+    </div>
+
+    <!-- BARRA DETALLE -->
+    <div class="search-bar">
+      <div class="search-grid">
+        <button mat-stroked-button class="btn btn-lite btn-secondary" (click)="marcarTodos()" [disabled]="isLocked">
+          <mat-icon>done_all</mat-icon>
+          Marcar todo
+        </button>
+
+        <button mat-stroked-button class="btn btn-lite btn-secondary" (click)="desmarcarTodos()" [disabled]="isLocked">
+          <mat-icon>remove_done</mat-icon>
+          Desmarcar
+        </button>
+
+        <button
+          mat-raised-button
+          color="accent"
+          class="btn btn-group"
+          (click)="onAgrupar()"
+          [disabled]="isLocked || loading">
+          <mat-icon>call_split</mat-icon>
+          Agrupar
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn btn-lite btn-secondary"
+          (click)="toggleExcel()"
+          *ngIf="nombreArchivoExcel || excelRows.length">
+          <mat-icon>{{ mostrarExcel ? 'unfold_less' : 'unfold_more' }}</mat-icon>
+          {{ mostrarExcel ? 'Contraer' : 'Extender' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- CONTENEDOR DINÁMICO DE GRIDS -->
+    <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
+      <!-- GRID IZQUIERDO -->
+      <div
+        class="movimientos-panel izquierdo"
+        [style.flexBasis.px]="panelIzquierdoAncho"
+        [style.width.px]="panelIzquierdoAncho">
+
+        <div class="section-title">Movimientos</div>
+
+        <div class="grid grid-main grid-movimientos-izq ag-theme-alpine">
+          <ag-grid-angular
+            [rowData]="movimientos"
+            [columnDefs]="colMov"
+            [defaultColDef]="defaultColDef"
+            [rowClassRules]="rowClassRules"
+            [rowSelection]="'single'"
+            (gridReady)="onGridMovReady($event)"
+            (cellValueChanged)="onMovCellValueChanged($event)"
+            (cellDoubleClicked)="onMovCellDoubleClicked($event)"
+            (cellClicked)="onMovCellClicked($event)"
+            [singleClickEdit]="true"
+            [stopEditingWhenCellsLoseFocus]="true"
+            [animateRows]="true"
+            [headerHeight]="34"
+            [rowHeight]="34"
+            [suppressMovableColumns]="true"
+            [enableBrowserTooltips]="true">
+          </ag-grid-angular>
+        </div>
+      </div>
+
+      <!-- SEPARADOR -->
+      <div
+        class="splitter-vertical"
+        *ngIf="mostrarExcel && excelRows.length"
+        (mousedown)="iniciarResize($event)">
+      </div>
+
+      <!-- GRID DERECHO -->
+      <div
+        class="movimientos-panel derecho"
+        *ngIf="mostrarExcel && excelRows.length"
+        [style.flexBasis.px]="panelDerechoAncho"
+        [style.width.px]="panelDerechoAncho">
+
+        <div class="section-title">Archivo Banco</div>
+
+        <div class="grid grid-main grid-movimientos-der ag-theme-alpine">
+          <ag-grid-angular
+            [rowData]="excelRows"
+            [columnDefs]="colExcel"
+            [defaultColDef]="defaultColDef"
+            [rowClassRules]="rowClassRulesExcel"
+            (gridReady)="onGridExcelReady($event)"
+            [animateRows]="true"
+            [headerHeight]="34"
+            [rowHeight]="32"
+            [suppressMovableColumns]="true"
+            [enableBrowserTooltips]="true">
+          </ag-grid-angular>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUMEN -->
+    <!-- RESUMEN -->
+<div class="section-title">
+  Saldos por Conciliar
+</div>
+
+<div class="grid grid-bottom ag-theme-alpine">
+  <ag-grid-angular
+    style="width: 100%; height: 102px;"
+    [rowData]="resumenRows"
+    [columnDefs]="colResumen"
+    [defaultColDef]="defaultColDef"
+    [headerHeight]="34"
+    [rowHeight]="34"
+    [suppressMovableColumns]="true"
+    [suppressHorizontalScroll]="true"
+    (gridReady)="onGridResumenReady($event)"
+    (firstDataRendered)="ajustarGridResumen()">
+  </ag-grid-angular>
+</div>
+  </mat-card>
+</div>

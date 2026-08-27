@@ -1,0 +1,167 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+
+    <div class="header-section">
+      <div class="header-icon">
+        <mat-icon>receipt_long</mat-icon>
+      </div>
+
+      <div class="header-text">
+        <h2>Gastos Personales</h2>
+        <p>
+          Seleccione un empleado o deje el campo vacío para generar el reporte de todos.
+        </p>
+      </div>
+    </div>
+
+    <div class="form-grid">
+
+      <mat-form-field
+        appearance="outline"
+        class="campo-empleado">
+
+        <mat-label>Buscar empleado</mat-label>
+
+        <input
+          matInput
+          type="text"
+          formControlName="empleadoBusqueda"
+          [matAutocomplete]="autoEmpleado"
+          autocomplete="off"
+          placeholder="Código, cédula o nombre" />
+
+        <mat-icon matPrefix>search</mat-icon>
+
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          *ngIf="form.get('empleadoBusqueda')?.value"
+          (click)="limpiarBusquedaEmpleado($event)">
+          <mat-icon>close</mat-icon>
+        </button>
+
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="displayEmpleado"
+          class="autocomplete-empleados">
+
+          <mat-option
+            *ngIf="cargandoEmpleados"
+            disabled>
+
+            <div class="opcion-cargando">
+              Buscando empleados...
+            </div>
+
+          </mat-option>
+
+          <mat-option
+            *ngFor="let empleado of empleadosFiltrados"
+            [value]="empleado"
+            (onSelectionChange)="
+              $event.isUserInput &&
+              seleccionarEmpleadoBusqueda(empleado)
+            ">
+
+            <div class="empleado-opcion">
+
+              <div class="empleado-linea-principal">
+                <span class="empleado-codigo">
+                  {{ empleado.idEmpleado }}
+                </span>
+
+                <span class="empleado-separador">
+                  -
+                </span>
+
+                <span class="empleado-nombre">
+                  {{ empleado.nombreCompleto }}
+                </span>
+              </div>
+
+              <div
+                class="empleado-documento"
+                *ngIf="empleado.documento">
+
+                {{ empleado.documento }}
+
+              </div>
+
+            </div>
+
+          </mat-option>
+
+          <mat-option
+            *ngIf="
+              !cargandoEmpleados &&
+              empleadosFiltrados.length === 0
+            "
+            disabled>
+
+            <div class="sin-resultados">
+              No existen empleados
+            </div>
+
+          </mat-option>
+
+        </mat-autocomplete>
+
+      </mat-form-field>
+
+    </div>
+
+    <div
+      class="empleado-seleccionado"
+      *ngIf="form.get('idEmpleado')?.value">
+
+      <mat-icon>person</mat-icon>
+
+      <div>
+        <span class="seleccion-label">
+          Empleado seleccionado
+        </span>
+
+        <strong>
+          Código {{ form.get('idEmpleado')?.value }}
+        </strong>
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="generando"
+        (click)="aceptar()">
+
+        <mat-icon>picture_as_pdf</mat-icon>
+
+        <span *ngIf="!generando">
+          Generar Reporte
+        </span>
+
+        <span *ngIf="generando">
+          Generando...
+        </span>
+
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="generando"
+        (click)="cancelar()">
+
+        <mat-icon>close</mat-icon>
+        Cancelar
+
+      </button>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Reporte Listado General y Gastos</h2>
+
+    <div class="top-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Periodo Inicial</mat-label>
+        <input matInput type="date" formControlName="periodoInicial" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Periodo Final</mat-label>
+        <input matInput type="date" formControlName="periodoFinal" />
+      </mat-form-field>
+
+      <div class="radio-block">
+        <mat-radio-group formControlName="tipoListado" class="radio-group">
+          <mat-radio-button value="empleado">Por Empleado</mat-radio-button>
+          <mat-radio-button value="departamentos">Por Departamentos</mat-radio-button>
+        </mat-radio-group>
+      </div>
+    </div>
+
+    <div class="option-row">
+      <mat-checkbox formControlName="incluirRolMensual">ROL Mensual</mat-checkbox>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

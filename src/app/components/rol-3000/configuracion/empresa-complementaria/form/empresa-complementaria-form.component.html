@@ -1,0 +1,43 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Empresa Complementaria' : 'Nueva Empresa Complementaria' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- EMPRESA -->
+    <div class="form-group">
+      <label for="empresa">Empresa <span class="required">*</span></label>
+      <input id="empresa" type="text" formControlName="empresa" placeholder="Ej: Empresa XYZ S.A." maxlength="248" />
+      <div class="error" *ngIf="form.get('empresa')?.touched && form.get('empresa')?.errors">
+        <span *ngIf="form.get('empresa')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('empresa')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- RUC -->
+    <div class="form-group">
+      <label for="ruc">RUC</label>
+      <input id="ruc" type="text" formControlName="ruc" placeholder="Ej: 1790000000001" maxlength="13" />
+      <div class="error" *ngIf="form.get('ruc')?.touched && form.get('ruc')?.errors">
+        <span *ngIf="form.get('ruc')?.hasError('maxlength')">Máximo 13 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ESTADO -->
+    <div class="form-group checkboxes-group">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estado" />
+        <span class="checkbox-custom"></span>
+        Activo
+      </label>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button type="submit" [disabled]="form.invalid" [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>

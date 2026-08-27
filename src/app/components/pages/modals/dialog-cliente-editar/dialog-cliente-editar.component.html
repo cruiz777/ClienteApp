@@ -1,0 +1,949 @@
+<h1 style="margin: 0; padding: 4px 0 0 10px; color: #002C6C;">{{ nombrecli }}</h1>
+
+<mat-dialog-content style="max-height: 105vh;" [class.disabled-content]="!modoEdicion">
+  <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight (selectedTabChange)="onTabChange($event)">
+
+
+    <!-- TAB 1: Información General -->
+    <!-- TAB 1: Información General -->
+    <mat-tab label="Información General">
+
+      <ng-template matTabContent>
+        <div>
+          <mat-horizontal-stepper linear #stepper>
+
+            <!-- Subpaso 1.1: Categorización -->
+            <mat-step [stepControl]="paso1Form">
+
+              <form [formGroup]="paso1Form">
+                <ng-template matStepLabel>Categorización</ng-template>
+
+                <div class="container">
+
+                  <div class="form-row">
+                    <label class="form-label">Código del Cliente:</label>
+                    <input type="text" formControlName="codigoCliente" style="min-width: 80px;" readonly />
+                  </div>
+                  <div>
+                    <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
+                      placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
+
+                    <!-- Mostrar error solo si NO es pasaporte -->
+                    <div *ngIf="error && !esPasaporte" class="error-message" style="color: red; font-size: 12px;">
+                      {{ error }}
+                    </div>
+                    <mat-error *ngIf="rucControl.hasError('required') && rucControl.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
+                    <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()">
+                      Es Pasaporte
+                    </mat-checkbox>
+                    <div>
+                      <span *ngIf="(tipoIdentificacion === 'CEDULA' || tipoIdentificacion === 'RUC') && razonSocial">
+                        {{ razonSocial }}
+                      </span>
+                    </div>
+
+                    <!-- Mostrar error solo si NO es pasaporte -->
+                    <div *ngIf="!paso1Form.get('esPasaporte')?.value && rucControl.invalid && rucControl.touched"
+                      style="color: red; font-size: 12px;">
+                      Ingrese 10 dígitos para cédula o 13 dígitos para RUC.
+                    </div>
+
+                  </div>
+                  <div class="form-row category-row" [formGroup]="paso1Form">
+                    <div class="form-row">
+                      <label class="form-label">
+                        <span style="color: red;">*</span>Categoría Cliente:
+                      </label>
+
+                      <div class="categoria-cliente-group">
+                        <label style="font-size: 11;">
+                          <input type="radio" formControlName="categoriaCliente" id="individual" [value]="2" />
+                          Individual
+                        </label>
+                        <label style="font-size: 11;">
+                          <input type="radio" formControlName="categoriaCliente" id="industrial" [value]="1" />
+                          Industrial
+                        </label>
+                      </div>
+                      <mat-error
+                        *ngIf="paso1Form.get('categoriaCliente')?.hasError('required') && paso1Form.get('categoriaCliente')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </div>
+
+                  </div>
+
+                  <div>
+                    <label class="form-label"><span style="color: red;">*</span>Grupo:</label>
+
+                    <mat-form-field
+                      style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="grupo" placeholder="Seleccione Grupo" style="font-size: 12px;">
+                        <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa"
+                          style="font-size: 11px;">
+                          {{ grupo.codigo }} - {{ grupo.nombre }}
+                        </mat-option>
+                      </mat-select>
+                      <mat-error *ngIf="paso1Form.get('grupo')?.hasError('required') && paso1Form.get('grupo')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </mat-form-field>
+                    <label class="form-label"> <span style="color: red;">*</span>Categoría Producto:</label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                      <input matInput formControlName="grupoProducto" [matAutocomplete]="autoGrupoProducto"
+                        placeholder="Seleccione Categoría Producto"
+                        (focus)="cargarGruposProductoInicial()">
+                      <mat-spinner matSuffix *ngIf="buscandoGrupoProducto" diameter="20"></mat-spinner>
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar"
+                        *ngIf="paso1Form.get('grupoProducto')?.value" (click)="limpiarGrupoProducto()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+
+                      <mat-autocomplete #autoGrupoProducto="matAutocomplete" [displayWith]="displayWithGrupoProducto"
+                        (optionSelected)="seleccionarGrupoProducto($event.option.value)" autocomplete="off">
+                        <mat-option *ngFor="let grupo of grupoProductoFiltrados" [value]="grupo"
+                          style="font-size: 11px">
+                          {{ grupo.codigo }} - {{ grupo.brick }} - {{ grupo.desBrick }}
+                        </mat-option>
+                      </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso1Form.get('grupoProducto')?.hasError('required') && paso1Form.get('grupoProducto')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </mat-form-field>
+
+                  </div>
+
+
+
+
+                </div>
+                <div style="background-color: #eef4f7;">
+                  <label class="form-label">Fecha Ingreso:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Fecha Modificación:</label>
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                    [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                    [disabled]="!paso1Form.get('usuarioMod')?.value" />
+
+
+                  <div>
+                    <div>
+
+                    </div>
+                    <div>
+                      <label class="form-label">Estado:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                          <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                            {{ estado.id }} - {{ estado.Nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <label>Zona:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="zona" style="font-size: 12px;">
+                          <mat-option *ngFor="let zona of zona" [value]="zona">
+                            {{ zona.referencia }} - {{ zona.nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+
+
+
+                <div style="text-align: right;">
+                  <button mat-button color="primary" matStepperNext (click)="verificarYAvanzar(paso1Form, stepper)">
+                    Siguiente
+                  </button>
+
+
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Subpaso 1.2: Datos de la Empresa -->
+            <mat-step [stepControl]="paso2Form">
+              <form [formGroup]="paso2Form">
+                <ng-template matStepLabel>Datos de la Empresa</ng-template>
+                <div class="container">
+                  <div>
+                    <div class="form-row">
+                      <label class="form-label"><span style="color: red;">*</span>Razón Social:</label>
+                      <input type="text" formControlName="razonSocial"
+                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)"
+                        (blur)="forzarGuardarValor('razonSocial', paso2Form, $event)"
+                        (focus)="alEntrarCampo('razonSocial', paso2Form)" class="underline-input" maxlength="300"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso2Form.get('razonSocial')?.hasError('required') && paso2Form.get('razonSocial')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;"><span
+                          style="color: red;">*</span>Representante:</label>
+                      <input type="text" formControlName="nombreRepresentante" value="{{ nombreRepresentante }}"
+                        class="underline-input" (input)="forzarMayusculas('nombreRepresentante', paso2Form, $event)"
+                        maxlength="200" (blur)="forzarGuardarValor('nombreRepresentante', paso2Form, $event)"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso2Form.get('nombreRepresentante')?.hasError('required') && paso2Form.get('nombreRepresentante')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </div>
+                  </div>
+                  <div style="padding-top: 0px; padding-bottom: 0px;">
+                    <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>País : </label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:210px;">
+                      <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione Pais"
+                        autocomplete="off">
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('pais')?.value"
+                        (click)="limpiarPais()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+
+                      <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayPais"
+                        (optionSelected)="seleccionarPais($event.option.value)">
+                        <mat-option *ngFor="let pais of paisFiltrados" [value]="pais" style="font-size: 11px;">
+                          {{ pais.codigoArea }} - {{ pais.nombre }}
+                        </mat-option>
+                      </mat-autocomplete>
+                      <mat-error *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </mat-form-field>
+                    <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:640px;">
+                      <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
+                        placeholder="Seleccione Ciudad" autocomplete="off">
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('ciudad')?.value"
+                        (click)="limpiarCiudad()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+
+                      <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad"
+                        (optionSelected)="seleccionarCiudad($event.option.value)">
+                        <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad" style="font-size: 11px;">
+                          {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                        </mat-option>
+                      </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso2Form.get('ciudad')?.hasError('required') && paso2Form.get('ciudad')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </mat-form-field>
+
+
+                  </div>
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Dirección
+                      Principal:</label>
+                    <input class="underline-input" formControlName="direccionPrincipal"
+                      (input)="forzarMayusculas('direccionPrincipal', paso2Form, $event)" maxlength="200"
+                      autocomplete="new-dp" />
+                    <mat-error
+                      *ngIf="paso2Form.get('direccionPrincipal')?.hasError('required') && paso2Form.get('direccionPrincipal')?.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
+                  </div>
+
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Código Postal:</label>
+                    <input type="text" class="underline-input" formControlName="codigoPostal" maxlength="10"
+                      placeholder="170521" autocomplete="new-dp" />
+
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
+                        style="color: red;">*</span>Celular:</label>
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
+                      minlength="9" pattern="[0-9]*" inputmode="numeric" autocomplete="off" placeholder="999999999"
+                      (input)="soloDigitos('celular', $event,paso2Form)" />
+                    <mat-error
+                      *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
+                  </div>
+
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Sitio Web:</label>
+                    <input type="text" class="underline-input" formControlName="sitioWeb" maxlength="150"
+                      placeholder="https://gs1ec.org" autocomplete="off" />
+
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
+                      maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
+                      autocomplete="off" (input)="soloDigitos('telefono2', $event,paso2Form)" />
+                  </div>
+
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
+                    <input type="text" class="underline-input" formControlName="usuario1" readonly />
+                  </div>
+
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Observación 1:</label>
+                    <input type="text" class="underline-input" formControlName="observacion1"
+                      (input)="forzarMayusculas('observacion1', paso2Form, $event)" maxlength="450"
+                      autocomplete="off" />
+                  </div>
+
+
+                </div>
+               <section class="export-questions-section" style="padding-bottom:16px;">
+  <div class="questions-container">
+    <div class="form-label">
+      <div class="checkbox-inline">
+        <label class="prefix">Facturación en Bloque:</label>
+
+        <label class="chk">
+          <input type="checkbox" id="chk-compra" formControlName="compra" />
+          <span>Orden de Compra</span>
+        </label>
+
+        <label class="chk">
+          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+          <span>Prefijos</span>
+        </label>
+
+        <label class="chk">
+          <input type="checkbox" id="chk-otros" formControlName="otros" />
+          <span>Otros</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</section>
+
+                <div style="background-color: #eef4f7;">
+                  <label class="form-label">Fecha Ingreso:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Fecha Modificación:</label>
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                    [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                    [disabled]="!paso1Form.get('usuarioMod')?.value" />
+
+
+                  <div>
+                    <div>
+
+                    </div>
+                    <div>
+                      <label class="form-label">Estado:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                          <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                            {{ estado.id }} - {{ estado.Nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <label>Zona:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="zona" style="font-size: 12px;">
+                          <mat-option *ngFor="let zona of zona" [value]="zona">
+                            {{ zona.referencia }} - {{ zona.nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <button mat-button matStepperPrevious>Anterior</button>
+                  <button mat-button color="primary" matStepperNext
+                    (click)="forzarSyncYAvanzar('razonSocial', paso2Form); verificarYAvanzar(paso2Form, stepper)">Siguiente</button>
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Subpaso 1.3: Contactos -->
+            <mat-step [stepControl]="paso3Form">
+              <form [formGroup]="paso3Form">
+                <ng-template matStepLabel>Contactos</ng-template>
+
+                <div class="container">
+                  <div>
+                    <div class="form-row">
+
+                      <label class="form-label"><span style="color: red;">*</span>Nombre: (Representante Legal)</label>
+                      <input type="text" class="underline-input" formControlName="nombreRepresentante"
+                        (input)="forzarMayusculas('nombreRepresentante', paso3Form, $event)" maxlength="200"
+                        (blur)="forzarGuardarValor('nombreRepresentante', paso3Form, $event)" autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso3Form.get('nombreRepresentante')?.hasError('required') && paso3Form.get('nombreRepresentante')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </div>
+                    <div>
+                      <div class="form-row">
+                        <label style="color: #002c6c; font-size: 12px;"><span
+                            style="color: red;">*</span>E-mail:</label>
+                        <input type="text" class="underline-input" formControlName="emailRepresentante" maxlength="200"
+                          autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                        <mat-error
+                          *ngIf="paso3Form.get('emailRepresentante')?.hasError('required') && paso3Form.get('emailRepresentante')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
+                        <div
+                          *ngIf="paso3Form.get('emailRepresentante')?.hasError('emailInvalido') && paso3Form.get('emailRepresentante')?.touched">
+                          <small style="color: red;">Ingrese un correo válido</small>
+                        </div>
+                        <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                          Cel:</label>
+                        {{ codigoAreaE }}<input type="text" class="underline-input"
+                          formControlName="telefonoRepresentante" maxlength="9" minlength="9" pattern="[0-9]*"
+                          inputmode="numeric" placeholder="999999999" autocomplete="off"
+                          (input)="soloDigitos('telefonoRepresentante', $event,paso3Form)" />
+                        <mat-error
+                          *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
+                      </div>
+
+                    </div>
+                    <div class="form-row">
+
+
+                      <label class="form-label">
+                        Nombre: (Codificación)
+                      </label>
+                      <input type="text" class="underline-input" formControlName="nombreCodificacion"
+                        (input)="forzarMayusculas('nombreCodificacion', paso3Form, $event)" maxlength="200"
+                        autocomplete="off" />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
+                      <input type="text" class="underline-input" formControlName="email" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                      <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                        Cel:</label>
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
+                        maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" autocomplete="off"
+                        placeholder="999999999" (input)="soloDigitos('telefono', $event,paso3Form)" />
+                      <mat-error
+                        *ngIf="paso3Form.get('telefono')?.hasError('required') && paso3Form.get('telefono')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </div>
+                    <div class="form-row">
+
+
+                      <label class="form-label">
+                        <span style="color: red;">*</span>Nombre: (Financiero)
+                      </label>
+                      <input type="text" class="underline-input" formControlName="nombreFinanciero"
+                        (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso3Form.get('nombreFinanciero')?.hasError('required') && paso3Form.get('nombreFinanciero')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>E-mail 1:
+                      </label>
+                      <input type="text" class="underline-input" formControlName="email1" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                      <mat-error
+                        *ngIf="paso3Form.get('email1')?.hasError('required') && paso3Form.get('email1')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                      <div
+                        *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                        Cel:</label>
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono22"
+                        maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
+                        autocomplete="off" (input)="soloDigitos('telefono22', $event,paso3Form)" />
+                      <mat-error
+                        *ngIf="paso3Form.get('telefono22')?.hasError('required') && paso3Form.get('telefono22')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+
+                    </div>
+                    <div class="form-row">
+                      <label style="color:#002c6c;font-size:12px;">E-mail Facturación:</label>
+                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
+                        inputmode="email" autocomplete="off" placeholder="correo1@dominio.com;correo2@dominio.com"
+                        (keydown.space)="$event.preventDefault()" />
+
+                      <div *ngIf="paso3Form.get('email2')?.touched && paso3Form.get('email2')?.invalid">
+
+                        <!-- cuando el validador simple estuviera activo -->
+                        <small *ngIf="paso3Form.get('email2')?.errors?.['emailInvalido']" style="color:red;">
+                          Ingrese correo(s) válido(s).
+                        </small>
+
+                        <!-- lista de correos mal formateados -->
+                        <ng-container *ngIf="paso3Form.get('email2')?.errors?.['multipleEmails'] as multi">
+                          <small style="color:red;">
+                            Correos inválidos: {{ (multi.invalid || []).join(', ') }}
+                          </small>
+                        </ng-container>
+
+                        <!-- exceso de correos: DEBE estar fuera del bloque anterior -->
+                        <small *ngIf="paso3Form.get('email2')?.errors?.['tooManyEmails'] as tme" style="color:red;">
+                          Máximo {{ tme.max }} correos. Ingresaste {{ tme.count }}.
+                        </small>
+                      </div>
+                    </div>
+
+
+                    <section class="export-questions-section">
+                      <div class="questions-container">
+                        <div class="form-label">
+                          <div>
+                            <input type="checkbox" formControlName="pregunta1" />
+
+                            <label for="prefix-5">¿Se va a exportar sus productos?</label>
+                          </div>
+                          <div>
+                            <input type="checkbox" formControlName="pregunta2" />
+                            <label for="prefix-5">¿Se vende o se venderá su producto en el mercado
+                              estadounidense?</label>
+                          </div>
+                          <div>
+                            <input type="checkbox" formControlName="pregunta3" />
+                            <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas
+                              de la FDA?</label>
+                          </div>
+
+
+                        </div>
+
+                       <div class="checks-inline">
+  <label class="question">¿Cómo se enteró de GS1 Ecuador?</label>
+
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta4" />
+    <span>Página Web</span>
+  </label>
+
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta5" />
+    <span>Instagram</span>
+  </label>
+
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta6" />
+    <span>Facebook</span>
+  </label>
+
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta7" />
+    <span>Un conocido</span>
+  </label>
+</div>
+
+                      </div>
+                    </section>
+                    <div style="background-color: #eef4f7;">
+                      <label class="form-label">Fecha Ingreso:</label>
+                      <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                      <label class="form-label">Fecha Modificación:</label>
+                      <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                        [disabled]="!paso1Form.get('fechaMod')?.value" />
+                      <label class="form-label">Usuario Modificado:</label>
+                      <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                        [disabled]="!paso1Form.get('usuarioMod')?.value" />
+
+
+                      <div>
+                        <div>
+
+                        </div>
+                        <div>
+                          <label class="form-label">Estado:</label>
+                          <mat-form-field
+                            style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                            appearance="fill" class="compacto-form-field">
+                            <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                              <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                                {{ estado.id }} - {{ estado.Nombre }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+
+                          <label>Zona:</label>
+                          <mat-form-field
+                            style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                            appearance="fill" class="compacto-form-field">
+                            <mat-select formControlName="zona" style="font-size: 12px;">
+                              <mat-option *ngFor="let zona of zona" [value]="zona">
+                                {{ zona.referencia }} - {{ zona.nombre }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div style="text-align: right;">
+                  <button mat-button matStepperPrevious>Anterior</button>
+                  <button mat-button color="primary" matStepperNext
+                    (click)="verificarYAvanzar(paso3Form, stepper)">Siguiente</button>
+
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Subpaso 1.4: Observaciones -->
+            <mat-step [stepControl]="paso4Form">
+              <form [formGroup]="paso4Form">
+                <ng-template matStepLabel>Observaciones</ng-template>
+                <div>
+
+                  <!-- First Section -->
+                  <article class="section-container">
+                    <div class="form-row">
+                      <label class="form-label">Usuario:</label>
+
+                      <input type="text" class="underline-input" readonly formControlName="usuario2" />
+                      <label class="form-label">Fecha:</label>
+
+                      <input type="text" class="underline-input" readonly formControlName="fecha2" />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
+                      <input type="text" class="underline-input" formControlName="observacion2"
+                        (input)="forzarMayusculas('observacion2', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
+                    </div>
+
+                  </article>
+
+                  <!-- Second Section -->
+                  <article class="section-container">
+                    <div class="form-row">
+                      <label class="form-label">Usuario:</label>
+
+                      <input type="text" class="underline-input" readonly formControlName="usuario3" />
+                      <label class="form-label">Fecha:</label>
+
+                      <input type="text" class="underline-input" readonly formControlName="fecha3" />
+                    </div>
+
+
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">Observaciones 3:</label>
+                      <input type="text" class="underline-input" formControlName="observacion3"
+                        (input)="forzarMayusculas('observacion3', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
+                    </div>
+
+                  </article>
+
+                  <!-- Third Section -->
+                  <article class="section-container">
+
+                    <div class="form-row">
+                      <label class="form-label">Usuario:</label>
+
+                      <input type="text" class="underline-input" readonly formControlName="usuario4" />
+                      <label class="form-label">Fecha:</label>
+
+                      <input type="text" class="underline-input" readonly formControlName="fecha4" />
+                    </div>
+
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">Observaciones 4:</label>
+                      <input type="text" class="underline-input" formControlName="observacion4"
+                        (input)="forzarMayusculas('observacion4', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
+                    </div>
+
+
+                  </article>
+                </div>
+                <div style="background-color: #eef4f7;">
+                  <label class="form-label">Fecha Ingreso:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Fecha Modificación:</label>
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                    [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                    [disabled]="!paso1Form.get('usuarioMod')?.value" />
+
+
+                  <div>
+                    <div>
+
+                    </div>
+                    <div>
+                      <label class="form-label">Estado:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                          <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                            {{ estado.id }} - {{ estado.Nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <label>Zona:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="zona" style="font-size: 12px;">
+                          <mat-option *ngFor="let zona of zona" [value]="zona">
+                            {{ zona.referencia }} - {{ zona.nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <button mat-button matStepperPrevious>Anterior</button>
+
+
+                </div>
+              </form>
+            </mat-step>
+
+
+          </mat-horizontal-stepper>
+        </div>
+      </ng-template>
+
+    </mat-tab>
+
+    <!-- TAB 2: Histórico -->
+    <mat-tab label="Histórico del Cliente">
+      <mat-form-field appearance="outline" style="padding: 0px 0px;width: 450px;padding-top: 6px;">
+        <mat-label>Buscar</mat-label>
+        <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
+
+      </mat-form-field>
+
+
+
+
+
+      <div class="tabla-con-borde">
+
+        <ng-container *ngIf="tieneHistorial(); else sinHistorial">
+
+
+          <table mat-table [dataSource]="dataSourceHistorial">
+
+            <ng-container matColumnDef="nombre_usuario">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Usuario </th>
+              <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.nombre_usuario}} </td>
+            </ng-container>
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
+              <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.fecha | date:'dd/MM/yyyy'}}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Descripción </th>
+              <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.descripcion}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedHistorialColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedHistorialColumns;"></tr>
+
+          </table>
+
+        </ng-container>
+
+        <ng-template #sinHistorial>
+          <p>No hay historial disponible.</p>
+        </ng-template>
+
+
+        <mat-paginator [pageSizeOptions]="[5, 10]" showFirstLastButtons aria-label="Select page of periodic elements">
+        </mat-paginator>
+      </div>
+    </mat-tab>
+
+
+    <!-- TAB 3: Prefijos -->
+    <mat-tab label="Prefijos">
+      <ng-template matTabContent>
+        <div>
+
+          <div style="text-align: right; margin-bottom: 10px;">
+            <button mat-button (click)="abrirModalPrefijo()" class="new-button">
+              Nuevo
+            </button>
+            <button mat-button (click)="exportar('excel')" class="new-button">
+              Imprimir
+            </button>
+          </div>
+          <div class="tabla-con-borde">
+            <table mat-table [dataSource]="dataSourcePrefijo" class="mat-elevation-z8"
+              *ngIf="dataSourcePrefijo.data.length">
+
+              <ng-container matColumnDef="clientesCodigo">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;display: none;"> Código </th>
+                <td mat-cell *matCellDef="let el" style="display: none;"> {{ el.clientesCodigo }} </td>
+              </ng-container>
+
+
+
+              <ng-container matColumnDef="codpre">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.codpre }} </td>
+              </ng-container>
+
+              <ng-container matColumnDef="gln">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> GLN </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.gln }} </td>
+              </ng-container>
+
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.fecha | date: 'dd/MM/yyyy' }} </td>
+              </ng-container>
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> ESTADO </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.estado ? 'Inactivo' : 'Activo' }}
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="fechaCierre">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">F.Cierre </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  <ng-container *ngIf="el.fechaCierre && el.fechaCierre !== '0001-01-01T00:00:00'">
+                    {{ el.fechaCierre | date: 'dd/MM/yyyy' }}
+                  </ng-container>
+                </td>
+              </ng-container>
+
+
+              <ng-container matColumnDef="tipoLocalizacion">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Tipo </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.tipoLocalizacion }} </td>
+              </ng-container>
+              <ng-container matColumnDef="observacion">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Observación</th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.observacion }} </td>
+              </ng-container>
+              <ng-container matColumnDef="orden">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;display: none;"> Orden</th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;display: none;"> {{ el.orden }} </td>
+              </ng-container>
+              <ng-container matColumnDef="accion">
+                <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Acción </th>
+                <td mat-cell *matCellDef="let element">
+                  <button mat-icon-button color="primary" (click)="abrirModalPrefijoEditar(element.codpre)">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <ng-template #editarPrefijoBlocked>
+                    <button mat-icon-button disabled>
+                      <mat-icon style="opacity: 0.3;">visibility_off</mat-icon>
+                      <mat-icon class="lock-overlay">lock</mat-icon>
+                    </button>
+                  </ng-template>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
+
+            </table>
+          </div>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+  </mat-tab-group>
+</mat-dialog-content>
+<div style="text-align: center;">
+  <button mat-button color="primary" (click)="actualizar()" format control="actualizar"
+    [disabled]="botonActualizarDeshabilitado">
+    <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
+    Grabar
+  </button>
+
+  <button mat-button (click)="habilitarActualizar()" [disabled]="botonModificarDeshabilitado">
+    <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
+    Modificar
+  </button>
+  <!-- <button mat-button style="visibility: hidden;">
+    <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
+    Imprimir
+  </button> -->
+  <ng-template #imprimirBlocked>
+    <button mat-button disabled style="opacity: 0.3;">
+      <mat-icon>lock</mat-icon>
+      <img src="assets/icons/icon-imprimir.png" alt="Sin permisos" width="18" height="18"
+        style="margin-right: 6px; opacity: 0.3;" />
+      Imprimir (Sin Permisos)
+    </button>
+  </ng-template>
+  <button mat-button mat-dialog-close (click)="cancelar()">
+    <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Salir
+  </button>
+  <!-- Muestra mientras se carga -->
+
+  <div *ngIf="cargando" class="overlay-cargando">
+    <mat-spinner></mat-spinner>
+    <p>Espere, cargando información...</p>
+  </div>
+
+  <!-- Muestra el formulario solo cuando ya no está cargando -->
+  <div *ngIf="!cargando">
+    <!-- tu formulario aquí -->
+  </div>
+</div>

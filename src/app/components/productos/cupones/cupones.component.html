@@ -1,0 +1,338 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado Cupones</button>
+
+  <button [class.active]="activeTab === 'Generar'"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.generar-cupones'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.generar-cupones')) ? 'Sin permisos' : ''"
+          (click)="cambiarTab('Generar')">Generar Cupones</button>
+
+  <button [class.active]="activeTab === 'Reportes'"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.reportes'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.reportes')) ? 'Sin permisos' : ''"
+          (click)="cambiarTab('Reportes')">Reportes</button>
+</div>
+
+<!-- TAB LISTADO -->
+<ng-container *ngIf="activeTab === 'Listado'">
+  <div class="contenedor">
+    <!-- Header con título y nombre del cliente -->
+    <div class="header-listado">
+      <h2 class="titulo">Total de registros: <span class="contador">{{ totalItems }}</span></h2>
+      <div class="cliente-info" *ngIf="clienteSeleccionadoObj">
+        <span class="cliente-label">Empresa:</span>
+        <span class="cliente-nombre">{{ clienteSeleccionadoObj.nomcli }}</span>
+      </div>
+    </div>
+
+    <!-- Filtros en dos columnas -->
+    <div class="filtros-dos-columnas">
+      <div class="columna-izquierda">
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar</mat-label>
+          <input matInput [formControl]="buscarCuponControl" placeholder="Código de cupón">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Prefijo</mat-label>
+          <mat-select [(ngModel)]="filtroPrefijo" [compareWith]="compararIds">
+            <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
+            <mat-option [value]="null">Todos</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="columna-derecha">
+        <mat-form-field appearance="outline">
+          <mat-label>Desde Serial</mat-label>
+          <input matInput [(ngModel)]="filtroSerialDesde" placeholder="Ej: 1000" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta Serial</mat-label>
+          <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2000" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="acciones-filtros">
+      <button mat-raised-button color="primary" class="boton-azul-oscuro" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
+      <button mat-flat-button color="warn" (click)="eliminarSeleccionados()"
+      [disabled]="!tieneSeleccion ||!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.eliminar'))"
+      >Eliminar</button>
+      <button mat-stroked-button (click)="limpiarFiltros()">
+      <mat-icon>clear</mat-icon> Limpiar Filtros </button>
+    </div>
+
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 500px;"
+      [rowData]="cuponesData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [gridOptions]="gridOptions"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+
+    <div class="paginacion-resumen">
+      Mostrando {{ (pageIndex + 1) * pageSize > totalItems ? totalItems : (pageIndex + 1) * pageSize }}
+      de {{ totalItems }} registros
+    </div>
+
+    <mat-paginator
+      [length]="totalItems"
+      [pageIndex]="pageIndex"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      [showFirstLastButtons]="true">
+    </mat-paginator>
+  </div>
+</ng-container>
+
+<!-- TAB GENERAR -->
+<ng-container *ngIf="activeTab === 'Generar'">
+  <div class="contenedor">
+    <h2 class="titulo">Creación de Cupones</h2>
+
+    <form class="formulario" [formGroup]="formCupon">
+      <!-- Información del cliente en dos columnas -->
+      <div class="seccion-cliente">
+        <div class="columna-izquierda">
+          <mat-form-field appearance="outline">
+            <mat-label>Código Cliente</mat-label>
+            <input matInput formControlName="codigoCliente" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cliente</mat-label>
+            <input matInput formControlName="cliente" readonly />
+          </mat-form-field>
+        </div>
+
+        <div class="columna-derecha">
+          <mat-form-field appearance="outline">
+            <mat-label>RUC</mat-label>
+            <input matInput formControlName="ruc" readonly />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Configuración del cupón en dos columnas -->
+      <div class="seccion-configuracion">
+        <div class="columna-izquierda">
+          <mat-form-field appearance="fill">
+            <mat-label>Prefijo</mat-label>
+            <mat-select formControlName="prefijo" [compareWith]="compararIds">
+              <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Grupo de producto</mat-label>
+            <mat-select formControlName="idGrupoProducto">
+              <mat-option *ngFor="let grupo of gruposProducto" [value]="grupo.id_grupo_producto">
+                {{ grupo.codigo }} - {{ grupo.desBrick }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="formCupon.get('idGrupoProducto')?.hasError('required')">
+              El grupo de producto es obligatorio.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cantidad</mat-label>
+            <input matInput type="number" formControlName="cantidad" min="1">
+            <mat-error *ngIf="formCupon.get('cantidad')?.hasError('max')">
+              La cantidad máxima permitida son 5000 códigos a generar.
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="columna-derecha">
+          <mat-form-field appearance="outline">
+            <mat-label>Descripción</mat-label>
+            <input matInput formControlName="descripcion">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de Vigencia</mat-label>
+            <input matInput [matDatepicker]="dpInicio" formControlName="fechaInicio" [min]="minDate">
+            <mat-datepicker-toggle matSuffix [for]="dpInicio"></mat-datepicker-toggle>
+            <mat-datepicker #dpInicio></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fecha de Caducidad*</mat-label>
+            <input matInput [matDatepicker]="dpCaducidad"
+                  formControlName="fechaCaducidad"
+                  [min]="formCupon.get('fechaInicio')?.value || minDate">
+            <mat-datepicker-toggle matSuffix [for]="dpCaducidad"></mat-datepicker-toggle>
+            <mat-datepicker #dpCaducidad></mat-datepicker>
+            <mat-error *ngIf="formCupon.hasError('fechaInvalida')">
+              La fecha de caducidad no puede ser anterior a la de vigencia.
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Configuración de serie en dos columnas -->
+      <div class="seccion-serie">
+        <div class="columna-izquierda">
+          <div class="checkbox-container">
+            <mat-checkbox formControlName="serie">Serie</mat-checkbox>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Secuencia inicio</mat-label>
+            <input matInput type="number" formControlName="inicio" [disabled]="!formCupon.get('serie')?.value">
+          </mat-form-field>
+        </div>
+
+        <div class="columna-derecha">
+          <mat-form-field appearance="outline">
+            <mat-label>Códigos generados</mat-label>
+            <input matInput formControlName="codigosGenerados" readonly />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="botones">
+        <button mat-stroked-button (click)="nuevo()">Nuevo</button>
+        <button mat-stroked-button color="primary"
+                (click)="generarCupones()"
+                [disabled]="codigoGenerado || !formCupon.valid">
+          Generar
+        </button>
+
+        <button mat-stroked-button color="accent"
+                (click)="grabar()"
+                [disabled]="cuponesGenerados.length === 0">
+          Grabar
+        </button>
+        <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button>
+      </div>
+    </form>
+
+    <div class="tabla-scroll" *ngIf="cuponesGenerados.length > 0">
+      <table mat-table [dataSource]="cuponesGenerados" class="tabla">
+        <ng-container matColumnDef="ia">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let row">{{ row.ia }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cupon">
+          <th mat-header-cell *matHeaderCellDef>Cupón</th>
+          <td mat-cell *matCellDef="let row">{{ row.cupon }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="prefijo">
+          <th mat-header-cell *matHeaderCellDef>Prefijo</th>
+          <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="duplicado">
+          <th mat-header-cell *matHeaderCellDef>Duplicado</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-icon *ngIf="row.duplicado" color="warn" matTooltip="Ya existe y no será guardado">report</mat-icon>
+          </td>
+        </ng-container>
+
+
+        <tr mat-header-row *matHeaderRowDef="['ia', 'cupon', 'prefijo', 'fecha', 'duplicado']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['ia', 'cupon', 'prefijo', 'fecha', 'duplicado']"
+            [ngClass]="{ 'duplicado-row': row.duplicado }"></tr>
+      </table>
+    </div>
+  </div>
+</ng-container>
+
+<!-- TAB REPORTES -->
+<ng-container *ngIf="activeTab === 'Reportes'">
+  <div class="contenedor">
+    <h2 class="titulo">Reportes de Cupones</h2>
+
+    <form [formGroup]="formReporte" class="formulario">
+      <!-- Filtros de reportes en dos columnas -->
+      <div class="seccion-filtros">
+        <div class="columna-izquierda">
+          <mat-form-field appearance="fill">
+            <mat-label>Prefijo</mat-label>
+            <mat-select formControlName="prefijo">
+              <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="estado">
+              <mat-option *ngFor="let e of estados" [value]="e">{{ e }}</mat-option>
+            </mat-select>
+          </mat-form-field> -->
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="estado">
+              <mat-option value="">Todos</mat-option>
+              <mat-option [value]="true">Activo</mat-option>
+              <mat-option [value]="false">Inactivo</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="columna-derecha">
+          <mat-form-field appearance="outline">
+            <mat-label>Desde</mat-label>
+            <input matInput [matDatepicker]="dpDesde" formControlName="desde">
+            <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+            <mat-datepicker #dpDesde></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta</mat-label>
+            <input matInput [matDatepicker]="dpHasta" formControlName="hasta">
+            <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+            <mat-datepicker #dpHasta></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Operador centrado -->
+      <div class="seccion-operador">
+        <mat-form-field appearance="fill" class="operador-field">
+          <mat-label>Operador de fecha</mat-label>
+          <mat-select formControlName="operadorFecha">
+            <mat-option value="=">=</mat-option>
+            <mat-option value="<=">&le;</mat-option>
+            <mat-option value=">">&gt;</mat-option>
+            <mat-option value="entre">Entre</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="botones">
+        <button mat-stroked-button (click)="nuevo()" [disabled]="!tieneFiltrosReporte">Nuevo</button>
+        <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent"
+        [disabled]="!puedeExportar || !((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.exportar'))"
+        >
+          Exportar <mat-icon>arrow_drop_down</mat-icon>
+        </button>
+
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="reportes('excel')">
+            <mat-icon>table_view</mat-icon>
+            <span>Exportar a Excel</span>
+          </button>
+          <button mat-menu-item (click)="reportes('pdf')">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>Exportar a PDF</span>
+          </button>
+        </mat-menu>
+      </div>
+    </form>
+  </div>
+</ng-container>

@@ -1,0 +1,72 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Tipos de Documento SRI</h2>
+
+    <button mat-raised-button color="primary" class="btn-azul" (click)="abrirCrear()">
+      Nuevo
+    </button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label>Buscar</label>
+
+    <div class="input-wrapper">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Id / Descripción / Documento SRI" />
+      <span class="search-icon">⌕</span>
+
+    </div>
+  </div>
+
+  <div *ngIf="error" class="state error">{{ error }}</div>
+  <div *ngIf="loading" class="loading">Cargando...</div>
+
+  <div class="table-wrap" *ngIf="!loading">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 90px;">Id</th>
+          <th style="width: 320px;">Descripción</th>
+          <th style="width: 180px;">Documento SRI</th>
+          <th style="width: 100px; text-align:center;">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let it of filtered; trackBy: trackById">
+          <td>{{ it.idTipoDocumento }}</td>
+          <td title="{{ it.descripcion || '' }}">{{ it.descripcion }}</td>
+          <td title="{{ it.documentoSri || '' }}">{{ it.documentoSri }}</td>
+
+          <td class="acciones">
+            <button class="icon-btn" (click)="abrirEditar(it)" title="Editar">
+  ✎
+</button>
+
+          </td>
+        </tr>
+
+        <tr *ngIf="filtered.length === 0">
+          <td class="empty" colspan="4">No hay registros</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="paginacion">
+      <button class="btn-page" (click)="paginaAnterior()" [disabled]="page <= 1">
+        Anterior
+      </button>
+
+      <div class="page-info">
+        Página {{ page }} de {{ totalPages }} — Total: {{ totalItems }}
+      </div>
+
+      <button class="btn-page" (click)="paginaSiguiente()" [disabled]="page >= totalPages">
+        Siguiente
+      </button>
+    </div>
+  </div>
+</div>

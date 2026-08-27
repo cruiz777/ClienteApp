@@ -1,0 +1,23 @@
+<div class="dialog-proceso">
+  <div class="header">
+    <div class="icono">
+      <mat-icon>insert_drive_file</mat-icon>
+    </div>
+    <div class="titulos">
+      <div class="titulo">{{ data.titulo }}</div>
+      <div class="subtitulo" *ngIf="data.subtitulo">{{ data.subtitulo }}</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="pasos" *ngIf="data.pasos?.length">
+      <div class="paso" *ngFor="let p of data.pasos">{{ p }}</div>
+    </div>
+
+    <div class="spinner">
+      <mat-progress-spinner mode="indeterminate" diameter="26"></mat-progress-spinner>
+    </div>
+
+    <div class="leyenda">Procesando...</div>
+  </div>
+</div>

@@ -1,0 +1,230 @@
+.form-container {
+
+   width: 100%;
+  max-width: 1200px;     /* más ancho en desktop */
+  padding: 24px;         /* más “aire” interno */
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;       /* importante para redondeo del header */
+}
+
+.wrap {
+  display: grid;
+  gap: 12px;
+  padding: 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.row.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.w-100 { width: 100%; }
+
+.chk {
+  align-self: end;
+  margin: 0 8px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* Autocomplete option styling */
+.optline {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px;
+  align-items: center;
+}
+.optline .code { font-weight: 600; }
+.optline .name { opacity: .9; }
+.optline .empresa { opacity: .6; font-size: 8px; }
+
+
+.form-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin:2px 0 10px;
+}
+
+.title{ margin:0; font-weight:700; }
+
+.mode-pill{
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.3px;
+}
+
+.mode-pill.is-new{ background:#e3f2fd; color:#0d47a1; }     /* Azul suave: Nuevo */
+.mode-pill.is-edit{ background:#fff3cd; color:#8a6d3b; }    /* Ámbar: Edición */
+
+/* (Opcional) cambia tono del botón Guardar cuando es edición */
+/*.edit-mode .actions button[type="submit"]{  }
+  /* color de Material se mantiene; si quieres forzar: */
+  /* background:#ffb300; color:#111; */
+
+
+  .btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+.btn-new {
+  background: #2563eb;   /* azul */
+  color: #fff;
+}
+
+.btn-edit {
+  background: #16a34a;   /* verde */
+  color: #fff;
+}
+
+.cancel-button {
+  background-color: #f5f5f5;
+  color: #333;
+  padding: 8px 24px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+
+
+/* ====== EDIT MODE: pinta TODO el control (outline) ====== */
+.form-container.edit-mode
+  .mat-mdc-form-field.mat-mdc-form-field-appearance-outline
+  .mat-mdc-text-field-wrapper {
+  /* Fondo completo del control */
+  --mdc-outlined-text-field-container-color: #fff7d6;   /* amarillo suave */
+  /* Borde */
+  --mdc-outlined-text-field-outline-color: #e5b400;
+  --mdc-outlined-text-field-hover-outline-color: #e5b400;
+  --mdc-outlined-text-field-focus-outline-color: #d4a100;
+  /* Texto/caret/label */
+  --mdc-outlined-text-field-input-text-color: #333333;
+  --mdc-outlined-text-field-caret-color: #6b5d00;
+  --mdc-outlined-text-field-label-text-color: #6b5d00;
+  --mdc-outlined-text-field-hover-label-text-color: #6b5d00;
+  --mdc-outlined-text-field-focus-label-text-color: #6b5d00;
+}
+
+/* Colorea el texto de input y select */
+.form-container.edit-mode .mat-mdc-input-element,
+.form-container.edit-mode .mat-mdc-select-value {
+  color: #333333;
+}
+
+/* ====== Readonly/Disabled en edición: gris suave ====== */
+.form-container.edit-mode
+  .mat-mdc-form-field.mat-mdc-form-field-disabled
+  .mat-mdc-text-field-wrapper {
+  --mdc-outlined-text-field-container-color: #eeeef3;
+  --mdc-outlined-text-field-outline-color: #d7d8de;
+  --mdc-outlined-text-field-hover-outline-color: #86d14d;
+  --mdc-outlined-text-field-focus-outline-color: #c9cad1;
+  --mdc-outlined-text-field-input-text-color: #6b7280;
+  --mdc-outlined-text-field-label-text-color: #6b7280;
+}
+
+/* (Opcional) efecto de foco adicional */
+.form-container.edit-mode
+  .mat-mdc-form-field:not(.mat-mdc-form-field-disabled)
+  .mdc-notched-outline--notched {
+  box-shadow: 0 0 0 3px rgba(11, 171, 8, 0.15);
+}
+
+/* (Opcional) panel del mat-select. Es overlay, por eso ::ng-deep */
+:host ::ng-deep .cdk-overlay-pane .mat-mdc-select-panel {
+  background-color: #fff7d6;
+}
+
+
+
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+
+.form-container { font-size: inherit; }
+
+/* Labels, inputs y selects */
+.form-container .mat-mdc-form-field,
+.form-container .mat-mdc-input-element,
+.form-container .mat-mdc-form-field .mat-mdc-floating-label,
+.form-container .mat-mdc-select-value-text,
+.form-container .mat-mdc-select-trigger {
+  font-size: 13px !important;
+}
+
+/* Hints y errores (un poco más pequeño) */
+.form-container .mat-mdc-form-field-hint,
+.form-container .mat-mdc-form-field-error {
+  font-size: 11px !important;
+}
+
+/* Botones (Guardar / Cancelar) */
+.form-container .mdc-button__label,
+.form-container button .mat-icon {
+  font-size: 13px !important;
+}
+
+/* Título */
+.form-container .title {
+  font-size: 17px;  /* baja si lo quieres aún más compacto */
+}
+
+/* ===== Autocomplete / Select (overlay) =====
+   Si ya pusiste panelClass="auto-sm" al mat-autocomplete,
+   estos estilos aplican. Si no, usa ::ng-deep como antes. */
+:host ::ng-deep .auto-sm.mat-mdc-autocomplete-panel .mat-mdc-option .mdc-list-item__primary-text,
+:host ::ng-deep .mat-mdc-select-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 12px !important;
+}
+
+/* Altura de opción más compacta (opcional) */
+:host ::ng-deep .auto-sm .mat-mdc-option .mdc-list-item,
+:host ::ng-deep .mat-mdc-select-panel .mat-mdc-option .mdc-list-item {
+  height: 32px !important;
+  
+}
+

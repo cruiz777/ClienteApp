@@ -1,0 +1,779 @@
+/* Toolbar superior */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background:#1d789f;/*#0d2a56*/
+  color: #fff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.toolbar .title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.toolbar .actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Botones */
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  /*width: 200px;
+  height: 500px;*/
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+
+.btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d0d5dd;
+  background:  #e1f9ca; /*#76afce;*/
+  cursor: pointer;
+}
+.btn:hover { background: #d5f7b3; }
+
+
+
+.btn.primary {
+  background: #1e88e5;
+  color: white;
+  border-color: #1e88e5;
+}
+.btn.primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-icon {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  cursor: pointer;
+}
+.btn-icon.danger { border-color: #ef9a9a; }
+.btn-icon.danger:hover { background: #ffebee; }
+
+/* Form cabecera */
+.header-form {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.header-form .grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; color: #334155; }
+.field input, .field select {
+  height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+/* Sub-toolbar de detalle */
+.subtoolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+/* Totales */
+.totales {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #c2c4c7;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+.tot span { color: #555; margin-right: 6px; }
+.tot strong { font-size: 20px; }
+.tot.diff.ok strong { color: #0e6113; }  /* Verde */
+.tot.diff.bad strong { color: #c62828; } /* Rojo */
+
+/* AG Grid */
+.ag-theme-alpine.grid {
+  --ag-foreground-color: #1f2937;
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #0d2a56;
+  --ag-header-foreground-color: #ffffff;
+  --ag-row-hover-color: #f3f4f6;
+}
+
+
+/* PARA EL SCROLL*/
+:host {
+  display: block;
+  max-height: 85vh; /* ajusta si tu modal es más bajo/alto */
+}
+
+/* Scroll SOLO del contenido; la toolbar queda fija arriba */
+.content-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(85vh - 56px); /* 56px ≈ altura de la toolbar */
+  overflow-y: auto;              /* <- aquí aparece el scroll vertical */
+  padding-right: 6px;            /* evita que el scroll tape contenido */
+}
+
+/* Si usas Angular Material Dialog, asegúrate que la caja permita scroll */
+:host::ng-deep .mat-dialog-content {
+  max-height: 85vh !important;
+  overflow: hidden; /* el scroll lo maneja .content-scroll */
+  padding: 0 !important; /* ya tenemos padding en el contenido */
+}
+
+/* Si tu contenedor es <mat-dialog-content>, puedes usarlo directamente:
+mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
+*/
+
+/* El grid con altura fija para que no “crezca” infinito */
+.ag-theme-alpine.grid {
+  min-height: 260px;
+  height: 320px;   /* mismo que en el style del HTML */
+}
+
+/* Opcional: totales pegados al borde inferior del área scrolleable */
+.totales {
+  position: sticky;
+  bottom: 0;
+  background: #eaedb7;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+
+}
+
+.total-label{
+  font-size: 18px;            /* 18px aprox */
+  font-weight:600;
+  letter-spacing:.2px;
+}
+
+.total-labelColor{
+ color: #c62828;
+}
+
+.btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+
+.asiento-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #0e2a54;      /* tu azul #0e2a54 */
+  color: #fff;
+  border-radius: 8px 8px 0 0;
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;                   /* se pega al borde superior del contenedor que scrollea */
+  z-index: 1000;
+  /* Para que no se transparente al pasar sobre el contenido */
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+.asiento-content {
+  /* Asegúrate de que este sea el contenedor que scrollea */
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* (Opcional) icono filtro y sort en blanco para cabecera oscura */
+.custom-grid .ag-icon {
+  filter: invert(1) brightness(1.8);
+}
+
+/* (Opcional) Botón de acciones coherente */
+.custom-grid .ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+}
+.custom-grid .ag-action-btn svg,
+.custom-grid .ag-action-btn img {
+  width: 18px; height: 18px;
+}
+
+/*:host ::ng-deep .custom-grid { variables aquí  }*/
+
+.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+}
+.custom-grid {
+  --ag-background-color:#dde3ee; /*fondo*/
+  --ag-foreground-color:#080808; /*color de letra*/
+  
+  --ag-header-background-color:#1d789f;/*cabecera  :#243760; */
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
+  --ag-even-row-background-color:#abc3f1;
+  
+  --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
+  --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
+  --ag-font-size: 12px;
+}
+
+.btn-add{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
+  border:1px solid #d0d7de; border-radius:.6rem; background:#fff; font-weight:600; cursor:pointer; }
+.btn-add__icon{ width:22px; height:22px; display:block; }
+
+/* versión pequeña */
+.btn-add--sm{ padding:.2rem .45rem; gap:.35rem; font-size:.85rem; border-radius:.5rem; }
+.btn-add--sm .btn-add__icon{ width:20px; height:20px; }
+
+/* Estilo visual para campos sólo lectura (cuando estás editando) */  
+.form-container.edit-mode input[readonly],
+.form-container.edit-mode select[readonly],
+.form-container.edit-mode textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.9;
+  background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  border-color: #f3f3f7;
+  background-color: #eae6e6;
+}
+
+/* base */
+.select-control{
+  width: 100%;
+  padding: 6px 28px 6px 12px;  /* espacio para el caret */
+  font-size: 14px;
+  line-height: 1.2;
+  color: #111827;
+  background: #f3f6fb;         /* fondo claro */
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  appearance: none;             /* ocultar estilo nativo */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #374151 50%),
+    linear-gradient(135deg, #374151 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%,
+    0 0;
+  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.select-control:focus{
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.25);
+}
+
+/* versión compacta (alto pequeño) */
+.select-sm{
+  height: 32px;                 /* compacto */
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 13px;
+}
+
+/* estado deshabilitado (editar) */
+.edit-mode-select{
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* opcional: armoniza el label requerido */
+.required{ color:#ef4444; margin-left: 2px; }
+
+/* Safari / iOS: quita el caret nativo extra */
+select.select-control::-ms-expand { display: none; }
+
+
+/* contenedor de la grilla de campos */
+.header-form .grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 24px;
+  align-items: start; /* evita “estirar” raro */
+}
+
+/* misma altura para todos los inputs/selects */
+.header-form .control{
+  width: 100%;
+  height: 36px;                 /* <- altura uniforme */
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.2;             /* no uses igual a height */
+  color: #111827;
+  background: #f3f6fb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;       /* importante para que el alto sea real */
+  outline: none;
+}
+
+/* selects: quita estilo nativo y ajusta caret */
+.header-form select.control{
+  appearance: none;
+  padding-right: 28px;          /* espacio para la flecha */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #374151 50%),
+    linear-gradient(135deg, #374151 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%,
+    0 0;
+  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* datetime-local suele ser más alto: igualalo y corrige padding */
+.header-form input[type="datetime-local"].control{
+  height: 36px;
+  padding-right: 10px;
+}
+
+/* focus consistente */
+.header-form .control:focus{
+  border-color:#60a5fa;
+  box-shadow:0 0 0 3px rgba(96,165,250,.25);
+}
+
+/* deshabilitado (modo editar en tu select) */
+.header-form .control:disabled{
+  background:#f9fafb;
+  color:#6b7280;
+  cursor:not-allowed;
+}
+
+
+/* ====== ESTILO BASE ====== */
+.control {
+  width: 100%;
+  height: 36px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #111827;
+  background: #f3f6fb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* ====== ENFOQUE ====== */
+.control:focus {
+  border-color: #2563eb; /* azul */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* ====== ERROR (para cualquier input/select/textarea inválido) ====== */
+.ng-invalid.ng-touched.control,
+.ng-invalid.ng-dirty.control {
+  border-color: #dc2626 !important; /* rojo fuerte */
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+}
+
+/* ====== MENSAJE DE ERROR ====== */
+.error {
+  color: #dc2626; /* rojo */
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+/* ====== LABELS CON ASTERISCO ====== */
+label .required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.textarea-observacion {
+  resize: vertical;      /* solo permite cambiar alto */
+  width: 100%;
+  padding: 6px 10px;
+  /* si tu clase .control ya tiene estilos, esto puede no hacer falta */
+}
+
+/* Solo para el botón de Agregar Línea */
+.subtoolbar .btn {
+  display: inline-flex;      /* icono + texto en la misma fila */
+  align-items: center;       /* centra verticalmente */
+  gap: 6px;                  /* espacio entre icono y texto */
+  padding: 6px 10px;
+}
+
+.btn-add__icon {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.btn-icon.btn-disabled {
+  opacity: 0.4;
+}
+
+
+.btn-icon.btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  /*width: 200px;
+  height: 500px;*/
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+
+/* cabecera distribucion de controles*/
+
+/* Contenedor de la cabecera */
+.header-form .grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* 4 columnas */
+  column-gap: 16px;
+  row-gap: 10px;
+}
+
+/* Cada form-group en columna */
+.header-form .form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Concepto: ocupa columnas 1 y 2 (mitad izquierda) */
+.header-form .form-group.span-2-left {
+  grid-column: 1 / span 2;
+}
+
+/* Beneficiario: ocupa columnas 3 y 4 (mitad derecha) */
+.header-form .form-group.span-2-right {
+  grid-column: 3 / span 2;
+}
+
+/* Para que el textarea se vea bien estirado */
+.header-form .form-group.span-2-left textarea.control {
+  width: 100%;
+  min-height: 40px;  /* ajusta a la altura de tus inputs */
+  resize: vertical;
+}
+
+/*controles mas pequeños cabecera*/
+/* CABECERA MÁS PEQUEÑA */
+.header-compact {
+  font-size: 12px;          /* tamaño base más pequeño */
+}
+
+/* Labels de la cabecera */
+.header-compact .form-group label,
+.header-compact .row-4 .campo label {
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+/* Inputs, selects, textarea de la cabecera */
+.header-compact .control,
+.header-compact .form-control,
+.header-compact .row-4 .campo input,
+.header-compact textarea {
+  font-size: 12px;
+  height: 30px;
+  padding: 2px 6px;
+}
+
+/* Selects de cabecera (Zona, Tipo Asiento, Auxiliar, Sustento, Tipo Comp…) */
+.header-compact select.control {
+  line-height: 30px;
+}
+
+/* Textarea de CONCEPTO más bajito pero ancho igual */
+.header-compact textarea.control {
+  min-height: 40px;   /* ajusta si lo quieres aún más pequeño */
+  resize: vertical;
+}
+
+/* Ajustar separación vertical entre filas de la cabecera */
+.header-compact .grid .form-group,
+.header-compact .row-4 {
+  margin-bottom: 6px;
+}
+
+/* Campos de la fila de Autorización / Fechas */
+.header-compact .row-4 .campo input {
+  height: 30px;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+/*bloquear cabecera*/
+/* Cuando la cabecera esté bloqueada, no acepta clicks / cambios */
+.cabecera-readonly {
+  pointer-events: none;       /* bloquea clicks */
+}
+
+/* Pero permitimos que los botones de Guardar/Cancelar sí funcionen
+   (si están dentro del mismo contenedor, ajústalo según tu HTML) */
+.cabecera-readonly .acciones-toolbar,
+.cabecera-readonly .acciones-toolbar * {
+  pointer-events: auto;
+}
+
+/* Estilo visual de solo lectura (opcional) */
+.cabecera-readonly .mat-input-element,
+.cabecera-readonly .mat-select-trigger {
+  background-color: #f5f5f5; /* #f5f5f5;*/
+}
+
+.cabecera-readonly .control,
+.cabecera-readonly textarea.control {
+  background-color: #ecedae; /* #f5f5f5; color de los controles bloqueados*/ 
+  color: #6b7280;
+}
+
+
+/* para el boton agregar fila*/
+/* Contenedor de la barra sobre el grid, alineado a la derecha */
+.subtoolbar {
+  margin: 8px 0;
+}
+
+.subtoolbar--right {
+  display: flex;
+  justify-content: flex-start;   /* manda el botón a la derecha */
+  align-items: center;
+}
+
+/* Botón más pequeño */
+.btn-mini {
+  padding: 4px 10px;           /* menos relleno = más pequeño */
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+/* Opcional: por si quieres diferenciarlo un poco del btn normal */
+.btn-add-line {
+  border-radius: 4px;
+}
+
+/* Icono más pequeño dentro del botón */
+.btn-add__icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.custom-grid {
+  --ag-selected-row-background-color: #a3c0e8; /* o el color que quieras */
+}
+
+
+
+.btn-tomate {
+  background: #e2a661;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  width: 100px;
+  height: 35px;
+}
+.btn-tomate:hover { background: #686fcd; border-color: #6291e8; }
+
+
+/* boton circulo*/
+.icon-circle {
+  width: 40px;        /* más grande el círculo */
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 0 2px #38b000;  /* borde verde (opcional) */
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease, transform 0.05s ease;
+}
+
+.icon-circle img {
+  width: 80%;   /* el icono ocupa casi todo el círculo */
+  height: 80%;
+  object-fit: contain;
+}
+
+.icon-circle:hover {
+  background-color: #f3f6fb;
+  box-shadow: 0 0 0 2px #1e88e5;
+  transform: translateY(-1px);
+}
+
+.icon-circle:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 1px #1e88e5;
+}
+
+.cabecera-readonly .control {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.cabecera-readonly .allow-edit {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* ===== MODO EDITAR: fondo blanco en controles ===== */
+.modo-editar .control,
+.modo-editar input.control,
+.modo-editar select.control,
+.modo-editar textarea.control {
+  background-color: #d04d4d !important;
+}
+
+/* Si tienes estilos para readonly que cambian color, igual dejamos blanco */
+.modo-editar .control[readonly],
+.modo-editar .control:disabled {
+  background-color: #36b44f !important;   /*#ffffff*/
+  opacity: 1; /* opcional: evita que se vea "apagado" */
+}
+
+
+.cabecera-readonly textarea.control.allow-edit {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* (opcional) si quieres que se vea normal al enfocarlo */
+.cabecera-readonly textarea.control.allow-edit:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.25) !important;
+}
+
+/* mensaje solo de lectura */
+
+.alert-readonly{
+  color: #b00020;          /* rojo tipo material */
+  font-weight: 700;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+.usuario-totales{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase; /* etiqueta + valor en mayúsculas */
+}
+
+.usuario-label{
+  font-weight: 700;
+}
+
+.usuario-valor{
+  font-weight: 800;
+}
+
+/* USUARIO pegado a la esquina izquierda */
+.usuario-totales{
+  position: absolute;
+  left: 12px;   /* separación mínima del borde */
+  bottom: 8px;  /* alínea con el padding */
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-weight: 800;
+}
+
+/* Opcional: si tu contenido queda tapado por la barra inferior */
+.content-scroll{
+  padding-bottom: 52px; /* ajusta según el alto real de .totales */
+}
+
+/* Etiqueta "USUARIO:" */
+.usuario-label{
+  color: #1b5e20;
+  letter-spacing: 0.5px;
+}
+
+/* Valor "ADMIN" */
+.usuario-valor{
+  color: #1b5e20;
+}

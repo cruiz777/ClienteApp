@@ -1,0 +1,225 @@
+<div class="pant-valid-inicio">
+  <div class="content-box">
+    <div class="box-content">
+      <h2 class="validator-title">Validador RUC en el SRI</h2>
+
+      <!-- Sección de Filtros y Acciones -->
+      <div class="form-group filtros-grid">
+        <!-- Filtro por letra -->
+        <div class="filtro-item">
+          <label for="letra">Letra:</label>
+          <input type="text" id="letra" [(ngModel)]="letraFiltro" (ngModelChange)="aplicarFiltros()" />
+        </div>
+
+        <!-- Filtro por zona -->
+        <div class="filtro-item">
+          <label for="zona">Zona:</label>
+          <select id="zona" [(ngModel)]="zonaFiltro" (ngModelChange)="aplicarFiltros()">
+            <option value="">Todas</option>
+            <option *ngFor="let zona of zonas" [value]="zona.nombre">
+              {{ zona.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Filtro por búsqueda libre -->
+        <div class="filtro-item">
+          <label for="busqueda">Buscar:</label>
+          <input type="text" id="busqueda" [(ngModel)]="textoBusqueda" (ngModelChange)="aplicarFiltros()" />
+        </div>
+
+        <!-- Grupo de acciones principales -->
+        <div class="acciones-principales">
+          <div class="grupo-botones">
+            <!-- Botón Validar -->
+            <button class="btn-accion" (click)="validarSeleccionados()"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+              matInput
+            >
+              <mat-icon>check_circle</mat-icon> Validar
+            </button>
+
+            <!-- Botón Actualizar -->
+            <button class="btn-accion" (click)="actualizarSeleccionadosMasivo()"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
+              matInput
+            >
+              <mat-icon>autorenew</mat-icon> Actualizar
+            </button>
+
+            <!-- Botón Cancelar -->
+            <button class="btn-accion cancelar" (click)="refrescarPagina()">
+              <mat-icon>cancel</mat-icon> Cancelar
+            </button>
+          </div>
+
+          <!-- Botón Exportar con menú -->
+          <div class="grupo-exportar">
+            <button mat-button [matMenuTriggerFor]="menuExportar" class="btn-accion exportar"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar')) ? 'Sin permisos' : ''"
+              matInput
+            >
+              <mat-icon>download</mat-icon> Exportar
+            </button>
+
+            <mat-menu #menuExportar="matMenu">
+              <button mat-menu-item (click)="exportar('excel')">
+                <mat-icon>table_view</mat-icon> Excel
+              </button>
+              <button mat-menu-item (click)="exportar('pdf')">
+                <mat-icon>picture_as_pdf</mat-icon> PDF
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <!-- Checkboxes de acciones masivas -->
+        <div class="filtro-checkboxes">
+          <label>
+            <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+            />
+            Marcar validación
+          </label>
+          <label>
+            <input type="checkbox" (change)="toggleActualizarTodos($event)"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
+            />
+            Marcar actualización
+          </label>
+        </div>
+      </div>
+
+      <!-- Contador de registros -->
+      <p>
+        Número de Registros: {{ totalItems }}
+        <span *ngIf="letraFiltro || zonaFiltro || textoBusqueda">
+          (filtrados)
+        </span>
+      </p>
+
+      <!-- Mensaje informativo -->
+      <div class="info-box">
+        <strong>INFO:</strong> Solo se permite la validación de clientes que se encuentren <span class="afiliado">AFILIADOS</span>.
+      </div>
+
+      <!-- Tabla de datos -->
+      <div class="table-responsive table-scroll-vertical">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>✓</th>
+              <th>Validar</th>
+              <th>Actualizar</th>
+              <th>Código</th>
+              <th>RUC</th>
+              <th>Razón Social</th>
+              <th>Representante</th>
+              <th>Estado</th>
+              <th>Ciudad</th>
+              <th>Cantón</th>
+              <th>Provincia</th>
+              <th>Zona</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Cese</th>
+              <th>Motivo Cese</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let cliente of clientes; let i = index">
+              <!-- Fila principal -->
+              <tr class="fila-original">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <input type="checkbox"
+                         [checked]="seleccionados[cliente.clientes_codigo] || false"
+                         (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)"
+                         [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+                          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+                          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+                          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+                         />
+                </td>
+                <td>
+                  <button (click)="validarUno(cliente.clientes_codigo)"
+                          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+                          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+                          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+                          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+                          matInput
+                  >✓</button>
+                </td>
+                <td>
+                  <input type="checkbox"
+                         [checked]="actualizarSeleccionados[cliente.clientes_codigo] || false"
+                         (change)="toggleActualizarUno(cliente.clientes_codigo, $event)"
+                         [disabled]="!cliente.validacionSRI || !((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
+                          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
+                          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
+                          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
+                         />
+                </td>
+                <td>{{ cliente.clientes_codigo }}</td>
+                <td>{{ cliente.ruc }}</td>
+                <td>{{ cliente.nomcli }}</td>
+                <td>{{ cliente.representante }}</td>
+                <td>
+                  {{ cliente.idEstadoEmpresa === 1 ? 'AFILIADO' :
+                     (cliente.idEstadoEmpresa === 2 ? 'DESAFILIADO' : cliente.idEstadoEmpresa) }}
+                </td>
+                <td>{{ cliente.ciudad }}</td>
+                <td>{{ cliente.canton }}</td>
+                <td>{{ cliente.provincia }}</td>
+                <td>{{ cliente.zonaNombre }}</td>
+                <td>{{ cliente.fecnac || '' }}</td>
+                <td>{{ cliente.fechaCeseAct || '' }}</td>
+                <td>{{ cliente.motivoCeseAct || '' }}</td>
+              </tr>
+
+              <!-- Fila validada opcional -->
+              <tr *ngIf="cliente.validacionSRI" class="fila-validada">
+                <td colspan="4" class="validado-label">Validado</td>
+                <td>{{ cliente.clientes_codigo }}</td>
+                <td>{{ cliente.validacionSRI.numeroRuc }}</td>
+                <td>{{ cliente.validacionSRI.razonSocial }}</td>
+                <td>{{ cliente.validacionSRI.representante || cliente.validacionSRI.razonSocial }}</td>
+                <td>{{ cliente.validacionSRI.estadoContribuyente }}</td>
+                <td>{{ cliente.validacionSRI.ciudad }}</td>
+                <td>{{ cliente.validacionSRI.canton }}</td>
+                <td>{{ cliente.validacionSRI.provincia }}</td>
+                <td></td>
+                <td>{{ cliente.validacionSRI.fechaInicioActividad || '' }}</td>
+                <td>{{ cliente.validacionSRI.fechaCeseActividad || '' }}</td>
+                <td>{{ cliente.validacionSRI.motivoCese || '' }}</td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
+    </div>
+  </div>
+</div>

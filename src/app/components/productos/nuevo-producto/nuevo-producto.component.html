@@ -1,0 +1,209 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Lista GTIN'S por empresa</button>
+  <button [class.active]="activeTab === 'Reportes'" (click)="cambiarTab('Reportes')">Reportes</button>
+</div>
+
+<!-- TAB LISTADO -->
+<ng-container *ngIf="activeTab === 'Listado'">
+  <div class="toolbar">
+    <label>Total de registros: <strong>{{ totalRegistros | number  }}</strong></label>
+
+    <mat-form-field appearance="outline">
+  <mat-label>Prefijo</mat-label>
+  <mat-select [(ngModel)]="prefijo" (selectionChange)="onSeleccionPrefijo($event.value)">
+    <mat-option *ngFor="let pref of prefijos" [value]="pref.codpre">
+      {{ pref.codpre }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
+
+    <mat-form-field appearance="outline">
+  <mat-label>Buscar</mat-label>
+  <input matInput [(ngModel)]="busqueda1" (keyup.enter)="buscarProductos()"  />
+</mat-form-field>
+
+
+    <mat-form-field appearance="outline">
+  <mat-label>Mostrar</mat-label>
+  <input
+    matInput
+    type="number"
+    [(ngModel)]="cantidadMostrar"
+    (change)="onChangePageSize()"
+    min="1"
+/>
+</mat-form-field>
+
+
+
+    <button mat-raised-button color="primary" (click)="irAUvIndividual()" 
+    [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv'))"
+    [class.blocked]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv'))">
+    Ingresar UV</button>
+    <button mat-raised-button color="accent" (click)="abrirVentanaUl()"
+     [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul'))"
+    [class.blocked]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul'))"
+    >Ingresar UL</button>
+    <button mat-raised-button color="accent" (click)="irBloque()"
+     [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.bloque'))"
+    [class.blocked]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.bloque'))"
+    >Bloque</button>
+    <button mat-raised-button color="warn" (click)="salir()">Salir</button>
+  </div>
+
+<!-- No uses filtrarRegistros si ya viene filtrado -->
+<ag-grid-angular
+  class="ag-theme-alpine"
+  style="width: 100%; height: 400px; margin-top: 10px;"
+  [gridOptions]="gridOptions"
+  [rowData]="registros"
+  [columnDefs]="columnDefsUV"
+  [defaultColDef]="defaultColDef"
+  rowSelection="single"
+  (gridReady)="onGridReady($event)"
+  (rowClicked)="manejarClic($event.data)" (cellKeyDown)="onKeyDown($event)">
+</ag-grid-angular>
+
+
+
+
+
+
+  <!-- GTIN-14 si hay selección -->
+  <ng-container *ngIf="registroSeleccionado?.presentacion">
+    <h3 class="asignacion-title">
+      Asignación de GTIN-14: <span class="gtin14">{{ codigoSeleccionado || '00000000' }}</span>
+    </h3>
+
+    <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 300px;" [rowData]="registrosGtin14"
+      [columnDefs]="columnDefsGtin14" [defaultColDef]="defaultColDef" rowSelection="single"> <!-- ✅ ESTA LÍNEA -->
+    </ag-grid-angular>
+
+  </ng-container>
+</ng-container>
+
+<!-- TAB REPORTES -->
+<ng-container *ngIf="activeTab === 'Reportes'">
+  <div [class.blocked-content]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-producto.reportes'))">
+    <form [formGroup]="formReporte" class="form-reporte">
+      <main class="main-content">
+        <div class="content-container">
+
+          <div class="subtabs">
+            <button class="subtab-button active">Reportes</button>
+            <button class="subtab-button">Certificados</button>
+          </div>
+
+          <mat-radio-group formControlName="reporte" class="radio-grid">
+            <div class="column">
+              <h3 class="titulo">Reportes</h3>
+              <mat-radio-button value="gtinVenta">GTIN Unidad de Venta</mat-radio-button>
+              <mat-radio-button value="logistica">Unidad Logística</mat-radio-button>
+              <mat-radio-button value="general">General</mat-radio-button>
+              <mat-radio-button value="completo">Completo</mat-radio-button>
+            </div>
+            <div class="column">
+              <h3 class="titulo">Certificados</h3>
+              <mat-radio-button value="producto">Por Producto</mat-radio-button>
+              <mat-radio-button value="membresia">Membresía</mat-radio-button>
+              <mat-radio-button value="carta">Carta</mat-radio-button>
+            </div>
+          </mat-radio-group>
+
+
+          <!-- ✅ Mejora del resto del formulario -->
+          <section class="form-section">
+            <div class="prefijo-codigo-wrap">
+              <mat-form-field class="select-pequeno" *ngIf="mostrarPrefijo()">
+                <mat-label>Prefijo</mat-label>
+                <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+                  <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+                    {{ prefijo.codpre }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+            <div>
+              <mat-form-field *ngIf="mostrarFiltrosCod" appearance="fill" class="codigo-separado">
+                <mat-label>Código</mat-label>
+                <input matInput formControlName="codigo" />
+              </mat-form-field>
+            </div>
+
+            <div class="date-filter-row" *ngIf="mostrarFiltros">
+              <label class="form-label">Condición de Fecha:</label>
+              <mat-radio-group formControlName="operadorFecha" class="operadores-radio-group"
+                (change)="onOperadorFechaChange()">
+                <mat-radio-button value="igual">=</mat-radio-button>
+                <mat-radio-button value="menorIgual">&le;</mat-radio-button>
+                <mat-radio-button value="mayor">&gt;</mat-radio-button>
+                <mat-radio-button value="entre">Entre</mat-radio-button>
+              </mat-radio-group>
+            </div>
+
+            <div class="date-range" *ngIf="mostrarFiltros">
+              <!-- Solo visible si operador !== 'entre' -->
+              <mat-form-field appearance="fill" *ngIf="formReporte.get('operadorFecha')?.value !== 'entre'">
+                <mat-label>Fecha</mat-label>
+                <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" readonly />
+                <mat-datepicker-toggle matSuffix [for]="pickerFecha"></mat-datepicker-toggle>
+                <mat-datepicker #pickerFecha></mat-datepicker>
+              </mat-form-field>
+
+              <!-- Visible solo si operador === 'entre' -->
+              <ng-container *ngIf="formReporte.get('operadorFecha')?.value === 'entre'">
+                <mat-form-field appearance="fill">
+                  <mat-label>Desde</mat-label>
+                  <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+                  <mat-datepicker-toggle matSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerDesde></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                  <mat-label>Hasta</mat-label>
+                  <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+                  <mat-datepicker-toggle matSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerHasta></mat-datepicker>
+                </mat-form-field>
+              </ng-container>
+            </div>
+
+            <mat-form-field appearance="fill" *ngIf="mostrarFiltros">
+              <mat-label>Estado</mat-label>
+              <mat-select formControlName="estado">
+                <mat-option value="1">Activo</mat-option>
+                <mat-option value="0">Inactivo</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </section>
+
+          <app-carta #cartaComponent></app-carta>
+          <app-carta-oficial #cartaOficialComponent></app-carta-oficial>
+
+          <!--BOTONES ACTUALIZADOS CON LÓGICA CONDICIONAL -->
+          <div class="form-actions">
+
+            <button mat-button (click)="nuevo()">Nuevo</button>
+
+            <!-- Imprimir: Bloqueado para "completo" -->
+            <button mat-button (click)="imprimir()" [disabled]="!imprimirHabilitado"
+              [title]="formReporte.get('reporte')?.value === 'completo' ? 'Use Excel para reporte completo' : ''">
+              Imprimir
+            </button>
+
+            <!-- Excel: Habilitado para todos los reportes -->
+            <button mat-button (click)="exportarExcel()" [disabled]="!excelHabilitado">
+              Excel
+            </button>
+
+            <button mat-button (click)="salir()">
+              <img src="assets/icons/icon-salir.png" alt="Salir" width="18" height="18" style="margin-right: 6px;" />
+              Salir
+            </button>
+          </div>
+        </div>
+      </main>
+    </form>
+  </div>
+</ng-container>

@@ -1,0 +1,100 @@
+<div class="form-wrapper">
+  <h1 class="form-title">{{ modoEdicion ? 'Edición' : 'Creación' }} Grupo de Cliente</h1>
+
+  <form [formGroup]="formulario" (ngSubmit)="guardar()">
+    <div class="form-grid">
+      <!-- COLUMNA IZQUIERDA -->
+      <div class="form-column">
+        <!-- Código -->
+        <div class="form-field">
+          <label class="field-label required">Código:</label>
+          <input type="text" formControlName="codigo" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('codigo')?.touched && formulario.get('codigo')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('codigo')?.errors?.['required']">El código es obligatorio.</small>
+          <small *ngIf="formulario.get('codigo')?.errors?.['alphanumeric']">Solo se permiten letras y números.</small>
+          <small *ngIf="formulario.get('codigo')?.errors?.['maxLength']">Máximo 4 caracteres.</small>
+        </div>
+
+        <!-- Inscripción -->
+        <div class="form-field">
+          <label class="field-label required">Afiliación:</label>
+          <input type="text" formControlName="inscripcion" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('inscripcion')?.touched && formulario.get('inscripcion')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('inscripcion')?.errors?.['required']">La inscripción es obligatoria.</small>
+          <small *ngIf="formulario.get('inscripcion')?.errors?.['onlyFormattedNumber']">Formato inválido (usa punto o coma para decimales).</small>
+        </div>
+
+        <!-- Mantenimiento -->
+        <div class="form-field">
+          <label class="field-label required">Mantenimiento:</label>
+          <input type="text" formControlName="mantenimiento" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('mantenimiento')?.touched && formulario.get('mantenimiento')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('mantenimiento')?.errors?.['required']">El mantenimiento es obligatorio.</small>
+          <small *ngIf="formulario.get('mantenimiento')?.errors?.['onlyFormattedNumber']">Número inválido.</small>
+        </div>
+
+        <!-- Asignación -->
+        <div class="form-field">
+          <label class="field-label required">Asignación:</label>
+          <input type="text" formControlName="asignacion" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('asignacion')?.touched && formulario.get('asignacion')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('asignacion')?.errors?.['required']">La asignación es obligatoria.</small>
+          <small *ngIf="formulario.get('asignacion')?.errors?.['onlyFormattedNumber']">Número inválido.</small>
+        </div>
+
+        <!-- Valor Anual -->
+        <div class="form-field">
+          <label class="field-label required">Valor Anual:</label>
+          <input type="text" formControlName="valorAnual" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('valorAnual')?.touched && formulario.get('valorAnual')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('valorAnual')?.errors?.['required']">El valor anual es obligatorio.</small>
+          <small *ngIf="formulario.get('valorAnual')?.errors?.['onlyFormattedNumber']">Número inválido.</small>
+        </div>
+
+        <!-- Fecha -->
+        <div class="form-field">
+          <label class="field-label required">Fecha:</label>
+          <input type="date" formControlName="fecha" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('fecha')?.touched && formulario.get('fecha')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('fecha')?.errors?.['required']">La fecha es obligatoria.</small>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA -->
+      <div class="form-column">
+        <!-- Grupo -->
+        <div class="form-field">
+          <label class="field-label required">Grupo:</label>
+          <input type="text" formControlName="nombre" class="field-input" />
+        </div>
+        <div *ngIf="formulario.get('nombre')?.touched && formulario.get('nombre')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('nombre')?.errors?.['required']">El grupo es obligatorio.</small>
+          <small *ngIf="formulario.get('nombre')?.errors?.['onlyLetters']">Solo se permiten letras.</small>
+        </div>
+
+        <!-- Estado -->
+        <div class="form-field">
+          <label class="field-label required">Estado:</label>
+          <select formControlName="estado" class="field-select">
+            <option [ngValue]="true">ACTIVO</option>
+            <option [ngValue]="false">INACTIVO</option>
+          </select>
+        </div>
+        <div *ngIf="formulario.get('estado')?.touched && formulario.get('estado')?.invalid" class="error-message">
+          <small *ngIf="formulario.get('estado')?.errors?.['required']">El estado es obligatorio.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button type="submit" class="action-button">Grabar</button>
+      <button type="button" class="action-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

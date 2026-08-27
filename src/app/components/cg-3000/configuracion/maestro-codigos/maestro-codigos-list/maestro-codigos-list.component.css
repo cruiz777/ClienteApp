@@ -1,0 +1,241 @@
+.zona-container {
+  padding: 16px 24px 20px;     /* antes 40px */
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.zona-header {
+ display: flex;
+  align-items: center;
+  margin-bottom: 6px;     /* poco espacio debajo del título */
+}
+
+.zona-header h2 {
+  font-size: 22px;
+  color: #002c6c;
+  font-weight: 700;
+}
+.zona-toolbar {
+  display: flex;
+  align-items: flex-end;  /* alinea base del input y botón */
+  gap: 16px;
+  margin-bottom: 6px;     /* casi pegado a la tabla */
+}
+
+.btn-nueva-zona {
+  background-color: #eef4f7;
+  color: #002c6c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-nueva-zona:hover {
+  background-color: #d5e8f1;
+}
+
+.zona-busqueda {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;            /* ya no deja hueco extra */
+}
+
+.zona-busqueda label {
+  margin-right: 6px;
+  font-size: 13px;
+  color: #002c6c;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper input {
+ padding: 4px 26px 4px 8px;   /* más compacto */
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  outline: none;
+  font-size: 13px;
+  width: 260px;
+}
+
+.input-wrapper img {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+}
+
+/* Tabla */
+.zona-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ccd5e2;
+  font-size: 11px;
+}
+
+.zona-tabla thead tr {
+  background-color: #eef4f7;
+  color: #002c6c;
+}
+
+.zona-tabla th,
+.zona-tabla td {
+  border: 1px solid #ccd5e2;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.zona-tabla tbody tr:hover {
+  background-color: #f8fafd;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.icon-btn img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.icon-btn:hover img {
+  opacity: 1;
+}
+
+.acciones { display: flex; gap: 8px; }
+.icon-btn { background: #fff; border: 1px solid #e5e7eb; padding: 6px; border-radius: 6px; cursor: pointer; }
+.icon-btn:hover { background: #f9fafb; }
+.icon-btn img { width: 18px; height: 18px; display: block; }
+
+.state { margin: 8px 0; padding: 8px 10px; border-radius: 6px; }
+.state.info { background: #eff6ff; border: 1px solid #bfdbfe; }
+.state.error { background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; }
+
+.empty { text-align: center; color: #6b7280; padding: 14px 8px; }
+
+.zona-tabla th.col-opcion,
+.zona-tabla td.acciones {
+  width: 44px;          /* ajusta si tu icono es más grande */
+  padding: 4px 6px;     /* menos padding para que no ensanche */
+  text-align: center;
+  white-space: nowrap;  /* evita que crezca por saltos de línea */
+}
+
+/* Botón icónico compacto */
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;                 /* sin padding para que calce exacto */
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.icon-btn:hover { background: #f9fafb; }
+
+.icon-btn img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.btn-azul {
+  background: #093679;          /* azul */
+  color: #fff;
+  border: 1px solid #0d6efd;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.btn-azul:hover {
+  background: #48b0ff;          /* celeste al hover */
+  border-color: #48b0ff;
+}
+
+.btn-azul:active {
+  background: #1a75ff;          /* un poco más oscuro al click */
+  border-color: #1a75ff;
+}
+
+.btn-azul:focus-visible {
+  outline: 2px solid #bfe6ff;   /* anillo de enfoque accesible */
+  outline-offset: 2px;
+}
+
+.btn-azul:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+
+}
+
+.acciones-header {
+  display: flex;
+  align-items: center;
+  margin-left: auto;      /* truco: empuja el botón al extremo derecho */
+}
+
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  /*width: 200px;
+  height: 500px;*/
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+.paginacion {
+  display: flex;
+  justify-content: flex-end;   /* ✅ todo a la derecha */
+  align-items: center;
+  gap: 16px;
+  padding: 10px 6px;
+  border-top: 1px solid #e5e5e5;
+  margin-top: 6px;
+}
+
+.paginacion-info,
+.paginacion-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ml { margin-left: 12px; }
+
+.btn-page {
+  min-width: 34px;
+  height: 30px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

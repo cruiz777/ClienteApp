@@ -1,0 +1,154 @@
+<div class="rol-container" [formGroup]="form">
+  <!-- CABECERA -->
+  <div class="page-header">
+    <div>
+      <h2>Generación de Roles Mensuales</h2>
+      <p>Administre y genere la nómina mensual de empleados.</p>
+    </div>
+  </div>
+
+  <!-- CONTENIDO -->
+  <div class="main-layout">
+    <!-- PANEL IZQUIERDO -->
+    <div class="card left-panel">
+      <div class="left-panel-body">
+        <ng-container *ngFor="let nodo of nodos">
+          <!-- RAÍZ -->
+          <div class="tree-item"
+            [class.active]="nodoSeleccionado?.tipo === nodo.tipo && nodoSeleccionado?.id === nodo.id"
+            (click)="seleccionarNodo(nodo)">
+
+            <mat-icon class="tree-icon" (click)="toggleNodo(nodo, $event)">
+              {{ nodo.expandido ? 'folder_open' : 'folder' }}
+            </mat-icon>
+
+            <span>{{ nodo.nombre }}</span>
+          </div>
+
+          <!-- HIJOS -->
+          <div class="tree-children" *ngIf="nodo.expandido">
+            <div *ngFor="let hijo of nodo.hijos" class="tree-item child"
+              [class.active]="nodoSeleccionado?.tipo === hijo.tipo && nodoSeleccionado?.id === hijo.id"
+              (click)="seleccionarNodo(hijo)">
+
+              <mat-icon class="tree-icon">business</mat-icon>
+              <span>{{ hijo.nombre }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO -->
+    <div class="card right-panel">
+      <div class="panel-header">
+        <mat-icon>table_view</mat-icon>
+        <span>Detalle del Rol</span>
+      </div>
+
+      <div class="periodo-cerrado-banner" *ngIf="periodoCerrado">
+        Periodo cerrado. La nómina se muestra solo en modo consulta.
+      </div>
+
+      <div class="tabla-wrapper">
+        <ag-grid-angular class="ag-theme-alpine rol-grid" [rowData]="detalleRol" [columnDefs]="columnDefs"
+          [defaultColDef]="defaultColDef" [pinnedBottomRowData]="pinnedBottomRowData" rowSelection="multiple"
+          [suppressRowClickSelection]="true" (gridReady)="onGridReady($event)"
+          (cellValueChanged)="onCellValueChanged($event)" (cellDoubleClicked)="onCellDoubleClicked($event)"
+          (gridSizeChanged)="onGridSizeChanged()" (firstDataRendered)="onFirstDataRendered()">
+        </ag-grid-angular>
+
+        <div class="sin-datos" *ngIf="!detalleRol || detalleRol.length === 0">
+          Genere o consulte un periodo para visualizar la nómina.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCIONES -->
+  <div class="actions-card">
+    <div class="actions-left">
+      <div class="periodo-inline">
+        <label>Periodo</label>
+
+        <mat-form-field appearance="outline" class="fecha-field">
+          <mat-label>Periodo</mat-label>
+
+          <input matInput [matDatepicker]="pickerPeriodo" formControlName="fechaPeriodo"
+            [matDatepickerFilter]="soloUltimoDiaMes" readonly />
+
+          <mat-datepicker-toggle matSuffix [for]="pickerPeriodo">
+          </mat-datepicker-toggle>
+
+          <mat-datepicker #pickerPeriodo></mat-datepicker>
+
+          <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
+            Solo puede seleccionar el último día del mes.
+          </mat-error>
+        </mat-form-field>
+      </div>
+      <button mat-flat-button color="primary" type="button"
+        [disabled]="generando || cargando || validandoCierre || procesandoModificar || modificarBloqueado"
+        (click)="accionPrincipalPeriodo()">
+
+        <mat-icon>
+          {{ periodoExiste ? 'edit' : 'add' }}
+        </mat-icon>
+
+        {{ periodoExiste ? 'Modificar' : 'Nuevo' }}
+      </button>
+
+      <button mat-stroked-button type="button"
+        [disabled]="actualizando || cargando || generando || validandoCierre || periodoCerrado"
+        (click)="recalcularRolMensual()">
+
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+
+      <input #inputArchivoHoras type="file" accept=".xlsx" hidden (change)="onArchivoHorasSeleccionado($event)" />
+
+      <button mat-stroked-button type="button"
+        [disabled]="!periodoExiste || periodoCerrado || cargando || generando || actualizando"
+        (click)="abrirSelectorArchivoHoras(inputArchivoHoras)">
+
+        <mat-icon>upload_file</mat-icon>
+        Cargar Horas
+      </button>
+
+      <button mat-stroked-button type="button" [disabled]="!periodoExiste || periodoCerrado" (click)="irRubrosFijos()">
+
+        <mat-icon>playlist_add</mat-icon>
+        Rubros Fijos
+      </button>
+
+      <button mat-stroked-button type="button" class="btn-mail"
+        [disabled]="!periodoExiste || detalleRol.length === 0 || enviandoCorreos"
+        (click)="enviarPdfEmpleadosSeleccionados()">
+
+        <mat-icon>mail</mat-icon>
+        Mail
+      </button>
+
+      <button mat-stroked-button type="button" class="btn-excel"
+        [disabled]="!periodoExiste || detalleRol.length === 0 || exportandoExcel" (click)="exportarRolExcel()">
+
+        <mat-icon>description</mat-icon>
+        Excel
+      </button>
+
+      <button mat-stroked-button type="button" [disabled]="!periodoExiste || detalleRol.length === 0"
+        (click)="abrirModalBanco()">
+
+        <mat-icon>account_balance</mat-icon>
+        Banco
+      </button>
+
+      <button mat-stroked-button type="button" class="btn-cancelar" (click)="cancelar()">
+
+        <mat-icon>close</mat-icon>
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

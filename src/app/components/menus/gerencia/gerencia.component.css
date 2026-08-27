@@ -1,0 +1,261 @@
+.filtros {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campo-anio { width: 140px; }
+.campo-mes  { width: 180px; }
+
+.panel-tablas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.card-tabla {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e6e6e6;
+}
+
+.titulo-tabla {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.tabla-gtin {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-gtin th, .tabla-gtin td {
+  border-bottom: 1px solid #eee;
+  padding: 8px;
+}
+
+.mensaje-vacio {
+  padding: 10px;
+  color: #666;
+}
+
+/* Responsive: en móvil se apilan */
+@media (max-width: 900px) {
+  .panel-tablas { grid-template-columns: 1fr; }
+}
+/* Wrapper */
+.gerencia-wrap{
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 16px 12px 16px;
+}
+
+/* Header */
+.gerencia-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom: 10px;
+}
+
+.title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.title-icon{
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.title-text h2{
+  margin:0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.title-text small{
+  display:block;
+  margin-top:2px;
+  color:#6b7280;
+  font-size: 12px;
+}
+
+/* Filters */
+.filters{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.ff{ width: 160px; }
+.ff-year{ width: 140px; }
+.ff-month{ width: 170px; }
+
+.btn-export{
+  height: 56px;
+  border-radius: 10px;
+  padding: 0 14px;
+}
+
+/* KPI Grid */
+.kpi-grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap:12px;
+  margin-top: 10px;
+}
+
+@media (max-width: 1200px){
+  .kpi-grid{ grid-template-columns: repeat(2, minmax(220px, 1fr)); }
+}
+@media (max-width: 700px){
+  .kpi-grid{ grid-template-columns: 1fr; }
+}
+
+/* KPI Card base */
+.kpi-card{
+  border-radius: 8px;
+  padding: 14px 14px 12px 14px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  min-height: 120px;
+}
+
+.kpi-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-bottom: 10px;
+}
+
+.kpi-name{
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .2px;
+}
+
+.kpi-sub{
+  font-size: 12px;
+  opacity: .9;
+}
+
+/* Metrics (3 columnas tipo “cajas blancas”) */
+.kpi-metrics{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
+}
+
+.kpi-metric{
+  background: rgba(255,255,255,.95);
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: #111827;
+}
+
+.kpi-label{
+  font-size: 11px;
+  color:#6b7280;
+  margin-bottom: 2px;
+}
+
+.kpi-value{
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* Color themes similar a tu screenshot */
+.kpi-blue{ background: #3f88c5; }
+.kpi-orange{ background: #f1b24a; }
+.kpi-green{ background: #50b05a; }
+.kpi-red{ background: #d9534f; }
+
+/* Empty state */
+.empty-state{
+  grid-column: 1 / -1;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color:#64748b;
+}
+.empty-state mat-icon{ color:#64748b; }
+.empty-title{ font-weight:700; }
+.empty-text{ font-size:12px; }
+
+/* Table */
+.table-card{
+  margin-top: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow:hidden;
+}
+
+.table-header{
+  padding: 10px 12px;
+  background:#f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table-title{
+  font-weight: 800;
+  font-size: 13px;
+  color:#111827;
+}
+
+.table-scroll{
+  overflow:auto;
+}
+
+.gtin-table{
+  width:100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gtin-table thead th{
+  text-align:left;
+  padding: 10px 12px;
+  background:#fff;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+}
+
+.gtin-table tbody td{
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.gtin-table tbody tr:hover{
+  background:#f8fafc;
+}
+
+.num{ text-align:right; }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+/* Table empty */
+.table-empty{
+  padding: 14px;
+  color:#64748b;
+}
+
+/* Status */
+.status{
+  margin-top: 10px;
+  font-size: 12px;
+  color:#6b7280;
+}

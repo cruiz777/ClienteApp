@@ -1,0 +1,311 @@
+<div class="page-container">
+  <div class="contenido-tablas">
+    <!-- ===== TÍTULO ===== -->
+    <div class="header-row">
+      <h2 class="title">Reporte de Ventas</h2>
+    </div>
+
+    <!-- ===== FILTROS ===== -->
+    <form [formGroup]="filtrosForm" class="filters-row">
+      <div class="filters-group">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha desde</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerDesde"
+            formControlName="fechaDesde"
+            placeholder="dd/MM/yyyy"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="pickerDesde"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #pickerDesde></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha hasta</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerHasta"
+            formControlName="fechaHasta"
+            placeholder="dd/MM/yyyy"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="pickerHasta"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #pickerHasta></mat-datepicker>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          class="btn-buscar"
+          (click)="consultar()"
+          [disabled]="loading"
+        >
+          <mat-icon *ngIf="!loading">search</mat-icon>
+        </button>
+
+        <button
+          mat-raised-button
+          type="button"
+          class="btn-exportar"
+          (click)="exportarExcel()"
+          [disabled]="loading || (!facturasData.length && !notasCreditoData.length)"
+        >
+          <mat-icon>download</mat-icon>
+          Exportar Excel
+        </button>
+      </div>
+    </form>
+
+    <!-- ===== TABS ===== -->
+    <div class="tabs">
+      <button
+        [class.active]="tabActivo === 'Facturas'"
+        (click)="cambiarTab('Facturas')"
+      >
+        Facturas
+      </button>
+      <button
+        [class.active]="tabActivo === 'NotasCredito'"
+        (click)="cambiarTab('NotasCredito')"
+      >
+        Notas de Crédito
+      </button>
+      <button
+        [class.active]="tabActivo === 'NotasDebito'"
+        (click)="cambiarTab('NotasDebito')"
+      >
+        Notas de Débito
+      </button>
+      <button
+        [class.active]="tabActivo === 'Retenciones'"
+        (click)="cambiarTab('Retenciones')"
+      >
+        Retenciones
+      </button>
+    </div>
+
+    <!-- ===== CONTENIDO DE TABS ===== -->
+    <div class="tab-content">
+      <!-- TAB: FACTURAS -->
+      <div *ngIf="tabActivo === 'Facturas'" class="grid-wrapper">
+        <ag-grid-angular
+          style="width: 100%; height: 600px"
+          class="ag-theme-quartz custom-grid"
+          [rowData]="facturasData"
+          [columnDefs]="facturasColumnDefs"
+          [defaultColDef]="defaultColDef"
+          [pagination]="false"
+          [pinnedBottomRowData]="facturasFilaTotales"
+          [animateRows]="true"
+          (gridReady)="onFacturasGridReady($event)"
+        >
+        </ag-grid-angular>
+
+        <!-- Paginador personalizado -->
+        <div class="paginador-custom" *ngIf="totalItemsFacturas > 0">
+          <div class="paginador-info">
+            Mostrando {{ (currentPageFacturas - 1) * pageSize + 1 }} -
+            {{ Math.min(currentPageFacturas * pageSize, totalItemsFacturas) }}
+            de {{ totalItemsFacturas }} registros
+          </div>
+
+          <div class="paginador-controles">
+            <button
+              mat-icon-button
+              [disabled]="currentPageFacturas === 1"
+              (click)="irPaginaFacturas(1)">
+              <mat-icon>first_page</mat-icon>
+            </button>
+
+            <button
+              mat-icon-button
+              [disabled]="currentPageFacturas === 1"
+              (click)="irPaginaFacturas(currentPageFacturas - 1)">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+
+            <span class="pagina-actual">
+              Página {{ currentPageFacturas }} de {{ totalPagesFacturas }}
+            </span>
+
+            <button
+              mat-icon-button
+              [disabled]="currentPageFacturas === totalPagesFacturas"
+              (click)="irPaginaFacturas(currentPageFacturas + 1)">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+            <button
+              mat-icon-button
+              [disabled]="currentPageFacturas === totalPagesFacturas"
+              (click)="irPaginaFacturas(totalPagesFacturas)">
+              <mat-icon>last_page</mat-icon>
+            </button>
+          </div>
+
+          <mat-form-field appearance="outline" class="page-size-selector">
+            <mat-label>Por página</mat-label>
+            <mat-select [(value)]="pageSize" (selectionChange)="cambiarTamanoPaginaFacturas()">
+              <mat-option [value]="10">10</mat-option>
+              <mat-option [value]="20">20</mat-option>
+              <mat-option [value]="50">50</mat-option>
+              <mat-option [value]="100">100</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- TAB: NOTAS DE CRÉDITO -->
+      <div *ngIf="tabActivo === 'NotasCredito'" class="grid-wrapper">
+      <ag-grid-angular
+        style="width: 100%; height: 600px"
+        class="ag-theme-quartz custom-grid"
+        [rowData]="notasCreditoData"
+        [columnDefs]="notasCreditoColumnDefs"
+        [defaultColDef]="defaultColDef"
+        [pagination]="false"
+        [pinnedBottomRowData]="notasCreditoFilaTotales"
+        [animateRows]="true"
+        (gridReady)="onNotasCreditoGridReady($event)"
+      >
+      </ag-grid-angular>
+
+      <!-- Paginador personalizado -->
+      <div class="paginador-custom" *ngIf="totalItemsNotasCredito > 0">
+        <div class="paginador-info">
+          Mostrando {{ (currentPageNotasCredito - 1) * pageSize + 1 }} -
+          {{ Math.min(currentPageNotasCredito * pageSize, totalItemsNotasCredito) }}
+          de {{ totalItemsNotasCredito }} registros
+        </div>
+
+        <div class="paginador-controles">
+          <button
+            mat-icon-button
+            [disabled]="currentPageNotasCredito === 1"
+            (click)="irPaginaNotasCredito(1)">
+            <mat-icon>first_page</mat-icon>
+          </button>
+
+          <button
+            mat-icon-button
+            [disabled]="currentPageNotasCredito === 1"
+            (click)="irPaginaNotasCredito(currentPageNotasCredito - 1)">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <span class="pagina-actual">
+            Página {{ currentPageNotasCredito }} de {{ totalPagesNotasCredito }}
+          </span>
+
+          <button
+            mat-icon-button
+            [disabled]="currentPageNotasCredito === totalPagesNotasCredito"
+            (click)="irPaginaNotasCredito(currentPageNotasCredito + 1)">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+          <button
+            mat-icon-button
+            [disabled]="currentPageNotasCredito === totalPagesNotasCredito"
+            (click)="irPaginaNotasCredito(totalPagesNotasCredito)">
+            <mat-icon>last_page</mat-icon>
+          </button>
+        </div>
+
+        <mat-form-field appearance="outline" class="page-size-selector">
+          <mat-label>Por página</mat-label>
+          <mat-select [(value)]="pageSize" (selectionChange)="cambiarTamanoPaginaNotasCredito()">
+            <mat-option [value]="10">10</mat-option>
+            <mat-option [value]="20">20</mat-option>
+            <mat-option [value]="50">50</mat-option>
+            <mat-option [value]="100">100</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+      <!-- TAB: NOTAS DE DÉBITO (En desarrollo) -->
+      <div *ngIf="tabActivo === 'NotasDebito'" class="tab-vacio">
+        <mat-icon style="font-size: 64px; width: 64px; height: 64px; color: #ccc">
+          construction
+        </mat-icon>
+        <p>Funcionalidad en desarrollo</p>
+      </div>
+
+      <!-- TAB: RETENCIONES -->
+      <div *ngIf="tabActivo === 'Retenciones'" class="grid-wrapper">
+        <ag-grid-angular
+          style="width: 100%; height: 600px"
+          class="ag-theme-quartz custom-grid"
+          [rowData]="retencionesData"
+          [columnDefs]="retencionesColumnDefs"
+          [defaultColDef]="defaultColDef"
+          [pagination]="false"
+          [pinnedBottomRowData]="retencionesFilaTotales"
+          [animateRows]="true"
+          (gridReady)="onRetencionesGridReady($event)"
+        >
+        </ag-grid-angular>
+
+        <!-- Paginador personalizado -->
+        <div class="paginador-custom" *ngIf="totalItemsRetenciones > 0">
+          <div class="paginador-info">
+            Mostrando {{ (currentPageRetenciones - 1) * pageSize + 1 }} -
+            {{ Math.min(currentPageRetenciones * pageSize, totalItemsRetenciones) }}
+            de {{ totalItemsRetenciones }} registros
+          </div>
+
+          <div class="paginador-controles">
+            <button
+              mat-icon-button
+              [disabled]="currentPageRetenciones === 1"
+              (click)="irPaginaRetenciones(1)">
+              <mat-icon>first_page</mat-icon>
+            </button>
+
+            <button
+              mat-icon-button
+              [disabled]="currentPageRetenciones === 1"
+              (click)="irPaginaRetenciones(currentPageRetenciones - 1)">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+
+            <span class="pagina-actual">
+              Página {{ currentPageRetenciones }} de {{ totalPagesRetenciones }}
+            </span>
+
+            <button
+              mat-icon-button
+              [disabled]="currentPageRetenciones === totalPagesRetenciones"
+              (click)="irPaginaRetenciones(currentPageRetenciones + 1)">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+
+            <button
+              mat-icon-button
+              [disabled]="currentPageRetenciones === totalPagesRetenciones"
+              (click)="irPaginaRetenciones(totalPagesRetenciones)">
+              <mat-icon>last_page</mat-icon>
+            </button>
+          </div>
+
+          <mat-form-field appearance="outline" class="page-size-selector">
+            <mat-label>Por página</mat-label>
+            <mat-select [(value)]="pageSize" (selectionChange)="cambiarTamanoPaginaRetenciones()">
+              <mat-option [value]="10">10</mat-option>
+              <mat-option [value]="20">20</mat-option>
+              <mat-option [value]="50">50</mat-option>
+              <mat-option [value]="100">100</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

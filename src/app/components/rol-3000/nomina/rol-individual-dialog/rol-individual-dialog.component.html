@@ -1,0 +1,216 @@
+<div class="rol-dialog">
+  <div class="dialog-topbar">
+    <div>
+      <h2>Rol Individual</h2>
+      <div class="periodo" *ngIf="dataRol">
+        Periodo: {{ fechaPeriodoTexto }}
+      </div>
+    </div>
+
+    <button
+  type="button"
+  class="close-button"
+  (click)="salir()">
+  x
+</button>
+  </div>
+
+  <div *ngIf="cargando" class="loading-box">
+    Cargando información del rol individual...
+  </div>
+
+  <ng-container *ngIf="!cargando && dataRol as rol">
+    <div class="info-card">
+      <div class="info-item">
+        <label>Código</label>
+        <span>{{ rol.codigoEmpleado }}</span>
+      </div>
+
+      <div class="info-item wide">
+        <label>Empleado</label>
+        <span>{{ rol.nombreEmpleado }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Cédula</label>
+        <span>{{ rol.cedula || 'N/D' }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Tipo Emp.</label>
+        <span>{{ rol.tipoEmpleado }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Área / Local</label>
+        <span>{{ rol.local || 'N/D' }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Entrada</label>
+        <span>{{ fechaIngresoTexto }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Salida</label>
+        <span>{{ fechaSalidaTexto }}</span>
+      </div>
+      <div class="info-row">
+        <div class="info-item">
+          <label>Cargo</label>
+          <span>{{ rol.cargo || 'N/D' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Contrato</label>
+          <span>{{ rol.contrato || 'N/D' }}</span>
+        </div>
+
+        <div class="info-item">
+          <label>Email</label>
+          <span>{{ rol.email || 'N/D' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grids-layout">
+      <div class="grid-panel">
+        <div class="grid-title ingresos">Ingresos</div>
+
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 360px;" [rowData]="ingresos"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [animateRows]="true" [singleClickEdit]="true"
+          [stopEditingWhenCellsLoseFocus]="true" (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+
+        <div class="subtotal subtotal-ingresos">
+          <span>Total Ingresos</span>
+          <strong>{{ totalIngresos | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="grid-panel">
+        <div class="grid-title egresos">Egresos</div>
+
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 360px;" [rowData]="egresos"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [animateRows]="true" [singleClickEdit]="true"
+          [stopEditingWhenCellsLoseFocus]="true" (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+
+        <div class="subtotal subtotal-egresos">
+          <span>Total Egresos</span>
+          <strong>{{ totalEgresos | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="liquido-box">
+      <span>Líquido a Recibir:</span>
+      <strong>$ {{ liquidoRecibir | number:'1.2-2' }}</strong>
+    </div>
+
+  <div class="acciones-rol-individual">
+
+  <!-- ACCIONES SECUNDARIAS -->
+  <div class="acciones-secundarias">
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="btn-accion-secundaria"
+      (click)="imprimirRolIndividual()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+
+      <mat-icon>
+        {{ imprimiendo ? 'hourglass_top' : 'print' }}
+      </mat-icon>
+
+      <span>
+        {{ imprimiendo ? 'Generando...' : 'Imprimir' }}
+      </span>
+    </button>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="btn-accion-secundaria btn-mail"
+      (click)="enviarRolPorCorreo()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+
+      <mat-icon>
+        {{ enviandoCorreo ? 'hourglass_top' : 'mail' }}
+      </mat-icon>
+
+      <span>
+        {{ enviandoCorreo ? 'Enviando...' : 'Mail' }}
+      </span>
+    </button>
+
+  </div>
+
+  <!-- ACCIONES PRINCIPALES -->
+  <div class="acciones-principales">
+
+    <button
+      mat-flat-button
+      type="button"
+      class="btn-calcular"
+      (click)="calcularDesdeBackend()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+      Calcular
+    </button>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="btn-grabar"
+      (click)="grabar()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+
+      <mat-icon *ngIf="!guardando">
+        save
+      </mat-icon>
+
+      <span>
+        {{ guardando ? 'Grabando...' : 'Grabar' }}
+      </span>
+    </button>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="btn-salir"
+      (click)="salir()"
+      [disabled]="
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+      Salir
+    </button>
+
+  </div>
+
+</div>
+  </ng-container>
+</div>

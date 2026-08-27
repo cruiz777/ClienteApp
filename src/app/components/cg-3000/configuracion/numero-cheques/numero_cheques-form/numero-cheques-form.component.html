@@ -1,0 +1,108 @@
+<div class="form-container" [class.edit-mode]="editing()" >
+  <div class="form-header" [class.edit-mode]="editing()">
+    <h2 class="title">{{ editing() ? 'Editar Número de Cheques' : 'Ingreso Numeración Cheques' }}</h2>
+  </div>
+
+  <form class="wrap" [formGroup]="form" (ngSubmit)="submit()">
+
+    <div class="row">
+      <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Cuenta Banco</mat-label>
+        <input matInput formControlName="CuentaBanco" maxlength="100" autocomplete="off" readonly />
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Cuentas Contables</mat-label>
+
+      <!-- Buscador visual -->
+      <input
+        #planInput
+        matInput
+        [formControl]="planFilterCtrl"
+        [matAutocomplete]="autoPlan"
+        panelClass="auto-sm" 
+        placeholder="Buscar por Cuenta , Nombre"
+        autocomplete="off" />
+
+      <!-- Control real para estado/errores -->
+      <input formControlName="IdPlanCuentas" class="visually-hidden" tabindex="-1" />
+
+      <mat-autocomplete
+        #autoPlan="matAutocomplete"
+        [displayWith]="displayPlanOpt"
+        (optionSelected)="onPlanSelected($event.option.value)">
+        <mat-option *ngFor="let p of filteredPlanCtas()" [value]="p">
+          <div class="optline">
+            <span class="code">{{ p.CuentaPresentacion }}</span>
+            <span class="name"> — {{ p.NombreCuenta }}</span>
+          </div>
+        </mat-option>
+        <mat-option *ngIf="filteredPlanCtas().length === 0" disabled>Sin resultados</mat-option>
+      </mat-autocomplete>
+
+      <mat-error *ngIf="f.IdPlanCuentas.hasError('required')">Campo Requerido</mat-error>
+      <mat-error *ngIf="f.IdPlanCuentas.hasError('planDuplicadoEmpresa')">
+        Cuenta duplicada: ya existe registrada a esta empresa.
+      </mat-error>
+    </mat-form-field>
+
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Número de Cheque</mat-label>
+        <input matInput type="number" formControlName="NumCheque" />
+        <mat-error *ngIf="f.NumCheque.hasError('required')">Requerido</mat-error>
+        <mat-error *ngIf="f.NumCheque.hasError('min')">Debe ser ≥ 1</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Número de Transacción</mat-label>
+        <input matInput type="number" formControlName="NumTra" />
+        <mat-error *ngIf="f.NumTra.hasError('required')">Requerido</mat-error>
+        <mat-error *ngIf="f.NumTra.hasError('min')">No puede ser negativo</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="row two">
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="Estado">
+          <mat-option value="A">Activo</mat-option>
+          <mat-option value="I">Inactivo</mat-option>
+        </mat-select>
+        <mat-error *ngIf="f.Estado.hasError('required')">Requerido</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>NumTrag Global</mat-label>
+        <input matInput type="number" formControlName="NumTragGlobal" />
+        <mat-error *ngIf="f.NumTragGlobal.hasError('required')">Requerido</mat-error>
+        <mat-error *ngIf="f.NumTragGlobal.hasError('min')">No puede ser negativo</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="row two">
+      <mat-checkbox formControlName="Ocupado" class="chk">Ocupado</mat-checkbox>
+    </div>
+
+    <div class="actions">
+     
+      <button
+        type="submit"
+        [ngClass]="{
+          'btn-rojo': editing(),
+          'btn-azul' : !editing()
+        }"
+      >
+        <mat-icon>{{ editing() ? 'edit' : 'save' }}</mat-icon>
+        &nbsp;{{ editing() ? 'Actualizar' : 'Guardar' }}
+      </button>
+
+      <button  type="button" class="cancel-button" (click)="cancel()">
+        <mat-icon>close</mat-icon>&nbsp;Cancelar
+      </button>
+
+    </div>
+
+  </form>
+</div>

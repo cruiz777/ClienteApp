@@ -1,0 +1,101 @@
+/* Contenedor general */
+.nc-container { padding: 16px 18px 28px; }
+
+/* Tipografía y colores base (similar a registro de cobros) */
+.titulo { color:#1c2a5e; font-weight:700; margin-bottom:16px; }
+.subtitulo { color:#1c2a5e; font-weight:600; margin:0 0 12px; }
+
+/* Inputs estilo línea inferior */
+.form-label { font-weight:600; color:#2c3b6f; display:block; }
+.form-control {
+  width:100%; border:none; border-bottom:1px solid #dfe6f5; border-radius:0;
+  background:transparent; padding:4px 0; outline:none;
+}
+.form-control:focus { border-bottom-color:#9db4d9; }
+
+/* Encabezado: grilla responsiva */
+.grid-header {
+  display:grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap:18px 24px;
+  margin-bottom:12px;
+}
+.field.wide { grid-column: span 2; }
+
+/* Paneles */
+.panel {
+  background:#fff; border:1px solid #e9edf6; border-radius:12px;
+  padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  margin-top:10px;
+}
+
+/* AG Grid tema y alto auto */
+.ag-theme-quartz.nc-grid {
+  --ag-foreground-color: #2c3b6f;
+  --ag-header-background-color: #f6f8fc;
+  --ag-header-foreground-color: #1c2a5e;
+  --ag-row-hover-color: #f2f6ff;
+  --ag-selected-row-background-color: #eef3ff;
+  --ag-borders: #e6ecf7;
+}
+
+/* Totales al pie del detalle (alineación como maqueta) */
+.totales-linea {
+  display:flex; align-items:center; margin-top:8px;
+}
+.totales-linea .spacer { flex:1; }
+.total-fila {
+  display:grid;
+  grid-template-columns: 160px 100px 100px;
+  gap:8px; align-items:center;
+  font-weight:600; color:#1c2a5e;
+}
+.total-fila span:last-child { text-align:right; }
+
+/* Bloque Formas de Pago + Resumen */
+.grid-2col {
+  display:grid;
+  grid-template-columns: 1fr 340px;
+  gap:16px;
+  margin-top:16px;
+}
+
+.toolbar {
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}
+.toolbar .spacer { flex:1; }
+.total-pago { font-weight:700; color:#1c2a5e; }
+
+/* Resumen */
+.resumen { padding:16px 16px 8px; }
+.res-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed #edf1fb; }
+.res-item span { color:#6b7ea6; font-weight:600; }
+.res-item strong { color:#1c2a5e; }
+.res-item.total-dev strong { font-size:1.1rem; }
+
+/* Acciones */
+.acciones {
+  display:flex; align-items:center; gap:10px; margin-top:18px;
+}
+.acciones .spacer { flex:1; }
+.btn {
+  border:1px solid #cfd9ee; background:#fff; color:#1c2a5e;
+  padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:600;
+}
+.btn:hover { background:#f6f8fc; }
+.btn-primary { background:#1c2a5e; color:#fff; border-color:#1c2a5e; }
+.btn-primary:hover { background:#16224a; }
+.btn-sm { padding:6px 10px; }
+
+.exportar { display:flex; align-items:center; gap:6px; }
+.exportar .caret { color:#6b7ea6; }
+
+/* Checkbox de celdas */
+.nc-checkbox { width:16px; height:16px; }
+
+/* Responsivo */
+@media (max-width: 1100px) {
+  .grid-header { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+  .grid-2col { grid-template-columns: 1fr; }
+}
+.cdk-overlay-container { z-index: 2000; }

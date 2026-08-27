@@ -1,0 +1,419 @@
+/* src/app/components/anticipos/anticipos-cg-form/anticipos-cg-form.component.css */
+
+/* =========================
+   CONTENEDOR (como gráfico1)
+   ========================= */
+:host{
+  display:block;
+  height:85vh;            /* alto del diálogo */
+}
+
+/* Si estás dentro de MatDialog: deja que tu layout controle el scroll */
+:host ::ng-deep .mat-dialog-content,
+:host ::ng-deep .mat-mdc-dialog-content{
+  max-height:none !important;
+  height:85vh !important;
+  overflow:hidden !important;
+  padding:0 !important;
+}
+
+.anticipo-wrapper{
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  background:#ffffff;
+  border-radius:8px;
+  overflow:hidden;        /* importante para sticky */
+}
+
+/* =========================
+   TOOLBAR (fija arriba)
+   ========================= */
+.toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 14px;
+  background:#1d789f;
+  color:#fff;
+  border-radius:8px 8px 0 0;
+}
+
+.toolbar .title{
+  font-weight:700;
+  font-size:16px;
+}
+
+.toolbar .actions{
+  display:flex;
+  gap:8px;
+}
+
+.sticky-header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+/* =========================
+   BOTONES
+   ========================= */
+.btn{
+  padding:6px 12px;
+  border-radius:8px;
+  border:1px solid #d0d5dd;
+  background:#e1f9ca;
+  cursor:pointer;
+}
+.btn:hover{ background:#d5f7b3; }
+
+.btn-verde{
+  background:#85c160;
+  color:#fff;
+  border:1px solid #81c8f2;
+  padding:8px 16px;
+  border-radius:8px;
+  font-weight:900;
+  cursor:pointer;
+  transition:background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-verde:hover{ background:#32af4f; border-color:#6291e8; }
+
+.btn-add__icon{
+  width:16px;
+  height:16px;
+  margin-right:6px;
+  vertical-align:middle;
+}
+
+/* =========================
+   CUERPO (scroll) + sticky totales
+   ========================= */
+.body-scroll{
+  flex:1;
+  overflow:auto;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background:#ffffff; /* si quieres gris suave como gráfico1: #f3f4f6 */
+}
+
+/* =========================
+   CABECERA / FORM
+   ========================= */
+.header-form{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:12px;
+  margin:0;
+}
+
+.header-form .grid{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  column-gap:16px;
+  row-gap:10px;
+}
+
+.header-form .form-group{
+  display:flex;
+  flex-direction:column;
+}
+
+.header-form .form-group.span-2-left{ grid-column:1 / span 2; }
+.header-form .form-group.span-2-right{ grid-column:3 / span 2; }
+
+.control{
+  width:100%;
+  height:34px;
+  padding:6px 10px;
+  font-size:13px;
+  color:#111827;
+  background:#f3f6fb;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  box-sizing:border-box;
+  outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+
+.control:focus{
+  border-color:#2563eb;
+  box-shadow:0 0 0 3px rgba(37,99,235,.25);
+}
+
+.control-textarea{
+  height:34px;            /* 1 línea visual */
+  min-height:34px;
+  resize:vertical;        /* si quieres permitir crecer */
+}
+
+.header-compact label{
+  font-size:12px;
+  margin-bottom:2px;
+}
+
+.required{ color:#dc2626; margin-left:2px; }
+
+.error{
+  color:#dc2626;
+  font-size:12px;
+  margin-top:3px;
+}
+
+/* errores Angular */
+.ng-invalid.ng-touched.control,
+.ng-invalid.ng-dirty.control{
+  border-color:#dc2626 !important;
+  box-shadow:0 0 0 2px rgba(220,38,38,.15);
+}
+
+/* =========================
+   SUBTOOLBAR BANCO
+   ========================= */
+.subtoolbar-banco{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:0;
+}
+
+.banco-busqueda{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.banco-busqueda-label{
+  font-weight:700;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+/* =========================
+   AG GRID (ocupa alto disponible)
+   ========================= */
+.grid-anticipo{
+  flex:1;                 /* clave: llena el espacio como gráfico1 */
+  min-height:260px;
+  width:100%;
+}
+
+/* Tema/variables (tu estilo) */
+.custom-grid{
+  --ag-font-size: 12px;
+
+  --ag-background-color:#dde3ee;
+  --ag-foreground-color:#080808;
+
+  --ag-header-background-color:#1d789f;
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9;
+  --ag-even-row-background-color:#abc3f1;
+
+  --ag-row-hover-color:#eaf1c3;
+  --ag-border-color:#afb0ad;
+
+  --ag-selected-row-background-color:#a3c0e8;
+}
+
+/* Opcional: iconos en cabecera blanca */
+.custom-grid .ag-icon{
+  filter: invert(1) brightness(1.8);
+}
+
+/* =========================
+   TOTALES (sticky abajo)
+   ========================= */
+.totales{
+  position:sticky;
+  bottom:0;
+  z-index:900;
+
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+
+  padding:8px 12px;
+  background:#eaedb7;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+}
+
+.total-label{
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.2px;
+}
+
+.tot strong{
+  font-size:20px;
+}
+
+.usuario-totales{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  text-transform:uppercase;
+  font-weight:800;
+}
+
+.usuario-label,
+.usuario-valor{
+  color:#1b5e20;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 1100px){
+  .header-form .grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+  .header-form .form-group.span-2-left,
+  .header-form .form-group.span-2-right{
+    grid-column:auto;
+  }
+  .banco-busqueda{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .banco-busqueda-label{
+    margin-bottom:4px;
+  }
+}
+
+
+/*beneficiario*/
+/* ===== Beneficiario (subtoolbar banco) estilo "pill" unido ===== */
+.subtoolbar-banco .banco-busqueda{
+  display: flex;
+  align-items: stretch;
+  gap: 0;                 /* clave para que se unan */
+  width: 100%;
+  max-width: 820px;       /* ajusta si quieres */
+}
+
+.subtoolbar-banco .banco-busqueda-label{
+  display: flex;
+  align-items: center;
+  background: #fff7c2;    /* amarillo bajito */
+  border: 1px solid #e6df9a;
+  color: #2b2b2b;
+  padding: 0 12px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  border-right: 0;        /* une con el input */
+  border-radius: 10px 0 0 10px;
+}
+
+.subtoolbar-banco .banco-busqueda .control{
+  flex: 1;
+  border: 1px solid #e6df9a;
+  border-left: 0;         /* une con el label */
+  border-radius: 0 10px 10px 0;
+  outline: none;
+}
+
+/* Mejoras de interacción */
+.subtoolbar-banco .banco-busqueda .control:focus{
+  border-color: #d8cf78;
+  box-shadow: 0 0 0 3px rgba(216, 207, 120, 0.25);
+}
+
+/* Placeholder un poco más suave */
+.subtoolbar-banco .banco-busqueda .control::placeholder{
+  opacity: 0.75;
+}
+
+/* ajustar componente*/
+/* =========================
+   CONTENEDOR (tamaño como en tu imagen)
+   ========================= */
+:host { display: block; }
+
+.anticipo-wrapper{
+  /* Ajusta el ancho “del recuadro naranja” */
+  width: min(1040px, calc(100vw - 120px));
+  margin: 10px auto;              /* centrado */
+  box-sizing: border-box;
+}
+
+/* Toolbar arriba (ya la tienes sticky) */
+.toolbar{
+  box-sizing: border-box;
+}
+
+/* =========================
+   SCROLL INTERNO (para que TODO quede dentro del recuadro)
+   ========================= */
+.body-scroll{
+  /* Altura total visible del componente (como el recuadro) */
+  height: calc(100vh - 110px);
+  overflow: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  box-sizing: border-box;
+}
+
+/* =========================
+   CABECERA un poco más compacta (opcional pero ayuda)
+   ========================= */
+.header-form.header-compact{
+  padding: 10px 12px;
+}
+
+.header-form .grid{
+  gap: 10px 14px;
+}
+
+/* =========================
+   SUBTOOLBAR (Beneficiario + botón) más compacta
+   ========================= */
+.subtoolbar.subtoolbar-banco{
+  padding: 8px 10px;
+  gap: 12px;
+}
+
+/* =========================
+   AG GRID: tamaño exacto (alto y ancho)
+   ========================= */
+.grid-anticipo{
+  width: 100%;
+  height: 100px;        /* <-- aquí controlas el “alto gris” como en tu imagen */
+  min-height: 100px;
+  max-height: 300px;
+  flex: 0 0 auto;
+}
+
+/* =========================
+   TOTALES: siempre visibles abajo
+   ========================= */
+.totales{
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  margin-top: 6px;
+}
+
+/* =========================
+   RESPONSIVE: si la pantalla es más baja, reduce el grid
+   ========================= */
+@media (max-height: 820px){
+  .body-scroll{ height: calc(100vh - 120px); }
+  .grid-anticipo{ height: 230px; }
+}
+
+@media (max-height: 720px){
+  .grid-anticipo{ height: 200px; }
+}

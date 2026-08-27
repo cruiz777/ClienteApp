@@ -1,0 +1,84 @@
+.aprobacion-page {
+  padding: 20px;
+  background: #f6f8fc;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.form-card {
+  background: #ffffff;
+  border: 1px solid #dbe3f0;
+  border-radius: 10px;
+  padding: 18px;
+}
+
+.form-card h2 {
+  margin: 0 0 24px 0;
+  color: #123b84;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.search-container {
+  margin-bottom: 18px;
+}
+
+.search-field {
+  width: 440px;
+  max-width: 100%;
+}
+
+.table-container {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.custom-table {
+  width: 100%;
+  min-width: 1050px;
+}
+
+.mat-mdc-header-row {
+  background: #eef3fa;
+}
+
+.mat-mdc-header-cell {
+  color: #27477d;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #dbe3f0;
+  text-align: center;
+}
+
+.mat-mdc-cell {
+  font-size: 12px;
+  color: #2f3a4d;
+  border-bottom: 1px solid #edf2f8;
+  text-align: center;
+}
+
+.action-cell {
+  text-align: center;
+}
+
+.mat-mdc-row:hover {
+  background: #f7faff;
+}
+
+::ng-deep .mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape: 6px;
+}
+
+@media (max-width: 768px) {
+  .form-card h2 {
+    font-size: 24px;
+  }
+
+  .search-field {
+    width: 100%;
+  }
+}
