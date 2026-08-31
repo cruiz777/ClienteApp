@@ -929,4 +929,39 @@ export class ReportesEmpleadosService {
     }
   );
 }
+generarFichaActualizacionEmpleadoPdf(
+  general: boolean,
+  idEmpleado: number | null
+): Observable<Blob> {
+
+  let params =
+    new HttpParams()
+      .set(
+        'general',
+        general.toString()
+      );
+
+
+  if (
+    !general &&
+    idEmpleado !== null
+  ) {
+
+    params =
+      params.set(
+        'idEmpleado',
+        idEmpleado.toString()
+      );
+
+  }
+
+
+  return this.http.get(
+    `${this.baseUrl}/ficha-actualizacion-empleado/pdf`,
+    {
+      params,
+      responseType: 'blob'
+    }
+  );
+}
 }

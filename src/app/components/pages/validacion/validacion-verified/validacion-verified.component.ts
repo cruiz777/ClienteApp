@@ -34,10 +34,10 @@ export class ProductoDetalleComponent implements OnInit {
     }
 
     // Validar que sea un código de 13 dígitos usando el helper del servicio
-    if (!this.validacionService.isValidGtin(this.codigoBarras)) {
-      this.errorMessage = 'El código de barras debe tener exactamente 13 dígitos';
-      return;
-    }
+    // if (!this.validacionService.isValidGtin(this.codigoBarras)) {
+    //   this.errorMessage = 'El código de barras debe tener exactamente 13 dígitos';
+    //   return;
+    // }
 
     this.isLoading = true;
     this.errorMessage = '';

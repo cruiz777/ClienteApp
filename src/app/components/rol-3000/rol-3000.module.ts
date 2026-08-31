@@ -100,6 +100,7 @@ import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-i
 import { DialogCargaGlobalRubrosFijosComponent } from './nomina/rubros-fijos/dialog-carga-global-rubros-fijo/dialog-carga-global-rubros-fijo.component';
 import { DialogBancoNominaComponent } from './nomina/dialog-banco-nomina/dialog-banco-nomina.component';
 import { GastosPersonalesComponent } from './empleados/reportes/gastos-personales/gastos-personales.component';
+import { FichaActualizacionComponent } from './empleados/reportes/ficha-actualizacion/ficha-actualizacion.component';
 @NgModule({
   declarations: [
     NavigationRolComponent,
@@ -152,7 +153,8 @@ import { GastosPersonalesComponent } from './empleados/reportes/gastos-personale
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,
     GastosPersonalesComponent,
-    DialogCargaGlobalRubrosFijosComponent
+    DialogCargaGlobalRubrosFijosComponent,
+    
   ],
   imports: [
     CommonModule,

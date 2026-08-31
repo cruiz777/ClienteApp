@@ -26,8 +26,8 @@
                   </div>
                   <div>
                     <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
-                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
-                      placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
+                    <input type="text" [formControl]="rucControl" placeholder="Ingrese número o pasaporte"
+                      class="underline-input" autocomplete="off" readonly />
 
                     <!-- Mostrar error solo si NO es pasaporte -->
                     <div *ngIf="error && !esPasaporte" class="error-message" style="color: red; font-size: 12px;">
@@ -37,7 +37,11 @@
                       style="color: red; font-size: 12px;">
                       Este campo es obligatorio.
                     </mat-error>
-                    <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()">
+                    <!-- <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()" readonly>
+                      Es Pasaporte
+                    </mat-checkbox> -->
+                    <mat-checkbox formControlName="esPasaporte" aria-readonly="true" tabindex="-1"
+                      (click)="$event.preventDefault()" (keydown.space)="$event.preventDefault()">
                       Es Pasaporte
                     </mat-checkbox>
                     <div>
@@ -98,8 +102,7 @@
                     <label class="form-label"> <span style="color: red;">*</span>Categoría Producto:</label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
                       <input matInput formControlName="grupoProducto" [matAutocomplete]="autoGrupoProducto"
-                        placeholder="Seleccione Categoría Producto"
-                        (focus)="cargarGruposProductoInicial()">
+                        placeholder="Seleccione Categoría Producto" (focus)="cargarGruposProductoInicial()">
                       <mat-spinner matSuffix *ngIf="buscandoGrupoProducto" diameter="20"></mat-spinner>
 
                       <button matSuffix mat-icon-button aria-label="Limpiar"
@@ -171,7 +174,7 @@
 
 
                 <div style="text-align: right;">
-                  <button mat-button color="primary" matStepperNext (click)="verificarYAvanzar(paso1Form, stepper)">
+                  <button type="button" mat-button color="primary" (click)="verificarYAvanzar(paso1Form, stepper)">
                     Siguiente
                   </button>
 
@@ -280,16 +283,31 @@
                     <input type="text" class="underline-input" formControlName="codigoPostal" maxlength="10"
                       placeholder="170521" autocomplete="new-dp" />
 
-                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
-                        style="color: red;">*</span>Celular:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
-                      minlength="9" pattern="[0-9]*" inputmode="numeric" autocomplete="off" placeholder="999999999"
-                      (input)="soloDigitos('celular', $event,paso2Form)" />
-                    <mat-error
-                      *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
-                      style="color: red; font-size: 12px;">
-                      Este campo es obligatorio.
-                    </mat-error>
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">
+                      <span style="color: red;">*</span>
+                      Celular:
+                    </label>
+
+                    {{ codigoAreaE }}
+
+                    <input type="text" class="underline-input" formControlName="celular" maxlength="9"
+                      inputmode="numeric" autocomplete="off" placeholder="999999999"
+                      (input)="soloDigitos('celular', $event, paso2Form)" />
+
+                    <div *ngIf="paso2Form.get('celular')?.touched" style="margin-left: 5px;">
+
+                      <small *ngIf="paso2Form.get('celular')?.hasError('required')" style="color: red;">
+                        El celular es obligatorio.
+                      </small>
+
+                      <small *ngIf="
+      !paso2Form.get('celular')?.hasError('required') &&
+      paso2Form.get('celular')?.hasError('pattern')
+    " style="color: red;">
+                        El celular debe tener exactamente 9 dígitos, sin incluir 593.
+                      </small>
+
+                    </div>
                   </div>
 
                   <div class="form-row">
@@ -297,10 +315,22 @@
                     <input type="text" class="underline-input" formControlName="sitioWeb" maxlength="150"
                       placeholder="https://gs1ec.org" autocomplete="off" />
 
-                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
-                      maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
-                      autocomplete="off" (input)="soloDigitos('telefono2', $event,paso2Form)" />
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">
+                      Teléfono 2:
+                    </label>
+
+                    {{ codigoAreaE }}
+
+                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
+                      inputmode="numeric" autocomplete="off" placeholder="999999999"
+                      (input)="soloDigitos('telefono2', $event, paso2Form)" />
+
+                    <small *ngIf="
+    paso2Form.get('telefono2')?.touched &&
+    paso2Form.get('telefono2')?.hasError('pattern')
+  " style="color: red;">
+                      El teléfono 2 debe tener exactamente 9 dígitos, sin incluir 593.
+                    </small>
                   </div>
 
                   <div class="form-row">
@@ -317,30 +347,30 @@
 
 
                 </div>
-               <section class="export-questions-section" style="padding-bottom:16px;">
-  <div class="questions-container">
-    <div class="form-label">
-      <div class="checkbox-inline">
-        <label class="prefix">Facturación en Bloque:</label>
+                <section class="export-questions-section" style="padding-bottom:16px;">
+                  <div class="questions-container">
+                    <div class="form-label">
+                      <div class="checkbox-inline">
+                        <label class="prefix">Facturación en Bloque:</label>
 
-        <label class="chk">
-          <input type="checkbox" id="chk-compra" formControlName="compra" />
-          <span>Orden de Compra</span>
-        </label>
+                        <label class="chk">
+                          <input type="checkbox" id="chk-compra" formControlName="compra" />
+                          <span>Orden de Compra</span>
+                        </label>
 
-        <label class="chk">
-          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
-          <span>Prefijos</span>
-        </label>
+                        <label class="chk">
+                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+                          <span>Prefijos</span>
+                        </label>
 
-        <label class="chk">
-          <input type="checkbox" id="chk-otros" formControlName="otros" />
-          <span>Otros</span>
-        </label>
-      </div>
-    </div>
-  </div>
-</section>
+                        <label class="chk">
+                          <input type="checkbox" id="chk-otros" formControlName="otros" />
+                          <span>Otros</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </section>
 
                 <div style="background-color: #eef4f7;">
                   <label class="form-label">Fecha Ingreso:</label>
@@ -384,8 +414,9 @@
                 </div>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
-                  <button mat-button color="primary" matStepperNext
-                    (click)="forzarSyncYAvanzar('razonSocial', paso2Form); verificarYAvanzar(paso2Form, stepper)">Siguiente</button>
+                  <button type="button" mat-button color="primary" (click)="verificarPaso2YAvanzar(stepper)">
+                    Siguiente
+                  </button>
                 </div>
               </form>
             </mat-step>
@@ -557,29 +588,29 @@
 
                         </div>
 
-                       <div class="checks-inline">
-  <label class="question">¿Cómo se enteró de GS1 Ecuador?</label>
+                        <div class="checks-inline">
+                          <label class="question">¿Cómo se enteró de GS1 Ecuador?</label>
 
-  <label class="chk">
-    <input type="checkbox" formControlName="pregunta4" />
-    <span>Página Web</span>
-  </label>
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta4" />
+                            <span>Página Web</span>
+                          </label>
 
-  <label class="chk">
-    <input type="checkbox" formControlName="pregunta5" />
-    <span>Instagram</span>
-  </label>
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta5" />
+                            <span>Instagram</span>
+                          </label>
 
-  <label class="chk">
-    <input type="checkbox" formControlName="pregunta6" />
-    <span>Facebook</span>
-  </label>
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta6" />
+                            <span>Facebook</span>
+                          </label>
 
-  <label class="chk">
-    <input type="checkbox" formControlName="pregunta7" />
-    <span>Un conocido</span>
-  </label>
-</div>
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta7" />
+                            <span>Un conocido</span>
+                          </label>
+                        </div>
 
                       </div>
                     </section>
@@ -629,8 +660,9 @@
 
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
-                  <button mat-button color="primary" matStepperNext
-                    (click)="verificarYAvanzar(paso3Form, stepper)">Siguiente</button>
+                  <button type="button" mat-button color="primary" (click)="verificarYAvanzar(paso3Form, stepper)">
+                    Siguiente
+                  </button>
 
                 </div>
               </form>

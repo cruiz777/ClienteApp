@@ -1,286 +1,1183 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  Component,
+  OnInit,
+  TemplateRef,
+  ViewChild
+} from '@angular/core';
 
-interface Empleado {
+import {
+  FormBuilder,
+  FormGroup,
+  Validators
+} from '@angular/forms';
+
+import {
+  HttpErrorResponse
+} from '@angular/common/http';
+
+import {
+  forkJoin
+} from 'rxjs';
+
+import {
+  finalize
+} from 'rxjs/operators';
+
+import {
+  MatSnackBar
+} from '@angular/material/snack-bar';
+
+import {
+  MatDialog
+} from '@angular/material/dialog';
+
+import {
+  LocalesService
+} from 'src/app/services/locales.service';
+
+import {
+  DepartamentosService
+} from 'src/app/services/departamentos.service';
+
+import {
+  RpCargosService
+} from 'src/app/services/rol/rp-cargos.service.service';
+
+import {
+  CambioSueldosService,
+  CambioSueldosRequest,
+  CambioSueldosResponse
+} from 'src/app/services/rol/cambio-sueldos.service';
+
+
+/* ============================================================
+   CATÁLOGO COMÚN
+============================================================ */
+
+interface CatalogoCambioSueldo {
+
   id: number;
-  codigo: string;
-  nombre: string;
-  cargo: string;
-  departamento: string;
-  local: string;
-}
 
-interface ItemBusqueda {
-  codigo: number | string;
   descripcion: string;
+
 }
 
-type TipoFiltro = 'local' | 'departamento' | 'cargo';
-type TipoCambio = 'porcentaje' | 'valor' | 'cambio';
 
 @Component({
+
   selector: 'app-cambio-sueldos',
-  templateUrl: './cambio-sueldos.component.html',
-  styleUrls: ['./cambio-sueldos.component.css']
+
+  templateUrl:
+    './cambio-sueldos.component.html',
+
+  styleUrls: [
+    './cambio-sueldos.component.css'
+  ]
+
 })
-export class CambioSueldosComponent implements OnInit {
+export class CambioSueldosComponent
+  implements OnInit {
+
+  @ViewChild('confirmacionDialog')
+  confirmacionDialog!: TemplateRef<unknown>;
+
+
   form!: FormGroup;
 
-  empleados: Empleado[] = [];
-  locales: ItemBusqueda[] = [];
-  departamentos: ItemBusqueda[] = [];
-  cargos: ItemBusqueda[] = [];
 
-  empleadosFiltrados: Empleado[] = [];
-  itemsBusquedaFiltrados: ItemBusqueda[] = [];
+  // ============================================================
+  // ESTADOS
+  // ============================================================
 
-  mostrarModal = false;
-  tituloModal = '';
-  tipoBusquedaActual: TipoFiltro = 'local';
-  textoBusqueda = '';
+  cargandoCatalogos = false;
 
-  constructor(private fb: FormBuilder) {}
+  procesando = false;
+
+
+  // ============================================================
+  // DATOS CONFIRMACIÓN
+  // ============================================================
+
+  mensajeOperacion = '';
+
+  criterioConfirmacion = '';
+
+
+  // ============================================================
+  // CATÁLOGOS
+  // ============================================================
+
+  locales:
+    CatalogoCambioSueldo[] = [];
+
+  departamentos:
+    CatalogoCambioSueldo[] = [];
+
+  cargos:
+    CatalogoCambioSueldo[] = [];
+
+
+  // ============================================================
+  // LISTA SEGÚN FILTRO
+  // ============================================================
+
+  opcionesFiltro:
+    CatalogoCambioSueldo[] = [];
+
+
+  constructor(
+
+    private readonly fb:
+      FormBuilder,
+
+    private readonly localesService:
+      LocalesService,
+
+    private readonly departamentosService:
+      DepartamentosService,
+
+    private readonly cargosService:
+      RpCargosService,
+
+    private readonly cambioSueldosService:
+      CambioSueldosService,
+
+    private readonly snackBar:
+      MatSnackBar,
+
+    private readonly dialog:
+      MatDialog
+
+  ) {}
+
+
+  // ============================================================
+  // INIT
+  // ============================================================
 
   ngOnInit(): void {
-    this.cargarMocks();
-    this.inicializarFormulario();
+
+    this.crearFormulario();
+
     this.configurarEventos();
+
+    this.cargarCatalogos();
+
   }
 
-  inicializarFormulario(): void {
-    this.form = this.fb.group({
-      tipoFiltro: ['local'],
-      empleadoId: [null],
-      empleadoTexto: [''],
 
-      localCodigo: [''],
-      localDescripcion: [''],
+  // ============================================================
+  // FORMULARIO
+  // ============================================================
 
-      departamentoCodigo: [''],
-      departamentoDescripcion: [''],
+  private crearFormulario(): void {
 
-      cargoCodigo: [''],
-      cargoDescripcion: [''],
+    this.form =
+      this.fb.group({
 
-      tipoCambio: ['porcentaje'],
-      valorCambio: ['', Validators.required]
-    });
+        /*
+         * 1 = Local
+         * 2 = Departamento
+         * 3 = Cargo
+         */
+        tipoFiltro: [
+          1,
+          Validators.required
+        ],
+
+
+        idFiltro: [
+          null,
+          Validators.required
+        ],
+
+
+        /*
+         * 1 = Por porcentaje
+         * 2 = Por valor
+         * 3 = Cambio directo
+         */
+        tipoActualizacion: [
+          1,
+          Validators.required
+        ],
+
+
+        valor: [
+          null,
+          Validators.required
+        ]
+
+      });
+
   }
 
-  configurarEventos(): void {
-    this.form.get('empleadoTexto')?.valueChanges.subscribe((valor: string) => {
-      this.filtrarEmpleados(valor || '');
-    });
 
-    this.form.get('tipoFiltro')?.valueChanges.subscribe((valor: TipoFiltro) => {
-      this.limpiarFiltroSeleccionado();
-      this.tipoBusquedaActual = valor;
-    });
+  // ============================================================
+  // EVENTOS
+  // ============================================================
 
-    this.filtrarEmpleados('');
+  private configurarEventos(): void {
+
+    this.form
+      .get('tipoFiltro')
+      ?.valueChanges
+      .subscribe(
+        valor => {
+
+          this.cambiarTipoFiltro(
+            Number(valor)
+          );
+
+        }
+      );
+
   }
 
-  cargarMocks(): void {
-    this.empleados = [
-      {
-        id: 1,
-        codigo: '1321',
-        nombre: 'ABENDAÑO ANILEMA BRYAN JORDAN',
-        cargo: 'TECNOLOGO',
-        departamento: 'RADIOLOGIA',
-        local: 'CLINICO'
-      },
-      {
-        id: 2,
-        codigo: '1422',
-        nombre: 'ABRIL MACIAS JOSE FRANCISCO',
-        cargo: 'MEDICO EMERGENCIOLOGO',
-        departamento: 'MEDICOS GENERAL',
-        local: 'CLINICO'
-      },
-      {
-        id: 3,
-        codigo: '31',
-        nombre: 'AYALA ARIAS JAIME EDUARDO',
-        cargo: 'ADMISIONISTA',
-        departamento: 'ADMISION',
-        local: 'ADMINISTRATIVO'
-      },
-      {
-        id: 4,
-        codigo: '100',
-        nombre: 'ACEVEDO COLLANTES BYRON RAMIRO',
-        cargo: 'DIRECTORA GENERAL',
-        departamento: 'DIRECCION',
-        local: 'ADMINISTRATIVO'
-      }
-    ];
 
-    this.locales = [
-      { codigo: 1, descripcion: 'ADMINISTRATIVO' },
-      { codigo: 2, descripcion: 'CLINICO' },
-      { codigo: 4, descripcion: 'PASANTES O BECARIOS' },
-      { codigo: 3, descripcion: 'SERVICIOS' }
-    ];
+  // ============================================================
+  // CARGAR CATÁLOGOS
+  // ============================================================
 
-    this.departamentos = [
-      { codigo: 1, descripcion: 'ADMISION' },
-      { codigo: 2, descripcion: 'RADIOLOGIA' },
-      { codigo: 3, descripcion: 'MEDICOS GENERAL' },
-      { codigo: 4, descripcion: 'DIRECCION' }
-    ];
+  private cargarCatalogos(): void {
 
-    this.cargos = [
-      { codigo: 1, descripcion: 'ADMISIONISTA' },
-      { codigo: 2, descripcion: 'TECNOLOGO' },
-      { codigo: 3, descripcion: 'MEDICO EMERGENCIOLOGO' },
-      { codigo: 4, descripcion: 'DIRECTORA GENERAL' }
-    ];
+    this.cargandoCatalogos =
+      true;
+
+
+    forkJoin({
+
+      locales:
+        this.localesService
+          .getAll(),
+
+      departamentos:
+        this.departamentosService
+          .getDepartamentos(),
+
+      cargos:
+        this.cargosService
+          .getAll()
+
+    })
+      .pipe(
+
+        finalize(() => {
+
+          this.cargandoCatalogos =
+            false;
+
+        })
+
+      )
+      .subscribe({
+
+        next: ({
+          locales,
+          departamentos,
+          cargos
+        }) => {
+
+          // ===================================================
+          // LOCALES
+          // ===================================================
+
+          const localesData:
+            any[] =
+            (locales as any)?.data
+            ?? [];
+
+
+          this.locales =
+            localesData
+
+              .filter(
+                x =>
+                  x.estado !== false
+              )
+
+              .map(
+                x => ({
+
+                  id:
+                    Number(
+                      x.id
+                      ??
+                      x.idLocal
+                      ??
+                      x.id_local
+                    ),
+
+                  descripcion:
+                    (
+                      x.nombre
+                      ?? ''
+                    )
+                    .toString()
+                    .trim()
+
+                })
+              )
+
+              .filter(
+                x =>
+                  x.id > 0
+              )
+
+              .sort(
+                (
+                  a,
+                  b
+                ) =>
+                  a.descripcion
+                    .localeCompare(
+                      b.descripcion
+                    )
+              );
+
+
+          // ===================================================
+          // DEPARTAMENTOS
+          // ===================================================
+
+          const departamentosData:
+            any[] =
+            departamentos
+            ?? [];
+
+
+          this.departamentos =
+            departamentosData
+
+              .filter(
+                x =>
+                  x.estado !== false
+              )
+
+              .map(
+                x => ({
+
+                  id:
+                    Number(
+                      x.id_departamento
+                      ??
+                      x.idDepartamento
+                      ??
+                      x.id
+                    ),
+
+                  descripcion:
+                    (
+                      x.nombre
+                      ?? ''
+                    )
+                    .toString()
+                    .trim()
+
+                })
+              )
+
+              .filter(
+                x =>
+                  x.id > 0
+              )
+
+              .sort(
+                (
+                  a,
+                  b
+                ) =>
+                  a.descripcion
+                    .localeCompare(
+                      b.descripcion
+                    )
+              );
+
+
+          // ===================================================
+          // CARGOS
+          // ===================================================
+
+          const cargosData:
+            any[] =
+            cargos
+            ?? [];
+
+
+          this.cargos =
+            cargosData
+
+              .filter(
+                x =>
+                  x.estado !== false
+              )
+
+              .map(
+                x => ({
+
+                  id:
+                    Number(
+                      x.idCargo
+                      ??
+                      x.id_cargo
+                      ??
+                      x.id
+                    ),
+
+                  descripcion:
+                    (
+                      x.descargo
+                      ??
+                      x.descripcion
+                      ??
+                      ''
+                    )
+                    .toString()
+                    .trim()
+
+                })
+              )
+
+              .filter(
+                x =>
+                  x.id > 0
+              )
+
+              .sort(
+                (
+                  a,
+                  b
+                ) =>
+                  a.descripcion
+                    .localeCompare(
+                      b.descripcion
+                    )
+              );
+
+
+          // ===================================================
+          // INICIAL = LOCAL
+          // ===================================================
+
+          this.cambiarTipoFiltro(
+            1
+          );
+
+        },
+
+
+        error: (
+          error:
+            HttpErrorResponse
+        ) => {
+
+          console.error(
+            'Error cargando catálogos:',
+            error
+          );
+
+
+          this.locales = [];
+
+          this.departamentos = [];
+
+          this.cargos = [];
+
+          this.opcionesFiltro = [];
+
+
+          this.mostrarError(
+            'No se pudieron cargar locales, departamentos o cargos.'
+          );
+
+        }
+
+      });
+
   }
 
-  filtrarEmpleados(texto: string): void {
-    const filtro = texto.toLowerCase().trim();
 
-    if (!filtro) {
-      this.empleadosFiltrados = [...this.empleados];
-      return;
-    }
+  // ============================================================
+  // CAMBIAR TIPO FILTRO
+  // ============================================================
 
-    this.empleadosFiltrados = this.empleados.filter(emp =>
-      emp.nombre.toLowerCase().includes(filtro) ||
-      emp.codigo.toLowerCase().includes(filtro)
-    );
-  }
+  cambiarTipoFiltro(
+    tipoFiltro: number
+  ): void {
 
-  seleccionarEmpleado(emp: Empleado): void {
-    this.form.patchValue({
-      empleadoId: emp.id,
-      empleadoTexto: `${emp.codigo} - ${emp.nombre}`
-    });
-    this.empleadosFiltrados = [];
-  }
+    this.form
+      .get('idFiltro')
+      ?.setValue(
+        null,
+        {
+          emitEvent: false
+        }
+      );
 
-  abrirBusqueda(): void {
-    const tipo = this.form.get('tipoFiltro')?.value as TipoFiltro;
-    this.tipoBusquedaActual = tipo;
-    this.textoBusqueda = '';
-    this.mostrarModal = true;
 
-    if (tipo === 'local') {
-      this.tituloModal = 'BUSQUEDA DE LOCALES';
-      this.itemsBusquedaFiltrados = [...this.locales];
-    } else if (tipo === 'departamento') {
-      this.tituloModal = 'BUSQUEDA DE DEPARTAMENTOS';
-      this.itemsBusquedaFiltrados = [...this.departamentos];
-    } else {
-      this.tituloModal = 'BUSQUEDA DE CARGOS';
-      this.itemsBusquedaFiltrados = [...this.cargos];
-    }
-  }
+    switch (
+      tipoFiltro
+    ) {
 
-  filtrarItemsBusqueda(): void {
-    const texto = this.textoBusqueda.toLowerCase().trim();
-    const base = this.obtenerListaSegunTipo();
+      case 1:
 
-    if (!texto) {
-      this.itemsBusquedaFiltrados = [...base];
-      return;
-    }
+        this.opcionesFiltro =
+          [
+            ...this.locales
+          ];
 
-    this.itemsBusquedaFiltrados = base.filter(item =>
-      item.descripcion.toLowerCase().includes(texto) ||
-      String(item.codigo).toLowerCase().includes(texto)
-    );
-  }
+        break;
 
-  obtenerListaSegunTipo(): ItemBusqueda[] {
-    switch (this.tipoBusquedaActual) {
-      case 'local':
-        return this.locales;
-      case 'departamento':
-        return this.departamentos;
-      case 'cargo':
-        return this.cargos;
+
+      case 2:
+
+        this.opcionesFiltro =
+          [
+            ...this.departamentos
+          ];
+
+        break;
+
+
+      case 3:
+
+        this.opcionesFiltro =
+          [
+            ...this.cargos
+          ];
+
+        break;
+
+
       default:
-        return [];
-    }
-  }
 
-  seleccionarItemBusqueda(item: ItemBusqueda): void {
-    if (this.tipoBusquedaActual === 'local') {
-      this.form.patchValue({
-        localCodigo: item.codigo,
-        localDescripcion: item.descripcion
-      });
-    } else if (this.tipoBusquedaActual === 'departamento') {
-      this.form.patchValue({
-        departamentoCodigo: item.codigo,
-        departamentoDescripcion: item.descripcion
-      });
-    } else {
-      this.form.patchValue({
-        cargoCodigo: item.codigo,
-        cargoDescripcion: item.descripcion
-      });
+        this.opcionesFiltro =
+          [];
+
+        break;
+
     }
 
-    this.mostrarModal = false;
   }
 
-  limpiarFiltroSeleccionado(): void {
-    this.form.patchValue({
-      localCodigo: '',
-      localDescripcion: '',
-      departamentoCodigo: '',
-      departamentoDescripcion: '',
-      cargoCodigo: '',
-      cargoDescripcion: ''
-    });
+
+  // ============================================================
+  // TÍTULO FILTRO
+  // ============================================================
+
+  get tituloFiltro(): string {
+
+    const tipo =
+      Number(
+        this.form
+          ?.get('tipoFiltro')
+          ?.value
+      );
+
+
+    switch (
+      tipo
+    ) {
+
+      case 1:
+        return 'Local';
+
+      case 2:
+        return 'Departamento';
+
+      case 3:
+        return 'Cargo';
+
+      default:
+        return 'Criterio';
+
+    }
+
   }
 
-  nuevo(): void {
-    const tipoFiltroActual = this.form.get('tipoFiltro')?.value || 'local';
-    const tipoCambioActual = this.form.get('tipoCambio')?.value || 'porcentaje';
 
-    this.form.reset({
-      tipoFiltro: tipoFiltroActual,
-      tipoCambio: tipoCambioActual,
-      empleadoId: null,
-      empleadoTexto: '',
-      localCodigo: '',
-      localDescripcion: '',
-      departamentoCodigo: '',
-      departamentoDescripcion: '',
-      cargoCodigo: '',
-      cargoDescripcion: '',
-      valorCambio: ''
-    });
+  // ============================================================
+  // TÍTULO VALOR
+  // ============================================================
 
-    this.empleadosFiltrados = [];
+  get tituloValor(): string {
+
+    const tipo =
+      Number(
+        this.form
+          ?.get('tipoActualizacion')
+          ?.value
+      );
+
+
+    switch (
+      tipo
+    ) {
+
+      case 1:
+        return 'Porcentaje';
+
+      case 2:
+        return 'Valor';
+
+      case 3:
+        return 'Nuevo sueldo';
+
+      default:
+        return 'Valor';
+
+    }
+
   }
 
-  grabar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+
+  // ============================================================
+  // SUFIJO
+  // ============================================================
+
+  get sufijoValor(): string {
+
+    const tipo =
+      Number(
+        this.form
+          ?.get('tipoActualizacion')
+          ?.value
+      );
+
+
+    return tipo === 1
+      ? '%'
+      : '$';
+
+  }
+
+
+  // ============================================================
+  // PROCESAR
+  // ============================================================
+
+  procesar(): void {
+
+    if (
+      this.procesando
+    ) {
+
       return;
+
     }
 
-    console.log('Cambio de sueldo:', this.form.value);
+
+    // ==========================================================
+    // VALIDAR FORMULARIO
+    // ==========================================================
+
+    if (
+      this.form.invalid
+    ) {
+
+      this.form
+        .markAllAsTouched();
+
+
+      this.mostrarAdvertencia(
+        'Debe completar todos los campos.'
+      );
+
+
+      return;
+
+    }
+
+
+    // ==========================================================
+    // VALORES
+    // ==========================================================
+
+    const tipoFiltro =
+      Number(
+        this.form
+          .get('tipoFiltro')
+          ?.value
+      );
+
+
+    const idFiltro =
+      Number(
+        this.form
+          .get('idFiltro')
+          ?.value
+      );
+
+
+    const tipoActualizacion =
+      Number(
+        this.form
+          .get('tipoActualizacion')
+          ?.value
+      );
+
+
+    const valor =
+      Number(
+        this.form
+          .get('valor')
+          ?.value
+      );
+
+
+    // ==========================================================
+    // VALIDACIONES
+    // ==========================================================
+
+    if (
+      !idFiltro ||
+      idFiltro <= 0
+    ) {
+
+      this.mostrarAdvertencia(
+        `Debe seleccionar un ${this.tituloFiltro.toLowerCase()}.`
+      );
+
+
+      return;
+
+    }
+
+
+    if (
+      Number.isNaN(
+        valor
+      )
+    ) {
+
+      this.mostrarAdvertencia(
+        'El valor ingresado no es válido.'
+      );
+
+
+      return;
+
+    }
+
+
+    if (
+      tipoActualizacion === 3 &&
+      valor < 0
+    ) {
+
+      this.mostrarAdvertencia(
+        'El nuevo sueldo no puede ser negativo.'
+      );
+
+
+      return;
+
+    }
+
+
+    // ==========================================================
+    // DESCRIPCIÓN DEL CRITERIO
+    // ==========================================================
+
+    const opcionSeleccionada =
+      this.opcionesFiltro
+        .find(
+          x =>
+            Number(x.id) ===
+            idFiltro
+        );
+
+
+    const descripcion =
+      opcionSeleccionada
+        ?.descripcion
+      ?? idFiltro.toString();
+
+
+    // ==========================================================
+    // DESCRIPCIÓN OPERACIÓN
+    // ==========================================================
+
+    let operacion =
+      '';
+
+
+    switch (
+      tipoActualizacion
+    ) {
+
+      case 1:
+
+        if (
+          valor >= 0
+        ) {
+
+          operacion =
+            `Aumentar los sueldos en ${valor}%`;
+
+        }
+        else {
+
+          operacion =
+            `Disminuir los sueldos en ${Math.abs(valor)}%`;
+
+        }
+
+        break;
+
+
+      case 2:
+
+        if (
+          valor >= 0
+        ) {
+
+          operacion =
+            `Aumentar $${valor.toFixed(2)} a los sueldos`;
+
+        }
+        else {
+
+          operacion =
+            `Disminuir $${Math.abs(valor).toFixed(2)} de los sueldos`;
+
+        }
+
+        break;
+
+
+      case 3:
+
+        operacion =
+          `Establecer el sueldo en $${valor.toFixed(2)}`;
+
+        break;
+
+    }
+
+
+    // ==========================================================
+    // PREPARAR DIÁLOGO
+    // ==========================================================
+
+    this.mensajeOperacion =
+      operacion;
+
+
+    this.criterioConfirmacion =
+      `${this.tituloFiltro}: ${descripcion}`;
+
+
+    // ==========================================================
+    // ABRIR CONFIRMACIÓN
+    // ==========================================================
+
+    const dialogRef =
+      this.dialog.open(
+        this.confirmacionDialog,
+        {
+          width:
+            '500px',
+
+          maxWidth:
+            '95vw',
+
+          disableClose:
+            true,
+
+          autoFocus:
+            false,
+
+          panelClass:
+            'cambio-sueldo-dialog'
+        }
+      );
+
+
+    dialogRef
+      .afterClosed()
+      .subscribe(
+        (
+          confirmar:
+            boolean | undefined
+        ) => {
+
+          if (
+            confirmar !== true
+          ) {
+
+            return;
+
+          }
+
+
+          this.ejecutarCambioSueldos(
+            tipoFiltro,
+            idFiltro,
+            tipoActualizacion,
+            valor
+          );
+
+        }
+      );
+
   }
 
-  cancelar(): void {
-    this.nuevo();
+
+  // ============================================================
+  // EJECUTAR CAMBIO
+  // ============================================================
+
+  private ejecutarCambioSueldos(
+    tipoFiltro: number,
+    idFiltro: number,
+    tipoActualizacion: number,
+    valor: number
+  ): void {
+
+    const request:
+      CambioSueldosRequest = {
+
+      tipoFiltro:
+        tipoFiltro,
+
+      idFiltro:
+        idFiltro,
+
+      tipoActualizacion:
+        tipoActualizacion,
+
+      valor:
+        valor
+
+    };
+
+
+    console.log(
+      'REQUEST CAMBIO SUELDOS:',
+      request
+    );
+
+
+    this.procesando =
+      true;
+
+
+    this.cambioSueldosService
+      .procesar(
+        request
+      )
+      .pipe(
+
+        finalize(() => {
+
+          this.procesando =
+            false;
+
+        })
+
+      )
+      .subscribe({
+
+        next: (
+          response:
+            CambioSueldosResponse
+        ) => {
+
+          this.mostrarExito(
+            response.mensaje
+            ??
+            `${response.empleadosActualizados} empleado(s) actualizados correctamente.`
+          );
+
+
+          this.limpiar();
+
+        },
+
+
+        error: (
+          error:
+            HttpErrorResponse
+        ) => {
+
+          console.error(
+            'Error cambiando sueldos:',
+            error
+          );
+
+
+          if (
+            error.status === 404
+          ) {
+
+            this.mostrarAdvertencia(
+              (error.error as any)
+                ?.mensaje
+              ??
+              'No existen empleados para el criterio seleccionado.'
+            );
+
+
+            return;
+
+          }
+
+
+          this.mostrarError(
+            (error.error as any)
+              ?.mensaje
+            ??
+            (error.error as any)
+              ?.message
+            ??
+            'No se pudo realizar el cambio de sueldos.'
+          );
+
+        }
+
+      });
+
   }
+
+
+  // ============================================================
+  // LIMPIAR
+  // ============================================================
+
+  limpiar(): void {
+
+    this.form
+      .reset({
+
+        tipoFiltro:
+          1,
+
+        idFiltro:
+          null,
+
+        tipoActualizacion:
+          1,
+
+        valor:
+          null
+
+      });
+
+
+    this.mensajeOperacion =
+      '';
+
+    this.criterioConfirmacion =
+      '';
+
+
+    this.cambiarTipoFiltro(
+      1
+    );
+
+  }
+
+
+  // ============================================================
+  // SALIR
+  // ============================================================
 
   salir(): void {
-    console.log('Salir');
+
+    if (
+      this.procesando
+    ) {
+
+      return;
+
+    }
+
+
+    window.history.back();
+
   }
 
-  cerrarModal(): void {
-    this.mostrarModal = false;
+
+  // ============================================================
+  // MENSAJES
+  // ============================================================
+
+  private mostrarExito(
+    mensaje: string
+  ): void {
+
+    this.snackBar.open(
+      mensaje,
+      'Cerrar',
+      {
+        duration:
+          5000,
+
+        horizontalPosition:
+          'end',
+
+        verticalPosition:
+          'top',
+
+        panelClass: [
+          'snackbar-success'
+        ]
+      }
+    );
+
   }
 
-  get tipoFiltro(): TipoFiltro {
-    return this.form.get('tipoFiltro')?.value as TipoFiltro;
+
+  private mostrarAdvertencia(
+    mensaje: string
+  ): void {
+
+    this.snackBar.open(
+      mensaje,
+      'Cerrar',
+      {
+        duration:
+          5000,
+
+        horizontalPosition:
+          'end',
+
+        verticalPosition:
+          'top',
+
+        panelClass: [
+          'snackbar-warning'
+        ]
+      }
+    );
+
   }
+
+
+  private mostrarError(
+    mensaje: string
+  ): void {
+
+    this.snackBar.open(
+      mensaje,
+      'Cerrar',
+      {
+        duration:
+          7000,
+
+        horizontalPosition:
+          'end',
+
+        verticalPosition:
+          'top',
+
+        panelClass: [
+          'snackbar-error'
+        ]
+      }
+    );
+
+  }
+
 }

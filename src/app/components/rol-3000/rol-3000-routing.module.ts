@@ -69,6 +69,7 @@ import { ExploradorEmpleadosComponent } from './empleados/explorador-empleado/ex
 import { ExploradorNominaComponent } from './nomina/explorador-nomina/explorador-nomina.component';
 import { AvisoValoresExtrasComponent } from './nomina/generacion/aviso-valores-extras/aviso-valores-extras.component';
 import { GastosPersonalesComponent } from './empleados/reportes/gastos-personales/gastos-personales.component';
+import { FichaActualizacionComponent } from './empleados/reportes/ficha-actualizacion/ficha-actualizacion.component';
 const routes: Routes = [
    {
       path: '',
@@ -141,6 +142,13 @@ const routes: Routes = [
           component: TerminacionContratoComponent,
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.empleado.reportes.terminacion-de-contrato' }
+        },
+        {
+          path: 'ficha-actualizacion',
+          component: FichaActualizacionComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.empleado.reportes.terminacion-de-contrato' }
+          
         },
         {
           path: 'reporte-entrada-salidas',

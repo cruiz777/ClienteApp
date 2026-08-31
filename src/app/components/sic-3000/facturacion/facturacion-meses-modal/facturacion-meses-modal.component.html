@@ -1,85 +1,181 @@
-<h2 mat-dialog-title>Mantenimiento Anual</h2>
+<h2 mat-dialog-title>
+  Mantenimiento Anual
+</h2>
 
-<div mat-dialog-content class="grid" [formGroup]="form">
+<div
+  mat-dialog-content
+  class="grid"
+  [formGroup]="form">
 
   <!-- Prefijo -->
-<mat-form-field appearance="fill" class="area-prefijo">
-  <mat-label>Prefijo</mat-label>
-  <mat-select formControlName="idPrefijo" (selectionChange)="consultar()">
-    <mat-option [value]="null">Seleccione…</mat-option>
-    <mat-option *ngFor="let p of data.prefijos" [value]="p.id_prefijos">
-      {{ p.codpre }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+  <mat-form-field
+    appearance="fill"
+    class="area-prefijo">
 
-<!-- ✅ Grid a ancho completo -->
-<!-- Área del grid -->
-<div class="area-grid ag-theme-alpine" [style.height.px]="gridHeightPx">
-<ag-grid-angular
-  style="width: 100%; height: 100%;"
-  [rowData]="rowData"
-  [columnDefs]="columnDefs"
-  [defaultColDef]="defaultColDef"
-[enableBrowserTooltips]="true"
-        [tooltipShowDelay]="0">  
-  rowSelection="single"
-  (gridReady)="onGridReady($event)">
-</ag-grid-angular>
+    <mat-label>Prefijo</mat-label>
 
+    <!--
+      La consulta se ejecuta mediante valueChanges
+      en el componente TypeScript.
+    -->
+    <mat-select formControlName="idPrefijo">
 
-</div>
+      <mat-option [value]="null">
+        Seleccione…
+      </mat-option>
 
+      <mat-option
+        *ngFor="let p of data.prefijos"
+        [value]="p.id_prefijos">
 
+        {{ p.codpre }}
 
+        <ng-container
+          *ngIf="obtenerFechaPrefijo(p) as fechaPrefijo">
+          --- {{ fechaPrefijo }}
+        </ng-container>
 
+      </mat-option>
 
-  
-  <!-- Fila 4: Desde | Hasta (2º par que usa tu lógica actual) -->
-  <mat-form-field appearance="fill" class="area-desde2">
+    </mat-select>
+
+  </mat-form-field>
+
+  <!-- Grid a ancho completo -->
+  <div
+    class="area-grid ag-theme-alpine"
+    [style.height.px]="gridHeightPx">
+
+    <ag-grid-angular
+      style="width: 100%; height: 100%;"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [rowHeight]="rowHeight"
+      [enableBrowserTooltips]="true"
+      [tooltipShowDelay]="0"
+      rowSelection="single"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+
+  </div>
+
+  <!-- Desde -->
+  <mat-form-field
+    appearance="fill"
+    class="area-desde2">
+
     <mat-label>Desde</mat-label>
-    <input matInput
-           [matDatepicker]="dpDesde2"
-           formControlName="fchUltimaPago"
-           (keydown)="bloquearTeclado($event)"
-           (paste)="$event.preventDefault()"
-           (dateChange)="recalcular()">
-    <mat-datepicker-toggle matSuffix [for]="dpDesde2"></mat-datepicker-toggle>
-    <mat-datepicker #dpDesde2 startView="month"></mat-datepicker>
+
+    <input
+      matInput
+      [matDatepicker]="dpDesde2"
+      formControlName="fchUltimaPago"
+      (keydown)="bloquearTeclado($event)"
+      (paste)="$event.preventDefault()"
+      (dateChange)="recalcular()">
+
+    <mat-datepicker-toggle
+      matSuffix
+      [for]="dpDesde2">
+    </mat-datepicker-toggle>
+
+    <mat-datepicker
+      #dpDesde2
+      startView="month">
+    </mat-datepicker>
+
   </mat-form-field>
 
-  <mat-form-field appearance="fill" class="area-hasta2">
+  <!-- Hasta -->
+  <mat-form-field
+    appearance="fill"
+    class="area-hasta2">
+
     <mat-label>Hasta</mat-label>
-    <input matInput
-           [matDatepicker]="dpHasta2"
-           formControlName="fchHastaPaga"
-           (keydown)="bloquearTeclado($event)"
-           (paste)="$event.preventDefault()"
-           (dateChange)="recalcular()">
-    <mat-datepicker-toggle matSuffix [for]="dpHasta2"></mat-datepicker-toggle>
-    <mat-datepicker #dpHasta2 startView="month"></mat-datepicker>
+
+    <input
+      matInput
+      [matDatepicker]="dpHasta2"
+      formControlName="fchHastaPaga"
+      (keydown)="bloquearTeclado($event)"
+      (paste)="$event.preventDefault()"
+      (dateChange)="recalcular()">
+
+    <mat-datepicker-toggle
+      matSuffix
+      [for]="dpHasta2">
+    </mat-datepicker-toggle>
+
+    <mat-datepicker
+      #dpHasta2
+      startView="month">
+    </mat-datepicker>
+
   </mat-form-field>
 
-  <!-- Fila 5: Número de Meses (full row) -->
-  <mat-form-field appearance="fill" class="area-meses">
+  <!-- Número de meses -->
+  <mat-form-field
+    appearance="fill"
+    class="area-meses">
+
     <mat-label>Número de Meses</mat-label>
-    <input matInput formControlName="numMeses" readonly>
+
+    <input
+      matInput
+      formControlName="numMeses"
+      readonly>
+
   </mat-form-field>
 
-  <!-- Fila 6: Mes | Año -->
-  <mat-form-field appearance="fill" class="area-mes">
+  <!-- Mes -->
+  <mat-form-field
+    appearance="fill"
+    class="area-mes">
+
     <mat-label>Mes</mat-label>
-    <input matInput formControlName="mesFinNombre" readonly>
+
+    <input
+      matInput
+      formControlName="mesFinNombre"
+      readonly>
+
   </mat-form-field>
 
-  <mat-form-field appearance="fill" class="area-anio">
+  <!-- Año -->
+  <mat-form-field
+    appearance="fill"
+    class="area-anio">
+
     <mat-label>Año</mat-label>
-    <input matInput formControlName="anioFin" readonly>
+
+    <input
+      matInput
+      formControlName="anioFin"
+      readonly>
+
   </mat-form-field>
 
 </div>
 
-<div mat-dialog-actions align="end">
-  <button mat-button (click)="salir()">Salir</button>
-  <button mat-flat-button color="primary" (click)="aceptar()" [disabled]="aplicado">Aceptar</button>
+<div
+  mat-dialog-actions
+  align="end">
+
+  <button
+    mat-button
+    type="button"
+    (click)="salir()">
+    Salir
+  </button>
+
+  <button
+    mat-flat-button
+    type="button"
+    color="primary"
+    (click)="aceptar()"
+    [disabled]="aplicado">
+    Aceptar
+  </button>
+
 </div>

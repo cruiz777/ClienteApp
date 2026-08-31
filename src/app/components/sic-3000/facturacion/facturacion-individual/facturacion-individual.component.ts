@@ -650,33 +650,103 @@ export class FacturacionIndividualComponent implements OnInit {
   }
 
   // ============= Prefijos =============
+// cargarPrefijos(codigoCliente: number): void {
+//   this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
+//     next: (data: PrefijoClienteTResponse[]) => {
+//       this.prefijos = (data ?? []).map((p) => ({
+//         ...p, // ✅ mantienes TODAS las propiedades del backend
+//         fechaVista: this.formatFechaVista((p as any).fecha),
+//       }));
+
+//       if (this.prefijos.length === 1) {
+//         const unico = this.prefijos[0];
+//         this.formCliente.patchValue(
+//           { gcp: unico.id_prefijos, prefijo: unico.codpre },
+//           { emitEvent: false }
+//         );
+//       } else {
+//         this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
+//       }
+//     },
+//     error: (err) => {
+//       console.error('Error al cargar prefijos:', err);
+//       this.prefijos = [];
+//       this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
+//     }
+//   });
+// }
+
 cargarPrefijos(codigoCliente: number): void {
-  this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
-    next: (data: PrefijoClienteTResponse[]) => {
-      this.prefijos = (data ?? []).map((p) => ({
-        ...p, // ✅ mantienes TODAS las propiedades del backend
-        fechaVista: this.formatFechaVista((p as any).fecha),
-      }));
+  this.prefijoService
+    .obtenerPorClienteCodigo(codigoCliente)
+    .subscribe({
+      next: (data: PrefijoClienteTResponse[]) => {
+        this.prefijos = (data ?? [])
+          .map(p => ({
+            ...p,
+            fechaVista: this.formatFechaVista(p.fecha)
+          }))
+          .sort((a, b) => {
+            const fechaA = a.fecha
+              ? new Date(
+                  `${a.fecha.toString().split('T')[0]}T00:00:00`
+                ).getTime()
+              : Number.MIN_SAFE_INTEGER;
 
-      if (this.prefijos.length === 1) {
-        const unico = this.prefijos[0];
-        this.formCliente.patchValue(
-          { gcp: unico.id_prefijos, prefijo: unico.codpre },
-          { emitEvent: false }
+            const fechaB = b.fecha
+              ? new Date(
+                  `${b.fecha.toString().split('T')[0]}T00:00:00`
+                ).getTime()
+              : Number.MIN_SAFE_INTEGER;
+
+            return fechaB - fechaA;
+          });
+
+        if (this.prefijos.length === 1) {
+          const unico = this.prefijos[0];
+
+          this.formCliente.patchValue(
+            {
+              gcp: unico.id_prefijos,
+              prefijo: unico.codpre
+            },
+            {
+              emitEvent: false
+            }
+          );
+        } else {
+          this.formCliente.patchValue(
+            {
+              gcp: '',
+              prefijo: ''
+            },
+            {
+              emitEvent: false
+            }
+          );
+        }
+      },
+
+      error: error => {
+        console.error(
+          'Error al cargar prefijos:',
+          error
         );
-      } else {
-        this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
+
+        this.prefijos = [];
+
+        this.formCliente.patchValue(
+          {
+            gcp: '',
+            prefijo: ''
+          },
+          {
+            emitEvent: false
+          }
+        );
       }
-    },
-    error: (err) => {
-      console.error('Error al cargar prefijos:', err);
-      this.prefijos = [];
-      this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
-    }
-  });
+    });
 }
-
-
 
 private formatFechaVista(value: any): string {
   if (!value) return '';

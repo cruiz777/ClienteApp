@@ -19,12 +19,19 @@
             <input 
               type="text" 
               class="search-input" 
-              placeholder="Ingrese código de barras (GTIN-13)" 
+              placeholder="Ingrese código de barras" 
               [(ngModel)]="codigoBarras"
               (input)="onCodigoBarrasChange($event)"
               (keyup.enter)="onEnterKey()"
-              maxlength="13">
-            <button 
+              >
+            <button
+  type="button"
+  class="clear-btn"
+  (click)="nuevaBusqueda()"
+  [disabled]="isLoading || (!codigoBarras && !producto && !errorMessage)">
+  Limpiar
+</button>
+              <button 
               class="search-btn" 
               (click)="buscarProducto()"
               [disabled]="!codigoBarras || isLoading">

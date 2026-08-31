@@ -1,152 +1,715 @@
-<div class="cambio-sueldos-page">
-  <div class="window-card" [formGroup]="form">
-    <h2>Cambio de Sueldos</h2>
+<div class="page-container">
 
-    <div class="radio-row">
-      <mat-radio-group formControlName="tipoFiltro">
-        <mat-radio-button value="local">Local</mat-radio-button>
-        <mat-radio-button value="departamento">Departamento</mat-radio-button>
-        <mat-radio-button value="cargo">Cargo</mat-radio-button>
-      </mat-radio-group>
+  <div
+    class="salary-card"
+    [formGroup]="form">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="card-header">
+
+      <div class="header-icon">
+
+        <mat-icon>
+          payments
+        </mat-icon>
+
+      </div>
+
+
+      <div class="header-text">
+
+        <h1>
+          Cambio de Sueldos
+        </h1>
+
+        <p>
+          Actualización masiva de sueldos por local,
+          departamento o cargo.
+        </p>
+
+      </div>
+
     </div>
 
-    <!-- NUEVO CAMPO EMPLEADO -->
-    <div class="field-block">
-      <label class="field-label">Empleado :</label>
 
-      <div class="empleado-wrapper">
-        <mat-form-field appearance="outline" class="empleado-input">
-          <input
-            matInput
-            formControlName="empleadoTexto"
-            placeholder="Buscar empleado por código o nombre"
-            autocomplete="off"
-          />
-        </mat-form-field>
+    <!-- =====================================================
+         PASO 1
+    ====================================================== -->
 
-        <div class="empleado-sugerencias" *ngIf="empleadosFiltrados.length > 0 && form.get('empleadoTexto')?.value">
-          <div
-            class="empleado-item"
-            *ngFor="let emp of empleadosFiltrados"
-            (click)="seleccionarEmpleado(emp)"
-          >
-            <strong>{{ emp.codigo }}</strong> - {{ emp.nombre }}
-          </div>
+    <section class="form-section">
+
+      <div class="section-header">
+
+        <span class="step-number">
+          1
+        </span>
+
+
+        <div>
+
+          <h2>
+            Seleccione el grupo de empleados
+          </h2>
+
+          <p>
+            Elija si desea aplicar el cambio por local,
+            departamento o cargo.
+          </p>
+
         </div>
+
       </div>
-    </div>
 
-    <!-- FILTRO -->
-    <div class="field-block">
-      <label class="field-label">
-        {{ tipoFiltro === 'local' ? 'Local :' : tipoFiltro === 'departamento' ? 'Departamento :' : 'Cargo :' }}
-      </label>
 
-      <div class="selector-row">
-        <mat-form-field appearance="outline" class="codigo-input">
+      <mat-radio-group
+        formControlName="tipoFiltro"
+        class="option-grid">
+
+        <!-- LOCAL -->
+
+        <mat-radio-button
+          [value]="1"
+          class="option-card">
+
+          <div class="option-content">
+
+            <mat-icon>
+              store
+            </mat-icon>
+
+
+            <div>
+
+              <strong>
+                Local
+              </strong>
+
+              <span>
+                Empleados de un local
+              </span>
+
+            </div>
+
+          </div>
+
+        </mat-radio-button>
+
+
+        <!-- DEPARTAMENTO -->
+
+        <mat-radio-button
+          [value]="2"
+          class="option-card">
+
+          <div class="option-content">
+
+            <mat-icon>
+              account_tree
+            </mat-icon>
+
+
+            <div>
+
+              <strong>
+                Departamento
+              </strong>
+
+              <span>
+                Empleados de un departamento
+              </span>
+
+            </div>
+
+          </div>
+
+        </mat-radio-button>
+
+
+        <!-- CARGO -->
+
+        <mat-radio-button
+          [value]="3"
+          class="option-card">
+
+          <div class="option-content">
+
+            <mat-icon>
+              badge
+            </mat-icon>
+
+
+            <div>
+
+              <strong>
+                Cargo
+              </strong>
+
+              <span>
+                Empleados con un cargo
+              </span>
+
+            </div>
+
+          </div>
+
+        </mat-radio-button>
+
+      </mat-radio-group>
+
+
+      <!-- SELECTOR -->
+
+      <div class="field-container">
+
+        <mat-form-field
+          appearance="outline"
+          class="full-width">
+
+          <mat-label>
+
+            Seleccione {{ tituloFiltro }}
+
+          </mat-label>
+
+
+          <mat-icon
+            matPrefix>
+
+            search
+
+          </mat-icon>
+
+
+          <mat-select
+            formControlName="idFiltro">
+
+            <mat-option
+              *ngIf="cargandoCatalogos"
+              disabled>
+
+              Cargando información...
+
+            </mat-option>
+
+
+            <mat-option
+              *ngFor="
+                let item
+                of opcionesFiltro
+              "
+              [value]="item.id">
+
+              {{ item.id }}
+              -
+              {{ item.descripcion }}
+
+            </mat-option>
+
+          </mat-select>
+
+
+          <mat-error
+            *ngIf="
+              form.get('idFiltro')?.touched &&
+              form.get('idFiltro')?.invalid
+            ">
+
+            Debe seleccionar un
+            {{ tituloFiltro.toLowerCase() }}.
+
+          </mat-error>
+
+        </mat-form-field>
+
+      </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         PASO 2
+    ====================================================== -->
+
+    <section class="form-section">
+
+      <div class="section-header">
+
+        <span class="step-number">
+          2
+        </span>
+
+
+        <div>
+
+          <h2>
+            Tipo de actualización
+          </h2>
+
+          <p>
+            Indique cómo desea modificar el sueldo actual.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <mat-radio-group
+        formControlName="tipoActualizacion"
+        class="option-grid">
+
+        <!-- PORCENTAJE -->
+
+        <mat-radio-button
+          [value]="1"
+          class="option-card">
+
+          <div class="option-content">
+
+            <mat-icon>
+              percent
+            </mat-icon>
+
+
+            <div>
+
+              <strong>
+                Por porcentaje
+              </strong>
+
+              <span>
+                Aumenta o disminuye un porcentaje
+              </span>
+
+            </div>
+
+          </div>
+
+        </mat-radio-button>
+
+
+        <!-- VALOR -->
+
+        <mat-radio-button
+          [value]="2"
+          class="option-card">
+
+          <div class="option-content">
+
+            <mat-icon>
+              attach_money
+            </mat-icon>
+
+
+            <div>
+
+              <strong>
+                Por valor
+              </strong>
+
+              <span>
+                Suma o resta un valor fijo
+              </span>
+
+            </div>
+
+          </div>
+
+        </mat-radio-button>
+
+
+        <!-- CAMBIO DIRECTO -->
+
+        <mat-radio-button
+          [value]="3"
+          class="option-card">
+
+          <div class="option-content">
+
+            <mat-icon>
+              edit
+            </mat-icon>
+
+
+            <div>
+
+              <strong>
+                Cambio de valor
+              </strong>
+
+              <span>
+                Reemplaza el sueldo actual
+              </span>
+
+            </div>
+
+          </div>
+
+        </mat-radio-button>
+
+      </mat-radio-group>
+
+    </section>
+
+
+    <!-- =====================================================
+         PASO 3
+    ====================================================== -->
+
+    <section class="form-section">
+
+      <div class="section-header">
+
+        <span class="step-number">
+          3
+        </span>
+
+
+        <div>
+
+          <h2>
+            Valor a aplicar
+          </h2>
+
+          <p>
+            Ingrese el porcentaje, valor adicional
+            o nuevo sueldo.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="value-row">
+
+        <mat-form-field
+          appearance="outline"
+          class="value-field">
+
+          <mat-label>
+            {{ tituloValor }}
+          </mat-label>
+
+
+          <mat-icon
+            matPrefix>
+
+            {{
+              form.get('tipoActualizacion')?.value === 1
+                ? 'percent'
+                : 'attach_money'
+            }}
+
+          </mat-icon>
+
+
           <input
             matInput
-            [value]="
-              tipoFiltro === 'local'
-                ? form.get('localCodigo')?.value
-                : tipoFiltro === 'departamento'
-                ? form.get('departamentoCodigo')?.value
-                : form.get('cargoCodigo')?.value
-            "
-            readonly
-          />
+            type="number"
+            step="0.01"
+            formControlName="valor">
+
+
+          <span
+            matSuffix
+            class="field-suffix">
+
+            {{ sufijoValor }}
+
+          </span>
+
+
+          <mat-error
+            *ngIf="
+              form.get('valor')?.touched &&
+              form.get('valor')?.invalid
+            ">
+
+            Debe ingresar un valor.
+
+          </mat-error>
+
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="descripcion-input">
-          <input
-            matInput
-            [value]="
-              tipoFiltro === 'local'
-                ? form.get('localDescripcion')?.value
-                : tipoFiltro === 'departamento'
-                ? form.get('departamentoDescripcion')?.value
-                : form.get('cargoDescripcion')?.value
-            "
-            readonly
-          />
-        </mat-form-field>
 
-        <button mat-stroked-button type="button" (click)="abrirBusqueda()">
-          Buscar
-        </button>
+        <!-- AYUDA PORCENTAJE -->
+
+        <div
+          class="value-help"
+          *ngIf="
+            form.get('tipoActualizacion')?.value === 1
+          ">
+
+          <strong>Ejemplo:</strong>
+
+          5 aumenta el sueldo en 5%.
+
+          -5 disminuye el sueldo en 5%.
+
+        </div>
+
+
+        <!-- AYUDA VALOR -->
+
+        <div
+          class="value-help"
+          *ngIf="
+            form.get('tipoActualizacion')?.value === 2
+          ">
+
+          <strong>Ejemplo:</strong>
+
+          50 suma $50 al sueldo.
+
+          -50 resta $50.
+
+        </div>
+
+
+        <!-- AYUDA CAMBIO -->
+
+        <div
+          class="value-help"
+          *ngIf="
+            form.get('tipoActualizacion')?.value === 3
+          ">
+
+          El valor ingresado reemplazará
+          completamente el sueldo actual.
+
+        </div>
+
       </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         INFORMACIÓN
+    ====================================================== -->
+
+    <div class="info-box">
+
+      <div class="info-icon">
+
+        <mat-icon>
+          info
+        </mat-icon>
+
+      </div>
+
+
+      <div>
+
+        <strong>
+          Importante
+        </strong>
+
+        <p>
+          Se actualizarán únicamente empleados cuyo
+          tipo sea diferente de ex-empleado.
+        </p>
+
+      </div>
+
     </div>
 
-    <!-- SUELDO -->
-    <fieldset class="group-box">
-      <legend>Sueldo</legend>
 
-      <div class="sueldo-row">
-        <mat-radio-group formControlName="tipoCambio" class="tipo-cambio-group">
-          <mat-radio-button value="porcentaje">%Porcentaje</mat-radio-button>
-          <mat-radio-button value="valor">Valor</mat-radio-button>
-          
-        </mat-radio-group>
-
-        <mat-form-field appearance="outline" class="valor-cambio-input">
-          <input matInput formControlName="valorCambio" />
-        </mat-form-field>
-      </div>
-    </fieldset>
+    <!-- =====================================================
+         BOTONES
+    ====================================================== -->
 
     <div class="actions">
-      <button mat-stroked-button type="button" (click)="nuevo()">Nuevo</button>
-      <button mat-stroked-button color="primary" type="button" (click)="grabar()">Grabar</button>
-      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
-      <button mat-stroked-button color="warn" type="button" (click)="salir()">Salir</button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="procesando"
+        (click)="limpiar()">
+
+        <mat-icon>
+          refresh
+        </mat-icon>
+
+        Limpiar
+
+      </button>
+
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="procesando"
+        (click)="salir()">
+
+        <mat-icon>
+          close
+        </mat-icon>
+
+        Salir
+
+      </button>
+
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="primary-button"
+        [disabled]="
+          procesando ||
+          cargandoCatalogos
+        "
+        (click)="procesar()">
+
+        <mat-icon>
+          save
+        </mat-icon>
+
+
+        {{
+          procesando
+            ? 'Procesando...'
+            : 'Aplicar cambio'
+        }}
+
+      </button>
+
     </div>
+
   </div>
+
 </div>
 
-<!-- MODAL DE BÚSQUEDA -->
-<div class="modal-backdrop" *ngIf="mostrarModal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <h3>{{ tituloModal }}</h3>
-      <button mat-icon-button type="button" (click)="cerrarModal()">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
 
-    <div class="modal-body">
-      <mat-form-field appearance="outline" class="modal-search">
-        <mat-label>Buscar</mat-label>
-        <input matInput [(ngModel)]="textoBusqueda" (input)="filtrarItemsBusqueda()" />
-      </mat-form-field>
+<!-- =========================================================
+     DIÁLOGO DE CONFIRMACIÓN
+========================================================== -->
 
-      <div class="table-container">
-        <table mat-table [dataSource]="itemsBusquedaFiltrados" class="custom-table">
+<ng-template #confirmacionDialog>
 
-          <ng-container matColumnDef="descripcion">
-            <th mat-header-cell *matHeaderCellDef>Descripción</th>
-            <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
-          </ng-container>
+  <div class="confirm-dialog">
 
-          <ng-container matColumnDef="codigo">
-            <th mat-header-cell *matHeaderCellDef>Código</th>
-            <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-          </ng-container>
+    <!-- HEADER -->
 
-          <tr mat-header-row *matHeaderRowDef="['descripcion', 'codigo']"></tr>
-          <tr
-            mat-row
-            *matRowDef="let row; columns: ['descripcion', 'codigo']"
-            (dblclick)="seleccionarItemBusqueda(row)">
-          </tr>
-        </table>
+    <div class="confirm-header">
+
+      <div class="confirm-icon">
+
+        <mat-icon>
+          warning_amber
+        </mat-icon>
+
       </div>
+
+
+      <div class="confirm-title">
+
+        <h2>
+          Confirmar cambio de sueldos
+        </h2>
+
+        <p>
+          Revise la información antes de continuar.
+        </p>
+
+      </div>
+
     </div>
 
-    <div class="modal-actions">
-      <button mat-stroked-button color="primary" type="button" [disabled]="itemsBusquedaFiltrados.length === 0">
-        Aceptar
-      </button>
-      <button mat-stroked-button type="button" (click)="cerrarModal()">Cancelar</button>
+
+    <!-- CONTENIDO -->
+
+    <div class="confirm-content">
+
+      <div class="confirm-field">
+
+        <span>
+          Operación
+        </span>
+
+
+        <strong>
+          {{ mensajeOperacion }}
+        </strong>
+
+      </div>
+
+
+      <div class="confirm-field">
+
+        <span>
+          Aplicar a
+        </span>
+
+
+        <strong>
+          {{ criterioConfirmacion }}
+        </strong>
+
+      </div>
+
+
+      <div class="confirm-warning">
+
+        <mat-icon>
+          info
+        </mat-icon>
+
+
+        <div>
+
+          <strong>
+            Atención
+          </strong>
+
+
+          <p>
+            Se modificarán los sueldos de todos los
+            empleados que cumplan con este criterio.
+          </p>
+
+        </div>
+
+      </div>
+
     </div>
+
+
+    <!-- BOTONES -->
+
+    <div class="confirm-actions">
+
+      <button
+        mat-stroked-button
+        type="button"
+        [mat-dialog-close]="false">
+
+        Cancelar
+
+      </button>
+
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [mat-dialog-close]="true">
+
+        <mat-icon>
+          check
+        </mat-icon>
+
+        Sí, aplicar cambio
+
+      </button>
+
+    </div>
+
   </div>
-</div>
+
+</ng-template>

@@ -46,7 +46,7 @@ import { PaisService, Pais } from 'src/app/services/pais.service';
 import { HistorialClienteService, HistorialClienteRequest } from 'src/app/services/historial-cliente.service';
 // Interfaces o modelos
 import { ClienteRuc } from '../../../../interfaces/clienteRuc';
-import { emailValidoValidator,multipleEmailsValidator } from '../../../../util/validators';
+import { emailValidoValidator, multipleEmailsValidator } from '../../../../util/validators';
 
 import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -295,9 +295,21 @@ export class DialogClienteEditarComponent implements OnInit {
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
-        celular: [''],
+        celular: [
+          '',
+          [
+            Validators.required,
+            Validators.pattern(/^\d{9}$/)
+          ]
+        ],
+
+        telefono2: [
+          '',
+          [
+            Validators.pattern(/^\d{9}$/)
+          ]
+        ],
         sitioWeb: [''],
-        telefono2: [''],
         extension: [''],
         usuario: [{ value: '', disabled: true }],
         observacion1: [''],
@@ -311,7 +323,7 @@ export class DialogClienteEditarComponent implements OnInit {
         fechaIng: [''],
         fechaMod: [''],
         usuarioMod: [''],
-        otros:[false]
+        otros: [false]
 
       }),
 
@@ -822,7 +834,7 @@ export class DialogClienteEditarComponent implements OnInit {
       representante: paso2.nombreRepresentante || '',
       fecmod: new Date().toLocaleDateString('en-CA'),
       usumod: this.usuarioActual?.nombre_usuario || '',
-      hello:paso2.extension || ''
+      hello: paso2.extension || ''
 
     };
 
@@ -1087,14 +1099,77 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
   verificarPaso2YAvanzar(stepper: MatStepper): void {
-    this.forzarSyncYAvanzar('razonSocial', this.paso2Form);
-    this.forzarSyncYAvanzar('nombreRepresentante', this.paso2Form);
+    const razonSocialControl =
+      this.paso2Form.get('razonSocial');
 
+    const razonSocialInput =
+      document.querySelector<HTMLInputElement>(
+        'input[formcontrolname="razonSocial"]'
+      );
+
+    const valorRazonSocial =
+      razonSocialInput?.value?.trim() ?? '';
+
+    /*
+     * Sincroniza directamente el valor visible.
+     * No se borra temporalmente el FormControl.
+     */
+    razonSocialControl?.setValue(
+      valorRazonSocial,
+      {
+        emitEvent: true
+      }
+    );
+
+    razonSocialControl?.markAsTouched();
+    razonSocialControl?.markAsDirty();
+    razonSocialControl?.updateValueAndValidity();
+
+    this.paso2Form.updateValueAndValidity();
     this.paso2Form.markAllAsTouched();
+    const celular = this.paso2Form.get('celular');
+    const telefono2 = this.paso2Form.get('telefono2');
 
+    const telefonosIncorrectos: string[] = [];
+
+    if (celular?.hasError('pattern')) {
+      telefonosIncorrectos.push('Celular');
+    }
+
+    if (telefono2?.hasError('pattern')) {
+      telefonosIncorrectos.push('Teléfono 2');
+    }
+
+    if (telefonosIncorrectos.length > 0) {
+      this.mostrarAlerta(
+        `${telefonosIncorrectos.join(' y ')} debe tener exactamente 9 dígitos, sin incluir el código 593.`,
+        'Número de teléfono incorrecto'
+      );
+
+      return;
+    }
     if (this.paso2Form.valid) {
       stepper.next();
+      return;
     }
+
+    console.warn(
+      'Formulario del paso 2 inválido:',
+      this.paso2Form.value
+    );
+
+    Object.keys(this.paso2Form.controls).forEach(nombre => {
+      const control = this.paso2Form.get(nombre);
+
+      if (control?.invalid) {
+        console.warn(
+          `Campo inválido: ${nombre}`,
+          control.errors,
+          'Valor:',
+          control.value
+        );
+      }
+    });
   }
 
   alEntrarCampo(nombreCampo: string, formGroup: FormGroup): void {
@@ -1169,7 +1244,7 @@ export class DialogClienteEditarComponent implements OnInit {
       celular: cliente.telefono1 || '',
       sitioWeb: cliente.web,
       telefono2: cliente.telefono || '',
-      extension:cliente.hello || '',
+      extension: cliente.hello || '',
       usuario: '',
       fechaIng: cliente.fecing,
       fechaMod: cliente.fecmod,
@@ -1294,16 +1369,16 @@ export class DialogClienteEditarComponent implements OnInit {
       console.warn('❌ No se encontró la ciudad con ID:', id);
     }
   }
-private activarModoEdicion(): void {
-  this.modoEdicion = true;
-  // Si quieres habilitar el form aquí:
-  // this.formCliente.enable();
-}
+  private activarModoEdicion(): void {
+    this.modoEdicion = true;
+    // Si quieres habilitar el form aquí:
+    // this.formCliente.enable();
+  }
 
-private activarModoEdicion$(): Observable<null> {
-  this.activarModoEdicion();   // ✅ ahora sí existe
-  return of(null);
-}
+  private activarModoEdicion$(): Observable<null> {
+    this.activarModoEdicion();   // ✅ ahora sí existe
+    return of(null);
+  }
 
 
 
@@ -1709,47 +1784,47 @@ private activarModoEdicion$(): Observable<null> {
     });
   }
 
-private cargarDatosAdicionales$(clientesCodigo: number): Observable<null> {
-  if (!clientesCodigo) return of(null);
+  private cargarDatosAdicionales$(clientesCodigo: number): Observable<null> {
+    if (!clientesCodigo) return of(null);
 
-  return this.clienteDatosAdicionalesService
-    .obtenerPorClienteCodigo(clientesCodigo)
-    .pipe(
-      tap((raw) => {
-        const datos: any = Array.isArray(raw) ? raw[0] : raw;
+    return this.clienteDatosAdicionalesService
+      .obtenerPorClienteCodigo(clientesCodigo)
+      .pipe(
+        tap((raw) => {
+          const datos: any = Array.isArray(raw) ? raw[0] : raw;
 
-        const paso3Patch = {
-          pregunta1: !!datos?.expprod,
-          pregunta2: !!datos?.vendeus,
-          pregunta3: !!datos?.medico,
-          pregunta4: !!datos?.gs1ec,
-          pregunta5: !!datos?.instagram,
-          pregunta6: !!datos?.facebook,
-          pregunta7: !!datos?.web
-        };
+          const paso3Patch = {
+            pregunta1: !!datos?.expprod,
+            pregunta2: !!datos?.vendeus,
+            pregunta3: !!datos?.medico,
+            pregunta4: !!datos?.gs1ec,
+            pregunta5: !!datos?.instagram,
+            pregunta6: !!datos?.facebook,
+            pregunta7: !!datos?.web
+          };
 
-        const paso2Patch = {
-          nprefijo: !!datos?.prefijo,
-          compra: !!datos?.guia,
-          otros:!!datos?.otros
-        
-        };
+          const paso2Patch = {
+            nprefijo: !!datos?.prefijo,
+            compra: !!datos?.guia,
+            otros: !!datos?.otros
 
-        this.paso3Form.patchValue(paso3Patch, { emitEvent: false });
-        this.paso2Form.patchValue(paso2Patch, { emitEvent: false });
-      }),
-      map(() => null),
-      catchError(() => {
-        this.paso3Form.patchValue({
-          pregunta1: false, pregunta2: false, pregunta3: false, pregunta4: false,
-          pregunta5: false, pregunta6: false, pregunta7: false
-        }, { emitEvent: false });
+          };
 
-        this.paso2Form.patchValue({ nprefijo: false, compra: false,otros:false }, { emitEvent: false });
-        return of(null);
-      })
-    );
-} // <- SOLO uno
+          this.paso3Form.patchValue(paso3Patch, { emitEvent: false });
+          this.paso2Form.patchValue(paso2Patch, { emitEvent: false });
+        }),
+        map(() => null),
+        catchError(() => {
+          this.paso3Form.patchValue({
+            pregunta1: false, pregunta2: false, pregunta3: false, pregunta4: false,
+            pregunta5: false, pregunta6: false, pregunta7: false
+          }, { emitEvent: false });
+
+          this.paso2Form.patchValue({ nprefijo: false, compra: false, otros: false }, { emitEvent: false });
+          return of(null);
+        })
+      );
+  } // <- SOLO uno
 
 
 

@@ -1,154 +1,574 @@
 <div class="empresa-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Empresa para Adaptación</h2>
 
-    <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Código</mat-label>
-        <input matInput formControlName="codigo" />
-        <mat-error *ngIf="esCampoInvalido('codigo')">El código es obligatorio</mat-error>
-      </mat-form-field>
+  <div class="empresa-container">
 
-      <mat-form-field appearance="outline">
-        <mat-label>Número Patronal</mat-label>
-        <input matInput formControlName="numeroPatronal" />
-      </mat-form-field>
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
 
-      <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Razón Social</mat-label>
-        <input matInput formControlName="razonSocial" />
-        <mat-error *ngIf="esCampoInvalido('razonSocial')">La razón social es obligatoria</mat-error>
-      </mat-form-field>
+    <div class="page-header">
 
-      <mat-form-field appearance="outline">
-        <mat-label>Número de RUC</mat-label>
-        <input matInput formControlName="numeroRuc" />
-      </mat-form-field>
+      <div class="header-icon">
 
-      <mat-form-field appearance="outline">
-        <mat-label>Provincia</mat-label>
-        <mat-select formControlName="provincia">
-          <mat-option *ngFor="let item of provincias" [value]="item">{{ item }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+        <mat-icon>
+          business
+        </mat-icon>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Cantón</mat-label>
-        <mat-select formControlName="canton">
-          <mat-option *ngFor="let item of cantones" [value]="item">{{ item }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      </div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Parroquia</mat-label>
-        <mat-select formControlName="parroquia">
-          <mat-option *ngFor="let item of parroquias" [value]="item">{{ item }}</mat-option>
-        </mat-select>
-      </mat-form-field>
 
-      <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Calle y Número</mat-label>
-        <input matInput formControlName="calleNumero" />
-      </mat-form-field>
+      <div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Teléfono</mat-label>
-        <input matInput formControlName="telefono" />
-      </mat-form-field>
+        <h2>
+          Empresa Complementaria
+        </h2>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Cédula Representante Legal</mat-label>
-        <input matInput formControlName="cedulaRepresentanteLegal" />
-      </mat-form-field>
+        <p>
+          Administración de empresas complementarias.
+        </p>
 
-      <mat-form-field appearance="outline" class="span-2">
-        <mat-label>Representante Legal</mat-label>
-        <input matInput formControlName="representanteLegal" />
-      </mat-form-field>
+      </div>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Tipo de Seguro</mat-label>
-        <mat-select formControlName="tipoSeguro">
-          <mat-option *ngFor="let item of tiposSeguro" [value]="item">{{ item }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Código de Registro</mat-label>
-        <input matInput formControlName="codigoRegistro" />
-      </mat-form-field>
     </div>
 
-    <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="nuevo()">Nuevo</button>
-      <button mat-flat-button color="primary" type="button" (click)="grabar()">Grabar</button>
-      <button mat-stroked-button color="warn" type="button" (click)="borrar()">Borrar</button>
-      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+
+    <!-- =====================================================
+         FORMULARIO
+    ====================================================== -->
+
+    <div
+      class="form-card"
+      [formGroup]="form">
+
+      <div class="form-title">
+
+        <div>
+
+          <h3>
+
+            {{
+              empresaSeleccionadaId
+                ? 'Editar empresa'
+                : 'Nueva empresa'
+            }}
+
+          </h3>
+
+          <span
+            *ngIf="empresaSeleccionadaId">
+
+            Código:
+            {{ empresaSeleccionadaId }}
+
+          </span>
+
+        </div>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="nuevo()"
+          [disabled]="guardando">
+
+          <mat-icon>
+            add
+          </mat-icon>
+
+          Nuevo
+
+        </button>
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <!-- EMPRESA -->
+
+        <mat-form-field
+          appearance="outline"
+          class="empresa-field">
+
+          <mat-label>
+            Empresa
+          </mat-label>
+
+
+          <mat-icon
+            matPrefix>
+
+            business
+
+          </mat-icon>
+
+
+          <input
+            matInput
+            maxlength="200"
+            formControlName="empresa"
+            placeholder="Nombre de la empresa">
+
+
+          <mat-error
+            *ngIf="
+              esCampoInvalido('empresa')
+            ">
+
+            El nombre de la empresa es obligatorio.
+
+          </mat-error>
+
+        </mat-form-field>
+
+
+        <!-- RUC -->
+
+        <mat-form-field
+          appearance="outline">
+
+          <mat-label>
+            RUC
+          </mat-label>
+
+
+          <mat-icon
+            matPrefix>
+
+            badge
+
+          </mat-icon>
+
+
+          <input
+            matInput
+            maxlength="13"
+            formControlName="ruc"
+            placeholder="RUC de la empresa">
+
+
+          <mat-hint align="end">
+
+            {{
+              form.get('ruc')?.value?.length || 0
+            }}/13
+
+          </mat-hint>
+
+
+          <mat-error
+            *ngIf="
+              esCampoInvalido('ruc')
+            ">
+
+            El RUC es obligatorio.
+
+          </mat-error>
+
+        </mat-form-field>
+
+
+        <!-- ESTADO -->
+
+        <div class="estado-container">
+
+          <div class="estado-label">
+
+            <span>
+              Estado
+            </span>
+
+            <small>
+              Define si la empresa está disponible.
+            </small>
+
+          </div>
+
+
+          <mat-slide-toggle
+            formControlName="estado"
+            color="primary">
+
+            {{
+              form.get('estado')?.value
+                ? 'Activo'
+                : 'Inactivo'
+            }}
+
+          </mat-slide-toggle>
+
+        </div>
+
+      </div>
+
+
+      <!-- ===================================================
+           BOTONES
+      ==================================================== -->
+
+      <div class="actions">
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="guardando"
+          (click)="cancelar()">
+
+          <mat-icon>
+            close
+          </mat-icon>
+
+          Cancelar
+
+        </button>
+
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="guardando"
+          (click)="grabar()">
+
+          <mat-icon>
+
+            {{
+              guardando
+                ? 'hourglass_top'
+                : 'save'
+            }}
+
+          </mat-icon>
+
+
+          {{
+            guardando
+              ? 'Guardando...'
+              : empresaSeleccionadaId
+                ? 'Actualizar'
+                : 'Guardar'
+          }}
+
+        </button>
+
+      </div>
+
     </div>
+
+
+    <!-- =====================================================
+         LISTADO
+    ====================================================== -->
+
+    <div class="list-card">
+
+      <div class="list-header">
+
+        <div>
+
+          <h3>
+            Empresas Complementarias
+          </h3>
+
+          <p>
+            Seleccione una empresa para modificarla.
+          </p>
+
+        </div>
+
+
+        <div class="registro-count">
+
+          <mat-icon>
+            business
+          </mat-icon>
+
+          {{ empresas.length }}
+
+          {{
+            empresas.length === 1
+              ? 'registro'
+              : 'registros'
+          }}
+
+        </div>
+
+      </div>
+
+
+      <!-- CARGANDO -->
+
+      <div
+        class="loading-container"
+        *ngIf="cargando">
+
+        <mat-spinner
+          diameter="35">
+
+        </mat-spinner>
+
+        <span>
+          Cargando empresas...
+        </span>
+
+      </div>
+
+
+      <!-- TABLA -->
+
+      <div
+        class="table-container"
+        *ngIf="!cargando">
+
+        <table
+          mat-table
+          [dataSource]="empresas"
+          class="custom-table">
+
+          <!-- ===============================================
+               ID
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="idEmpresaComplementaria">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              Código
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              {{ row.idEmpresaComplementaria }}
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               EMPRESA
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="empresa">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              Empresa
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              <div class="empresa-cell">
+
+                <div class="empresa-avatar">
+
+                  <mat-icon>
+                    business
+                  </mat-icon>
+
+                </div>
+
+
+                <span>
+                  {{ row.empresa }}
+                </span>
+
+              </div>
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               RUC
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="ruc">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              RUC
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              {{ row.ruc }}
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               ESTADO
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="estado">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              Estado
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              <span
+                class="status"
+                [class.status-active]="row.estado"
+                [class.status-inactive]="!row.estado">
+
+                <span class="status-dot"></span>
+
+                {{
+                  row.estado
+                    ? 'Activo'
+                    : 'Inactivo'
+                }}
+
+              </span>
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               ACCIONES
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="acciones">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="acciones-header">
+
+              Acciones
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+              class="acciones-cell">
+
+              <button
+                mat-icon-button
+                type="button"
+                title="Editar"
+                (click)="editar(row, $event)">
+
+                <mat-icon>
+                  edit
+                </mat-icon>
+
+              </button>
+
+
+              <button
+                mat-icon-button
+                type="button"
+                color="warn"
+                title="Eliminar"
+                [disabled]="eliminando"
+                (click)="borrar(row, $event)">
+
+                <mat-icon>
+                  delete
+                </mat-icon>
+
+              </button>
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- HEADER -->
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="displayedColumns">
+
+          </tr>
+
+
+          <!-- ROW -->
+
+          <tr
+            mat-row
+            *matRowDef="
+              let row;
+              columns: displayedColumns
+            "
+            (click)="seleccionarEmpresa(row)"
+            [class.row-selected]="
+              empresaSeleccionadaId ===
+              row.idEmpresaComplementaria
+            ">
+
+          </tr>
+
+        </table>
+
+
+        <!-- SIN DATOS -->
+
+        <div
+          class="empty-state"
+          *ngIf="
+            empresas.length === 0
+          ">
+
+          <mat-icon>
+            business_off
+          </mat-icon>
+
+          <strong>
+            No existen empresas complementarias
+          </strong>
+
+          <span>
+            Presione Nuevo para crear la primera empresa.
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
   </div>
 
-  <div class="list-card">
-    <div class="list-header">
-      <h3>Listado de Empresas</h3>
-      <span>{{ empresas.length }} registro(s)</span>
-    </div>
-
-    <div class="table-container">
-      <table mat-table [dataSource]="empresas" class="custom-table">
-
-        <ng-container matColumnDef="codigo">
-          <th mat-header-cell *matHeaderCellDef>Código</th>
-          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="razonSocial">
-          <th mat-header-cell *matHeaderCellDef>Razón Social</th>
-          <td mat-cell *matCellDef="let row">{{ row.razonSocial }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="numeroRuc">
-          <th mat-header-cell *matHeaderCellDef>RUC</th>
-          <td mat-cell *matCellDef="let row">{{ row.numeroRuc }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="provincia">
-          <th mat-header-cell *matHeaderCellDef>Provincia</th>
-          <td mat-cell *matCellDef="let row">{{ row.provincia }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="canton">
-          <th mat-header-cell *matHeaderCellDef>Cantón</th>
-          <td mat-cell *matCellDef="let row">{{ row.canton }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="telefono">
-          <th mat-header-cell *matHeaderCellDef>Teléfono</th>
-          <td mat-cell *matCellDef="let row">{{ row.telefono }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="representanteLegal">
-          <th mat-header-cell *matHeaderCellDef>Representante Legal</th>
-          <td mat-cell *matCellDef="let row">{{ row.representanteLegal }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="tipoSeguro">
-          <th mat-header-cell *matHeaderCellDef>Tipo Seguro</th>
-          <td mat-cell *matCellDef="let row">{{ row.tipoSeguro }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="codigoRegistro">
-          <th mat-header-cell *matHeaderCellDef>Cód. Registro</th>
-          <td mat-cell *matCellDef="let row">{{ row.codigoRegistro }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr
-          mat-row
-          *matRowDef="let row; columns: displayedColumns"
-          (click)="seleccionarEmpresa(row)"
-          [class.row-selected]="empresaSeleccionadaId === row.id">
-        </tr>
-      </table>
-    </div>
-  </div>
 </div>

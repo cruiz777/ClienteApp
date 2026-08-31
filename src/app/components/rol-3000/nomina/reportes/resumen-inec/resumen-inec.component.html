@@ -1,35 +1,119 @@
 <div class="inec-page">
+
   <div class="inec-card" [formGroup]="form">
 
-    <!-- HEADER -->
+    <!-- =========================
+         HEADER
+    ========================== -->
     <div class="card-header">
-      <h2>Resumen INEC</h2>
-      <p class="subtitle">Ingrese el período a generar</p>
+
+      <h2>
+        Resumen INEC
+      </h2>
+
+      <p class="subtitle">
+        Seleccione el período a generar
+      </p>
+
     </div>
 
-    <!-- BODY -->
+
+    <!-- =========================
+         BODY
+    ========================== -->
     <div class="card-body">
 
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Período</mat-label>
-        <input matInput type="date" formControlName="periodo" />
+      <!-- PERÍODO -->
+      <mat-form-field
+        appearance="outline"
+        class="full-width">
 
-        <mat-error *ngIf="form.get('periodo')?.hasError('required')">
+        <mat-label>
+          Período
+        </mat-label>
+
+        <input
+          matInput
+          type="date"
+          formControlName="periodo"
+          [disabled]="generando" />
+
+        <mat-error
+          *ngIf="
+            form.get('periodo')?.hasError('required')
+            &&
+            form.get('periodo')?.touched
+          ">
+
           El período es obligatorio
+
         </mat-error>
+
       </mat-form-field>
 
-      <!-- ACTIONS -->
+
+      <!-- =========================
+           ESTADO GENERANDO
+      ========================== -->
+      <div
+        class="generando-container"
+        *ngIf="generando">
+
+        <mat-spinner
+          diameter="32">
+        </mat-spinner>
+
+        <span>
+          Generando reporte INEC...
+        </span>
+
+      </div>
+
+
+      <!-- =========================
+           ACTIONS
+      ========================== -->
       <div class="actions">
-        <button mat-flat-button color="primary" (click)="aceptar()">
-          Aceptar
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="generando"
+          (click)="aceptar()">
+
+          <mat-icon
+            *ngIf="!generando">
+            picture_as_pdf
+          </mat-icon>
+
+          <span>
+            {{ generando ? 'Generando...' : 'Generar PDF' }}
+          </span>
+
         </button>
 
-        <button mat-stroked-button (click)="cancelar()">
-          Cancelar
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="generando"
+          (click)="cancelar()">
+
+          <mat-icon>
+            clear
+          </mat-icon>
+
+          <span>
+            Cancelar
+          </span>
+
         </button>
+
       </div>
 
     </div>
+
   </div>
+
 </div>
