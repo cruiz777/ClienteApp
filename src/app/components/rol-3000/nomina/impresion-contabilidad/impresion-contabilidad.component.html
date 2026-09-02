@@ -1,37 +1,123 @@
 <div class="generacion-page">
-  <div class="generacion-card" [formGroup]="form">
+
+  <div
+    class="generacion-card"
+    [formGroup]="form">
+
     <div class="card-header">
-      <h2>Impresión Asientos Diarios y Proviciones</h2>
-      <p class="subtitle">Ingrese el período a generar</p>
+
+      <h2>
+        Impresión Asientos Diarios y Provisiones
+      </h2>
+
+      <p class="subtitle">
+        Genere los reportes contables del período sin crear asientos
+      </p>
+
     </div>
 
+
     <div class="card-body">
+
       <div class="field-group">
-        <label for="periodo">Período</label>
+
+        <label for="periodo">
+          Período
+        </label>
+
         <input
           id="periodo"
           type="date"
           formControlName="periodo"
-          class="custom-input"
-        />
+          class="custom-input">
 
         <div
           class="error-text"
-          *ngIf="form.get('periodo')?.hasError('required') && form.get('periodo')?.touched"
-        >
+          *ngIf="
+            form.get('periodo')?.hasError('required')
+            &&
+            form.get('periodo')?.touched
+          ">
           La fecha es obligatoria
         </div>
+
       </div>
+
+
+      <div
+        *ngIf="consultado && tieneReportes"
+        style="
+          margin-top: 15px;
+          padding: 10px;
+          border: 1px solid #d7e3f4;
+          background: #f5f8fc;
+          border-radius: 4px;
+        ">
+
+        <div>
+          <strong>
+            Reportes generados:
+          </strong>
+        </div>
+
+        <div
+          *ngIf="reportes?.reporteProvision">
+          ✓ Provisiones
+        </div>
+
+        <div
+          *ngIf="reportes?.reporteResumenMensual">
+          ✓ Resumen mensual
+        </div>
+
+        <div
+          *ngIf="reportes?.reporteAsientoMensual">
+          ✓ Asiento mensual detallado
+        </div>
+
+      </div>
+
 
       <div class="actions">
-        <button class="btn-primary" type="button" (click)="aceptar()">
-          Aceptar
+
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="procesando"
+          (click)="aceptar()">
+
+          {{
+            procesando
+              ? 'Generando...'
+              : 'Aceptar'
+          }}
+
         </button>
 
-        <button class="btn-secondary" type="button" (click)="cancelar()">
+        <button
+          class="btn-secondary"
+          type="button"
+          [disabled]="procesando"
+          (click)="cancelar()">
+
           Cancelar
+
         </button>
+
+        <button
+          class="btn-primary"
+          type="button"
+          [disabled]="procesando || !tieneReportes"
+          (click)="imprimir()">
+
+          Imprimir
+
+        </button>
+
       </div>
+
     </div>
+
   </div>
+
 </div>

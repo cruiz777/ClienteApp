@@ -14,8 +14,29 @@ import {
 } from '@angular/common/http';
 
 import {
-  forkJoin
+  forkJoin,
+  of
 } from 'rxjs';
+
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  finalize
+} from 'rxjs/operators';
+
+import {
+  ReportesEmpleadosService
+} from 'src/app/services/rol/reportes-empleados.service';
+
+import {
+  EmpleadoFichaService,
+  EmpleadoBusquedaResponse
+} from 'src/app/services/rol/empleado-ficha.service';
+
+import {
+  DepartamentosService
+} from 'src/app/services/departamentos.service';
 
 import {
   ReporteNominaService,
@@ -37,7 +58,20 @@ interface OpcionFiltro {
 export class ReporteListadoGeneralComponent
   implements OnInit {
 
+  // =============================================================
+  // FORMULARIO
+  // =============================================================
+
   form!: FormGroup;
+
+
+  // =============================================================
+  // ESTADOS
+  // =============================================================
+
+  cargandoCatalogos = false;
+
+  cargandoEmpleados = false;
 
   generando = false;
 
@@ -45,74 +79,64 @@ export class ReporteListadoGeneralComponent
   // =============================================================
   // EMPRESA
   //
-  // TEMPORAL.
-  // Luego debe obtenerse de la sesión.
+  // TEMPORAL:
+  // después reemplazar por empresa de sesión.
   // =============================================================
 
   idEmpresa = 1;
 
 
   // =============================================================
-  // AREAS / LOCALES
-  //
-  // Estos son ejemplos.
-  // Luego podemos cargarlos desde el backend.
+  // CATÁLOGOS
   // =============================================================
 
-  areas: OpcionFiltro[] = [
-    {
-      id: 1,
-      nombre: 'Principal'
-    }
-  ];
+  locales: OpcionFiltro[] = [];
+
+  departamentos: OpcionFiltro[] = [];
+
+  empleadosFiltrados: EmpleadoBusquedaResponse[] = [];
 
 
   // =============================================================
-  // DEPARTAMENTOS
-  //
-  // Según seguridades.departamentos
+  // CONSTRUCTOR
   // =============================================================
-
-  departamentos: OpcionFiltro[] = [
-    {
-      id: 1,
-      nombre: 'SISTEMAS'
-    },
-    {
-      id: 2,
-      nombre: 'CONTABILIDAD'
-    },
-    {
-      id: 8,
-      nombre: 'ADMINISTRADOR'
-    },
-    {
-      id: 11,
-      nombre: 'GERENCIA'
-    },
-    {
-      id: 12,
-      nombre: 'MARKETING'
-    },
-    {
-      id: 13,
-      nombre: 'COBRANZAS'
-    },
-    {
-      id: 14,
-      nombre: 'ESTANDARES'
-    }
-  ];
-
 
   constructor(
     private readonly fb: FormBuilder,
-    private readonly reporteNominaService:
-      ReporteNominaService
-  ) { }
 
+    private readonly reporteNominaService:
+      ReporteNominaService,
+
+    private readonly reportesEmpleadosService:
+      ReportesEmpleadosService,
+
+    private readonly departamentosService:
+      DepartamentosService,
+
+    private readonly empleadoFichaService:
+      EmpleadoFichaService
+  ) {}
+
+
+  // =============================================================
+  // INIT
+  // =============================================================
 
   ngOnInit(): void {
+
+    this.crearFormulario();
+
+    this.configurarEventos();
+
+    this.cargarCatalogos();
+  }
+
+
+  // =============================================================
+  // FORMULARIO
+  // =============================================================
+
+  private crearFormulario(): void {
 
     this.form =
       this.fb.group({
@@ -127,17 +151,36 @@ export class ReporteListadoGeneralComponent
           Validators.required
         ],
 
-        empleado: [
+
+        // =======================================================
+        // EMPLEADO
+        // =======================================================
+
+        empleadoBusqueda: [
           ''
         ],
 
-        areaInicial: [
+        idEmpleado: [
           null
         ],
 
-        areaFinal: [
+
+        // =======================================================
+        // RANGO ÁREA / DEPARTAMENTO
+        // =======================================================
+
+        idInicial: [
           null
         ],
+
+        idFinal: [
+          null
+        ],
+
+
+        // =======================================================
+        // TIPO LISTADO
+        // =======================================================
 
         tipoListado: [
           'areas',
@@ -145,10 +188,17 @@ export class ReporteListadoGeneralComponent
         ]
 
       });
+  }
 
+
+  // =============================================================
+  // EVENTOS
+  // =============================================================
+
+  private configurarEventos(): void {
 
     // ===========================================================
-    // CAMBIO AREAS / DEPARTAMENTOS
+    // CAMBIAR ENTRE ÁREAS Y DEPARTAMENTOS
     // ===========================================================
 
     this.form
@@ -158,8 +208,8 @@ export class ReporteListadoGeneralComponent
 
         this.form.patchValue(
           {
-            areaInicial: null,
-            areaFinal: null
+            idInicial: null,
+            idFinal: null
           },
           {
             emitEvent: false
@@ -167,60 +217,541 @@ export class ReporteListadoGeneralComponent
         );
 
       });
+
+
+    // ===========================================================
+    // BUSCADOR DE EMPLEADOS
+    // ===========================================================
+
+    this.form
+      .get('empleadoBusqueda')
+      ?.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(valor => {
+
+        // =======================================================
+        // Si Angular colocó el objeto seleccionado,
+        // no volver a ejecutar la búsqueda.
+        // =======================================================
+
+        if (
+          valor
+          &&
+          typeof valor === 'object'
+        ) {
+          return;
+        }
+
+
+        // =======================================================
+        // Si escribe nuevamente se elimina el empleado anterior.
+        // =======================================================
+
+        this.form.patchValue(
+          {
+            idEmpleado: null
+          },
+          {
+            emitEvent: false
+          }
+        );
+
+
+        this.buscarEmpleados(
+          valor ?? ''
+        );
+
+      });
   }
 
 
   // =============================================================
-  // OPCIONES SEGUN RADIO
+  // CARGAR LOCALES Y DEPARTAMENTOS
   // =============================================================
 
-  get opcionesFiltro(): OpcionFiltro[] {
+  private cargarCatalogos(): void {
 
-    const tipo =
+    if (this.cargandoCatalogos) {
+      return;
+    }
+
+
+    this.cargandoCatalogos =
+      true;
+
+
+    forkJoin({
+
+      // =========================================================
+      // LOCALES
+      // =========================================================
+
+      locales:
+        this.reportesEmpleadosService
+          .obtenerLocales()
+          .pipe(
+
+            catchError(
+              (
+                error:
+                  HttpErrorResponse
+              ) => {
+
+                console.error(
+                  'ERROR CARGANDO LOCALES:',
+                  error
+                );
+
+                return of(null);
+              }
+            )
+
+          ),
+
+
+      // =========================================================
+      // DEPARTAMENTOS
+      // =========================================================
+
+      departamentos:
+        this.departamentosService
+          .getDepartamentos()
+          .pipe(
+
+            catchError(
+              (
+                error:
+                  HttpErrorResponse
+              ) => {
+
+                console.error(
+                  'ERROR CARGANDO DEPARTAMENTOS:',
+                  error
+                );
+
+                return of(null);
+              }
+            )
+
+          )
+
+    })
+
+      .pipe(
+
+        finalize(() => {
+
+          this.cargandoCatalogos =
+            false;
+
+        })
+
+      )
+
+      .subscribe({
+
+        next: response => {
+
+          // =====================================================
+          // LOCALES
+          // =====================================================
+
+          const respuestaLocales:
+            any =
+              response.locales;
+
+
+          const localesData:
+            any[] =
+
+            Array.isArray(
+              respuestaLocales
+            )
+              ?
+              respuestaLocales
+
+              :
+
+              Array.isArray(
+                respuestaLocales?.data
+              )
+                ?
+                respuestaLocales.data
+
+                :
+                [];
+
+
+          this.locales =
+            localesData
+
+              .filter(
+                x =>
+                  x.estado !== false
+              )
+
+              .map(
+                x => ({
+
+                  id:
+                    Number(
+                      x.id
+                      ??
+                      x.idLocal
+                      ??
+                      x.id_local
+                    ),
+
+                  nombre:
+                    (
+                      x.nombre
+                      ??
+                      x.nomloc
+                      ??
+                      x.descripcion
+                      ??
+                      ''
+                    )
+                      .toString()
+                      .trim()
+
+                })
+              )
+
+              .filter(
+                x =>
+                  x.id > 0
+                  &&
+                  x.nombre !== ''
+              )
+
+              .sort(
+                (a, b) =>
+                  a.nombre.localeCompare(
+                    b.nombre
+                  )
+              );
+
+
+          // =====================================================
+          // DEPARTAMENTOS
+          // =====================================================
+
+          const respuestaDepartamentos:
+            any =
+              response.departamentos;
+
+
+          const departamentosData:
+            any[] =
+
+            Array.isArray(
+              respuestaDepartamentos
+            )
+              ?
+              respuestaDepartamentos
+
+              :
+
+              Array.isArray(
+                respuestaDepartamentos?.data
+              )
+                ?
+                respuestaDepartamentos.data
+
+                :
+                [];
+
+
+          this.departamentos =
+            departamentosData
+
+              .filter(
+                x =>
+                  x.estado !== false
+              )
+
+              .map(
+                x => ({
+
+                  id:
+                    Number(
+                      x.idDepartamento
+                      ??
+                      x.id_departamento
+                      ??
+                      x.id
+                    ),
+
+                  nombre:
+                    (
+                      x.nombre
+                      ??
+                      ''
+                    )
+                      .toString()
+                      .trim()
+
+                })
+              )
+
+              .filter(
+                x =>
+                  x.id > 0
+                  &&
+                  x.nombre !== ''
+              )
+
+              .sort(
+                (a, b) =>
+                  a.nombre.localeCompare(
+                    b.nombre
+                  )
+              );
+
+
+          console.log(
+            'LOCALES:',
+            this.locales
+          );
+
+          console.log(
+            'DEPARTAMENTOS:',
+            this.departamentos
+          );
+
+        }
+
+      });
+  }
+
+
+  // =============================================================
+  // BUSCAR EMPLEADOS
+  //
+  // MISMO SERVICIO UTILIZADO EN GASTOS PERSONALES.
+  // =============================================================
+
+  buscarEmpleados(
+    texto: string = ''
+  ): void {
+
+    if (this.cargandoEmpleados) {
+      return;
+    }
+
+
+    this.cargandoEmpleados =
+      true;
+
+
+    this.empleadoFichaService
+      .getBusqueda(
+        texto ?? ''
+      )
+
+      .pipe(
+
+        finalize(() => {
+
+          this.cargandoEmpleados =
+            false;
+
+        })
+
+      )
+
+      .subscribe({
+
+        next: resp => {
+
+          this.empleadosFiltrados =
+            resp.data ?? [];
+
+        },
+
+
+        error: (
+          error:
+            HttpErrorResponse
+        ) => {
+
+          console.error(
+            'ERROR BUSCANDO EMPLEADOS:',
+            error
+          );
+
+
+          this.empleadosFiltrados =
+            [];
+
+        }
+
+      });
+  }
+
+
+  // =============================================================
+  // AL ABRIR EL CAMPO EMPLEADO
+  //
+  // Trae los empleados aunque todavía no escriba.
+  // =============================================================
+
+  abrirBusquedaEmpleado(): void {
+
+    const valor =
       this.form
-        ?.get('tipoListado')
+        .get('empleadoBusqueda')
         ?.value;
 
 
-    if (tipo === 'departamentos') {
+    if (
+      !valor
+      ||
+      typeof valor === 'string'
+    ) {
+
+      this.buscarEmpleados(
+        typeof valor === 'string'
+          ? valor
+          : ''
+      );
+
+    }
+  }
+
+
+  // =============================================================
+  // SELECCIONAR EMPLEADO
+  // =============================================================
+
+  seleccionarEmpleadoBusqueda(
+    empleado:
+      EmpleadoBusquedaResponse
+  ): void {
+
+    if (!empleado) {
+      return;
+    }
+
+
+    this.form.patchValue(
+      {
+
+        idEmpleado:
+          Number(
+            empleado.idEmpleado
+          ),
+
+        empleadoBusqueda:
+          empleado
+
+      },
+      {
+        emitEvent: false
+      }
+    );
+  }
+
+
+  // =============================================================
+  // DISPLAY AUTOCOMPLETE
+  // =============================================================
+
+  displayEmpleado(
+    empleado:
+      EmpleadoBusquedaResponse
+      |
+      string
+      |
+      null
+      |
+      undefined
+  ): string {
+
+    if (!empleado) {
+      return '';
+    }
+
+
+    if (
+      typeof empleado === 'string'
+    ) {
+      return empleado;
+    }
+
+
+    return (
+      empleado.nombreCompleto
+      ??
+      ''
+    );
+  }
+
+
+  // =============================================================
+  // LIMPIAR EMPLEADO
+  // =============================================================
+
+  limpiarBusquedaEmpleado(
+    event?: MouseEvent
+  ): void {
+
+    if (event) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+    }
+
+
+    this.form.patchValue(
+      {
+
+        empleadoBusqueda:
+          '',
+
+        idEmpleado:
+          null
+
+      },
+      {
+        emitEvent: false
+      }
+    );
+
+
+    this.empleadosFiltrados =
+      [];
+  }
+
+
+  // =============================================================
+  // OPCIONES DEL COMBO
+  // =============================================================
+
+  get opcionesFiltro():
+    OpcionFiltro[] {
+
+    if (this.esDepartamentos) {
 
       return this.departamentos;
     }
 
 
-    return this.areas;
+    return this.locales;
   }
 
 
   // =============================================================
-  // LABEL INICIAL
+  // ES DEPARTAMENTO
   // =============================================================
 
-  get labelInicial(): string {
-
-    return this.esDepartamentos
-      ? 'Departamento Inicial'
-      : 'Área Inicial';
-  }
-
-
-  // =============================================================
-  // LABEL FINAL
-  // =============================================================
-
-  get labelFinal(): string {
-
-    return this.esDepartamentos
-      ? 'Departamento Final'
-      : 'Área Final';
-  }
-
-
-  // =============================================================
-  // TIPO ACTUAL
-  // =============================================================
-
-  get esDepartamentos(): boolean {
+  get esDepartamentos():
+    boolean {
 
     return (
       this.form
@@ -233,9 +764,41 @@ export class ReporteListadoGeneralComponent
 
 
   // =============================================================
+  // LABEL INICIAL
+  // =============================================================
+
+  get labelInicial():
+    string {
+
+    return this.esDepartamentos
+
+      ?
+      'Departamento Inicial'
+
+      :
+      'Área Inicial';
+  }
+
+
+  // =============================================================
+  // LABEL FINAL
+  // =============================================================
+
+  get labelFinal():
+    string {
+
+    return this.esDepartamentos
+
+      ?
+      'Departamento Final'
+
+      :
+      'Área Final';
+  }
+
+
+  // =============================================================
   // ACEPTAR
-  //
-  // GENERA LOS DOS PDF.
   // =============================================================
 
   aceptar(): void {
@@ -248,59 +811,152 @@ export class ReporteListadoGeneralComponent
     }
 
 
-    const periodoInicial =
-      this.form
-        .get('periodoInicial')
-        ?.value;
+    const raw =
+      this.form.getRawValue();
 
-    const periodoFinal =
-      this.form
-        .get('periodoFinal')
-        ?.value;
 
+    // ===========================================================
+    // VALIDAR FECHAS
+    // ===========================================================
 
     if (
-      !periodoInicial
+      !raw.periodoInicial
       ||
-      !periodoFinal
-    ) {
-
-      return;
-    }
-
-
-    if (
-      periodoInicial >
-      periodoFinal
+      !raw.periodoFinal
     ) {
 
       alert(
-        'El período final debe ser mayor o igual al período inicial.'
+        'Debe seleccionar el período inicial y final.'
       );
 
       return;
     }
 
 
-    const query =
-      this.construirQuery();
+    if (
+      raw.periodoInicial
+      >
+      raw.periodoFinal
+    ) {
 
+      alert(
+        'El período inicial no puede ser mayor al período final.'
+      );
+
+      return;
+    }
+
+
+    // ===========================================================
+    // VALIDAR RANGO
+    // ===========================================================
+
+    if (
+      raw.idInicial !== null
+      &&
+      raw.idInicial !== undefined
+      &&
+      raw.idFinal !== null
+      &&
+      raw.idFinal !== undefined
+      &&
+      Number(
+        raw.idInicial
+      )
+      >
+      Number(
+        raw.idFinal
+      )
+    ) {
+
+      alert(
+        this.esDepartamentos
+
+          ?
+          'El Departamento Inicial no puede ser mayor al Departamento Final.'
+
+          :
+          'El Área Inicial no puede ser mayor al Área Final.'
+      );
+
+      return;
+    }
+
+
+    // ===========================================================
+    // REQUEST
+    // ===========================================================
+
+    const query:
+      ReporteListadoGeneralQuery =
+      {
+
+        idEmpresa:
+          this.idEmpresa,
+
+        periodoInicial:
+          raw.periodoInicial,
+
+        periodoFinal:
+          raw.periodoFinal,
+
+        tipoListado:
+          this.esDepartamentos
+
+            ?
+            'DEPARTAMENTOS'
+
+            :
+            'AREAS',
+
+        idInicial:
+          raw.idInicial
+          ??
+          null,
+
+        idFinal:
+          raw.idFinal
+          ??
+          null,
+
+        idEmpleado:
+          raw.idEmpleado
+          ??
+          null
+
+      };
+
+
+    console.log(
+      'REQUEST LISTADO GENERAL:',
+      query
+    );
+
+
+    // ===========================================================
+    // GENERAR
+    // ===========================================================
 
     this.generando =
       true;
 
 
-    // ===========================================================
-    // LLAMAR LOS DOS REPORTES
-    // ===========================================================
-
     forkJoin({
+
+      // =========================================================
+      // REPORTE RESUMEN
+      // =========================================================
 
       resumen:
         this.reporteNominaService
           .generarResumenPdf(
             query
           ),
+
+
+      // =========================================================
+      // REPORTE DETALLE
+      // =========================================================
 
       detalle:
         this.reporteNominaService
@@ -309,52 +965,65 @@ export class ReporteListadoGeneralComponent
           )
 
     })
-      .subscribe({
 
-        next: response => {
+      .pipe(
+
+        finalize(() => {
 
           this.generando =
             false;
 
+        })
 
-          // ===============================================
-          // PDF RESUMEN
-          // ===============================================
+      )
+
+      .subscribe({
+
+        next: response => {
+
+          // =====================================================
+          // RESUMEN GENERAL
+          // =====================================================
 
           this.descargarArchivo(
             response.resumen,
-            `Resumen_General_Nomina_${periodoInicial}_${periodoFinal}.pdf`
+
+            `Resumen_General_Nomina_` +
+            `${raw.periodoInicial}_` +
+            `${raw.periodoFinal}.pdf`
           );
 
 
-          // ===============================================
-          // PDF DETALLE
-          // ===============================================
+          // =====================================================
+          // DETALLE
+          // =====================================================
 
           this.descargarArchivo(
             response.detalle,
-            `Listado_General_Nomina_${periodoInicial}_${periodoFinal}.pdf`
+
+            `Listado_General_Nomina_` +
+            `${raw.periodoInicial}_` +
+            `${raw.periodoFinal}.pdf`
           );
 
         },
 
 
         error: (
-          error: HttpErrorResponse
+          error:
+            HttpErrorResponse
         ) => {
 
-          this.generando =
-            false;
-
           console.error(
-            'Error generando reportes:',
+            'ERROR GENERANDO LISTADO GENERAL:',
             error
           );
 
 
-          this.mostrarError(
+          this.mostrarErrorBlob(
             error
           );
+
         }
 
       });
@@ -362,85 +1031,21 @@ export class ReporteListadoGeneralComponent
 
 
   // =============================================================
-  // CONSTRUIR REQUEST
-  // =============================================================
-
-  private construirQuery():
-    ReporteListadoGeneralQuery {
-
-    const values =
-      this.form.value;
-
-
-    const tipoListado:
-      'AREAS' | 'DEPARTAMENTOS' =
-
-      values.tipoListado ===
-      'departamentos'
-
-        ? 'DEPARTAMENTOS'
-
-        : 'AREAS';
-
-
-    const empleado =
-      values.empleado
-        ? Number(
-            values.empleado
-          )
-        : null;
-
-
-    return {
-
-      idEmpresa:
-        this.idEmpresa,
-
-      periodoInicial:
-        values.periodoInicial,
-
-      periodoFinal:
-        values.periodoFinal,
-
-      tipoListado:
-        tipoListado,
-
-      idInicial:
-        values.areaInicial
-        ?? null,
-
-      idFinal:
-        values.areaFinal
-        ?? null,
-
-      idEmpleado:
-        empleado
-        &&
-        !isNaN(empleado)
-
-          ? empleado
-
-          : null
-    };
-  }
-
-
-  // =============================================================
-  // DESCARGAR ARCHIVO
+  // DESCARGAR PDF
   // =============================================================
 
   private descargarArchivo(
-    blob: Blob,
-    nombreArchivo: string
+    archivo: Blob,
+    nombre: string
   ): void {
 
     if (
-      !blob
+      !archivo
       ||
-      blob.size === 0
+      archivo.size === 0
     ) {
 
-      console.error(
+      console.warn(
         'El archivo generado está vacío.'
       );
 
@@ -451,7 +1056,7 @@ export class ReporteListadoGeneralComponent
     const url =
       window.URL
         .createObjectURL(
-          blob
+          archivo
         );
 
 
@@ -466,7 +1071,7 @@ export class ReporteListadoGeneralComponent
       url;
 
     link.download =
-      nombreArchivo;
+      nombre;
 
 
     document.body
@@ -492,14 +1097,12 @@ export class ReporteListadoGeneralComponent
 
 
   // =============================================================
-  // ERROR
-  //
-  // Como responseType es blob, el error también puede venir
-  // como Blob JSON.
+  // ERROR BLOB
   // =============================================================
 
-  private mostrarError(
-    error: HttpErrorResponse
+  private mostrarErrorBlob(
+    error:
+      HttpErrorResponse
   ): void {
 
     if (
@@ -525,15 +1128,16 @@ export class ReporteListadoGeneralComponent
             alert(
               respuesta.message
               ??
-              'Error generando el reporte.'
+              'No se pudo generar el reporte.'
             );
 
           }
           catch {
 
             alert(
-              'Error generando el reporte.'
+              'No se pudo generar el reporte.'
             );
+
           }
 
         };
@@ -553,7 +1157,7 @@ export class ReporteListadoGeneralComponent
       ??
       error.message
       ??
-      'Error generando el reporte.'
+      'No se pudo generar el reporte.'
     );
   }
 
@@ -566,13 +1170,33 @@ export class ReporteListadoGeneralComponent
 
     this.form.reset(
       {
-        periodoInicial: '',
-        periodoFinal: '',
-        empleado: '',
-        areaInicial: null,
-        areaFinal: null,
-        tipoListado: 'areas'
+
+        periodoInicial:
+          '',
+
+        periodoFinal:
+          '',
+
+        empleadoBusqueda:
+          '',
+
+        idEmpleado:
+          null,
+
+        idInicial:
+          null,
+
+        idFinal:
+          null,
+
+        tipoListado:
+          'areas'
+
       }
     );
+
+
+    this.empleadosFiltrados =
+      [];
   }
 }

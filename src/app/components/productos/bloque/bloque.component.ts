@@ -2760,34 +2760,72 @@ export class BloqueComponent implements OnInit {
   }
 
 
+  // generarDescripcionCompuesta(): void {
+  //   this.gridApi.forEachNode((node) => {
+  //     const data = node.data;
+  //     if (data.activo !== true) return; // solo los marcados
+
+  //     const descripcion = (data.descripcion ?? '').toString().trim();
+  //     const marca = (data.marca ?? '').toString().trim();
+  //     const contenido = (data.contenidoNeto ?? '').toString().trim();
+  //     const factor = (data.factor ?? '').toString().trim();
+
+  //     const t = (this.formUV.get('t')?.value ?? '').toString().trim();
+  //     const u = (this.formUV.get('u')?.value ?? '').toString().trim();
+
+  //     // Si marca y contenido están en blanco, unidad también debe ir en blanco
+  //     const unidad =
+  //       (marca === '' && contenido === '')
+  //         ? ''
+  //         : (data.contenidoUM ?? '').toString().trim();
+
+  //     const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
+  //       .replace(/\s+/g, ' ')
+  //       .trim();
+
+  //     node.setDataValue('descripciong', texto);
+  //     this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
+  //   });
+  // }
+
   generarDescripcionCompuesta(): void {
-    this.gridApi.forEachNode((node) => {
-      const data = node.data;
-      if (data.activo !== true) return; // solo los marcados
+  this.gridApi.forEachNode((node) => {
+    const data = node.data;
+    if (data.activo !== true) return; // solo los marcados
 
-      const descripcion = (data.descripcion ?? '').toString().trim();
-      const marca = (data.marca ?? '').toString().trim();
-      const contenido = (data.contenidoNeto ?? '').toString().trim();
-      const factor = (data.factor ?? '').toString().trim();
+    const descripcion = (data.descripcion ?? '').toString().trim();
+    const marca = (data.marca ?? '').toString().trim();
+    const contenido = (data.contenidoNeto ?? '').toString().trim();
+    const factor = (data.factor ?? '').toString().trim();
 
-      const t = (this.formUV.get('t')?.value ?? '').toString().trim();
-      const u = (this.formUV.get('u')?.value ?? '').toString().trim();
+    const t = (this.formUV.get('t')?.value ?? '').toString().trim();
+    const u = (this.formUV.get('u')?.value ?? '').toString().trim();
 
-      // Si marca y contenido están en blanco, unidad también debe ir en blanco
-      const unidad =
-        (marca === '' && contenido === '')
-          ? ''
-          : (data.contenidoUM ?? '').toString().trim();
+    // Si contenidoNeto es 0, no se muestra
+    const contenidoMostrar =
+      contenido === '0' || contenido === '0.0' || contenido === '0.00'
+        ? ''
+        : contenido;
 
-      const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
-        .replace(/\s+/g, ' ')
-        .trim();
+    // Si marca y contenido están en blanco, unidad también debe ir en blanco
+    const unidad =
+      (marca === '' && contenidoMostrar === '')
+        ? ''
+        : (data.contenidoUM ?? '').toString().trim();
 
-      node.setDataValue('descripciong', texto);
-      this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
+    const texto = `${descripcion} ${marca} ${contenidoMostrar} ${unidad} ${t} ${factor} ${u}`
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    node.setDataValue('descripciong', texto);
+
+    this.gridApi.refreshCells({
+      rowNodes: [node],
+      columns: ['descripciong'],
+      force: true
     });
-  }
-
+  });
+}
 
   generarGtin14(): void {
     this.gridApi.forEachNode((node) => {

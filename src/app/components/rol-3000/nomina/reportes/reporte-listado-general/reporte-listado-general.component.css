@@ -67,3 +67,80 @@
     align-items: center;
   }
 }
+.empleado-buscador {
+  position: relative;
+  width: 100%;
+}
+
+.campo-empleado {
+  width: 100%;
+}
+
+.lista-empleados {
+  position: absolute;
+  top: 54px;
+  left: 0;
+  right: 0;
+
+  max-height: 280px;
+  overflow-y: auto;
+
+  background: white;
+
+  border: 1px solid #d8dee9;
+  border-radius: 0 0 4px 4px;
+
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, 0.18);
+
+  z-index: 1000;
+}
+
+.empleado-opcion {
+  padding: 8px 10px;
+
+  cursor: pointer;
+
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.empleado-opcion:hover {
+  background: #f4f7ff;
+}
+
+.empleado-nombre {
+  font-size: 12px;
+
+  display: flex;
+  gap: 4px;
+
+  align-items: center;
+}
+
+.empleado-codigo {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+.empleado-cedula {
+  margin-top: 3px;
+
+  font-size: 10px;
+  color: #7a8494;
+}
+
+.sin-resultados {
+  padding: 12px;
+
+  text-align: center;
+
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.estado-carga {
+  margin: 5px 0 10px;
+
+  font-size: 11px;
+  color: #64748b;
+}

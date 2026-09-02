@@ -2,86 +2,291 @@
 
   <div class="card">
 
-    <h2>Personal Ocupado</h2>
 
-    <!-- FILTROS -->
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
+
+    <div class="page-header">
+
+      <h2>
+        Personal Ocupado
+      </h2>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTROS
+    ====================================================== -->
+
     <div class="filters">
 
-      <mat-form-field appearance="outline">
-        <mat-label>Mes</mat-label>
-        <mat-select [(ngModel)]="mes">
-          <mat-option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
-            {{ m }}
+
+      <!-- MES -->
+
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Mes
+        </mat-label>
+
+
+        <mat-select
+          [(ngModel)]="mes">
+
+          <mat-option
+            *ngFor="let item of meses"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
           </mat-option>
+
         </mat-select>
+
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Año</mat-label>
-        <mat-select [(ngModel)]="anio">
-          <mat-option *ngFor="let y of [2024,2025,2026]" [value]="y">
-            {{ y }}
+
+      <!-- AÑO -->
+
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Año
+        </mat-label>
+
+
+        <mat-select
+          [(ngModel)]="anio">
+
+          <mat-option
+            *ngFor="let item of anios"
+            [value]="item">
+
+            {{ item }}
+
           </mat-option>
+
         </mat-select>
+
       </mat-form-field>
+
+
+      <!-- ===================================================
+           AGRUPACIÓN
+      ==================================================== -->
 
       <div class="radio-group">
-        <label>Agrupar por:</label>
 
-        <mat-radio-group [(ngModel)]="agrupadoPor">
-          <mat-radio-button value="contrato">Contrato</mat-radio-button>
-          <mat-radio-button value="edad">Edad</mat-radio-button>
-          <mat-radio-button value="horas">Horas-Salario</mat-radio-button>
+        <label>
+          Agrupar por:
+        </label>
+
+
+        <mat-radio-group
+
+          [(ngModel)]="agrupadoPor"
+
+          (change)="cambiarAgrupacion()">
+
+
+          <mat-radio-button
+            value="contrato">
+
+            Contrato
+
+          </mat-radio-button>
+
+
+          <mat-radio-button
+            value="edad">
+
+            Edad
+
+          </mat-radio-button>
+
+
+          <mat-radio-button
+            value="horas">
+
+            Horas-Salario
+
+          </mat-radio-button>
+
+
         </mat-radio-group>
+
       </div>
+
+
+      <!-- ===================================================
+           ACCIONES
+      ==================================================== -->
 
       <div class="actions-top">
-        <button mat-flat-button color="primary" (click)="generar()">Generar</button>
-        <button mat-stroked-button (click)="cancelar()">Cancelar</button>
-        <button mat-stroked-button (click)="exportar()">Exportar</button>
+
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="cargando"
+          (click)="generar()">
+
+          <mat-icon>
+            search
+          </mat-icon>
+
+
+          {{
+            cargando
+              ? 'Generando...'
+              : 'Generar'
+          }}
+
+        </button>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="cargando"
+          (click)="cancelar()">
+
+          <mat-icon>
+            refresh
+          </mat-icon>
+
+          Limpiar
+
+        </button>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="
+            cargando
+            ||
+            !hayResultados
+          "
+          (click)="exportar()">
+
+          <mat-icon>
+            table_view
+          </mat-icon>
+
+          Exportar Excel
+
+        </button>
+
+
       </div>
 
     </div>
 
-    <!-- TABLA -->
-    <div class="table-container">
-      <table mat-table [dataSource]="dataSource">
 
-        <ng-container matColumnDef="grupo">
-          <th mat-header-cell *matHeaderCellDef>Grupo</th>
-          <td mat-cell *matCellDef="let row">{{ row.grupo }}</td>
-        </ng-container>
+    <!-- =====================================================
+         CARGANDO
+    ====================================================== -->
 
-        <ng-container matColumnDef="sdh">
-          <th mat-header-cell *matHeaderCellDef>Hombres</th>
-          <td mat-cell *matCellDef="let row">{{ row.sinDiscapacidadH }}</td>
-        </ng-container>
+    <div
+      class="loading-container"
+      *ngIf="cargando">
 
-        <ng-container matColumnDef="sdm">
-          <th mat-header-cell *matHeaderCellDef>Mujeres</th>
-          <td mat-cell *matCellDef="let row">{{ row.sinDiscapacidadM }}</td>
-        </ng-container>
+      <mat-spinner
+        diameter="38">
 
-        <ng-container matColumnDef="cdh">
-          <th mat-header-cell *matHeaderCellDef>Hombres</th>
-          <td mat-cell *matCellDef="let row">{{ row.conDiscapacidadH }}</td>
-        </ng-container>
+      </mat-spinner>
 
-        <ng-container matColumnDef="cdm">
-          <th mat-header-cell *matHeaderCellDef>Mujeres</th>
-          <td mat-cell *matCellDef="let row">{{ row.conDiscapacidadM }}</td>
-        </ng-container>
 
-        <ng-container matColumnDef="ph">
-          <th mat-header-cell *matHeaderCellDef>Permanente</th>
-          <td mat-cell *matCellDef="let row">{{ row.permanenteH }}</td>
-        </ng-container>
+      <span>
+        Generando reporte...
+      </span>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-
-      </table>
     </div>
 
+
+    <!-- =====================================================
+         AG GRID
+    ====================================================== -->
+
+    <div
+      class="grid-container"
+      *ngIf="
+        !cargando
+        &&
+        hayResultados
+      ">
+
+      <ag-grid-angular
+
+        class="ag-theme-alpine"
+
+        style="
+          width: 100%;
+          height: 620px;
+        "
+
+        [rowData]="rowData"
+
+        [columnDefs]="columnDefs"
+
+        [defaultColDef]="defaultColDef"
+
+        [pinnedBottomRowData]="pinnedBottomRowData"
+
+        [pagination]="false"
+
+        [animateRows]="true"
+
+        [enableCellTextSelection]="true"
+
+        (gridReady)="onGridReady($event)">
+
+      </ag-grid-angular>
+
+    </div>
+
+
+    <!-- =====================================================
+         SIN INFORMACIÓN
+    ====================================================== -->
+
+    <div
+      class="empty-state"
+      *ngIf="
+        !cargando
+        &&
+        consultado
+        &&
+        !hayResultados
+      ">
+
+      <mat-icon>
+        search_off
+      </mat-icon>
+
+
+      <strong>
+        Sin información
+      </strong>
+
+
+      <span>
+        {{
+          mensaje
+          ||
+          'No existen registros para el período seleccionado.'
+        }}
+      </span>
+
+    </div>
+
+
   </div>
+
 </div>

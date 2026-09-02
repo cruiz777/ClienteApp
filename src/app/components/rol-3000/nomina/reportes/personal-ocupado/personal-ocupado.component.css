@@ -12,14 +12,14 @@
   padding: 16px;
 }
 
-h2 {
+.page-header h2 {
   color: #123b84;
-  margin-bottom: 16px;
+  margin: 0 0 16px 0;
 }
 
 .filters {
   display: grid;
-  grid-template-columns: 120px 120px 1fr auto;
+  grid-template-columns: 170px 150px 1fr auto;
   gap: 16px;
   align-items: center;
   margin-bottom: 20px;
@@ -28,7 +28,12 @@ h2 {
 .radio-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+}
+
+.radio-group mat-radio-group {
+  display: flex;
+  gap: 15px;
 }
 
 .actions-top {
@@ -36,22 +41,44 @@ h2 {
   gap: 10px;
 }
 
-.table-container {
-  border: 1px solid #dbe3f0;
-  overflow: auto;
-}
-
-table {
+.grid-container {
   width: 100%;
+  overflow: hidden;
+  border: 1px solid #dbe3f0;
+  border-radius: 4px;
 }
 
-.mat-mdc-header-cell {
-  font-size: 11px;
-  font-weight: bold;
-  text-align: center;
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 40px;
 }
 
-.mat-mdc-cell {
-  font-size: 11px;
-  text-align: center;
+.empty-state {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #65748b;
+  gap: 8px;
+}
+
+.empty-state mat-icon {
+  font-size: 42px;
+  width: 42px;
+  height: 42px;
+}
+
+@media (max-width: 1100px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .radio-group,
+  .actions-top {
+    grid-column: 1 / -1;
+  }
 }

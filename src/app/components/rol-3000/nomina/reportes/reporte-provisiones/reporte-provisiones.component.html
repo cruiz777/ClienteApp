@@ -1,84 +1,330 @@
 <div class="reporte-page">
-  <div class="form-card" [formGroup]="form">
-    <h2>Periodo</h2>
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
+
+    <div class="report-header">
+
+      <div>
+
+        <h2>
+          Reporte de Provisiones
+        </h2>
+
+        <p>
+          Consulte las provisiones generadas por período.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTROS
+    ====================================================== -->
 
     <div class="filter-row">
-      <mat-form-field appearance="outline" class="periodo-field">
-        <mat-label>Periodo Inicial</mat-label>
-        <input matInput type="date" formControlName="periodoInicial" />
+
+
+      <!-- ===================================================
+           PERÍODO
+      ==================================================== -->
+
+      <mat-form-field
+        appearance="outline"
+        class="periodo-field">
+
+        <mat-label>
+          Período
+        </mat-label>
+
+
+        <!--
+          El usuario NO escribe la fecha.
+
+          Selecciona año + mes.
+
+          El TS coloca automáticamente
+          el último día del mes.
+        -->
+
+        <input
+          matInput
+          [matDatepicker]="pickerPeriodo"
+          formControlName="periodoInicial"
+          readonly>
+
+
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="pickerPeriodo">
+
+        </mat-datepicker-toggle>
+
+
+        <!--
+          startView multi-year:
+
+          1. Selecciona año
+          2. Selecciona mes
+          3. monthSelected ejecuta seleccionarMes()
+          4. Se coloca último día del mes
+        -->
+
+        <mat-datepicker
+          #pickerPeriodo
+          startView="multi-year"
+          (monthSelected)="
+            seleccionarMes(
+              $event,
+              pickerPeriodo
+            )
+          ">
+
+        </mat-datepicker>
+
+
+        <mat-error
+          *ngIf="
+            form.get('periodoInicial')?.touched
+            &&
+            form.get('periodoInicial')?.invalid
+          ">
+
+          El período es obligatorio.
+
+        </mat-error>
+
       </mat-form-field>
-    </div>
 
-    <div class="table-container">
-      <table mat-table [dataSource]="dataSource" class="custom-table">
 
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef></th>
-          <td mat-cell *matCellDef="let row">{{ row.id }}</td>
-        </ng-container>
+      <!-- ===================================================
+           CONSULTAR
+      ==================================================== -->
 
-        <ng-container matColumnDef="cedula">
-          <th mat-header-cell *matHeaderCellDef>Cédula</th>
-          <td mat-cell *matCellDef="let row">{{ row.cedula }}</td>
-        </ng-container>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="cargando"
+        (click)="aceptar()">
 
-        <ng-container matColumnDef="nombres">
-          <th mat-header-cell *matHeaderCellDef>Nombres</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombres }}</td>
-        </ng-container>
+        <mat-icon>
+          search
+        </mat-icon>
 
-        <ng-container matColumnDef="area">
-          <th mat-header-cell *matHeaderCellDef>Área</th>
-          <td mat-cell *matCellDef="let row">{{ row.area }}</td>
-        </ng-container>
 
-        <ng-container matColumnDef="dias">
-          <th mat-header-cell *matHeaderCellDef>Días</th>
-          <td mat-cell *matCellDef="let row">{{ row.dias ?? '' }}</td>
-        </ng-container>
+        {{
+          cargando
+            ? 'Consultando...'
+            : 'Consultar'
+        }}
 
-        <ng-container matColumnDef="sueldo">
-          <th mat-header-cell *matHeaderCellDef>Sueldo</th>
-          <td mat-cell *matCellDef="let row">{{ row.sueldo ?? '' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="fechaIngreso1">
-          <th mat-header-cell *matHeaderCellDef>Fecha Ingreso 1</th>
-          <td mat-cell *matCellDef="let row">{{ row.fechaIngreso1 }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="fechaSalida1">
-          <th mat-header-cell *matHeaderCellDef>Fecha Salida 1</th>
-          <td mat-cell *matCellDef="let row">{{ row.fechaSalida1 }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="fechaIngreso2">
-          <th mat-header-cell *matHeaderCellDef>Fecha Ingreso 2</th>
-          <td mat-cell *matCellDef="let row">{{ row.fechaIngreso2 }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="fechaSalida2">
-          <th mat-header-cell *matHeaderCellDef>Fecha Salida 2</th>
-          <td mat-cell *matCellDef="let row">{{ row.fechaSalida2 }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-      </table>
-    </div>
-
-    <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
-        Aceptar
       </button>
 
-      <button mat-stroked-button type="button" (click)="exportar()">
-        Exportar
+
+      <!-- ===================================================
+           EXPORTAR EXCEL
+      ==================================================== -->
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="
+          cargando
+          ||
+          !hayResultados
+        "
+        (click)="exportarExcel()">
+
+        <mat-icon>
+          table_view
+        </mat-icon>
+
+        Exportar Excel
+
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
-        Cancelar
+
+      <!-- ===================================================
+           LIMPIAR
+      ==================================================== -->
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="cargando"
+        (click)="cancelar()">
+
+        <mat-icon>
+          refresh
+        </mat-icon>
+
+        Limpiar
+
       </button>
+
     </div>
+
+
+    <!-- =====================================================
+         RESUMEN
+    ====================================================== -->
+
+    <div
+      class="report-summary"
+      *ngIf="hayResultados">
+
+
+      <!-- GENERALES -->
+
+      <div class="summary-item">
+
+        <span>
+          Empleados Generales
+        </span>
+
+        <strong>
+          {{ cantidadGenerales }}
+        </strong>
+
+      </div>
+
+
+      <!-- PASANTES -->
+
+      <div class="summary-item">
+
+        <span>
+          Pasantes / Becarios
+        </span>
+
+        <strong>
+          {{ cantidadPasantes }}
+        </strong>
+
+      </div>
+
+
+      <!-- TOTAL -->
+
+      <div class="summary-item">
+
+        <span>
+          Total Registros
+        </span>
+
+        <strong>
+          {{ totalRegistros }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CARGANDO
+    ====================================================== -->
+
+    <div
+      class="loading-container"
+      *ngIf="cargando">
+
+      <mat-spinner
+        diameter="38">
+
+      </mat-spinner>
+
+
+      <span>
+        Consultando provisiones...
+      </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         AG GRID
+    ====================================================== -->
+
+    <div
+      class="grid-container"
+      *ngIf="
+        !cargando
+        &&
+        hayResultados
+      ">
+
+      <ag-grid-angular
+
+        class="ag-theme-alpine"
+
+        style="
+          width: 100%;
+          height: 620px;
+        "
+
+        [rowData]="rowData"
+
+        [columnDefs]="columnDefs"
+
+        [defaultColDef]="defaultColDef"
+
+        [pinnedBottomRowData]="pinnedBottomRowData"
+
+        [pagination]="true"
+
+        [paginationPageSize]="25"
+
+        [animateRows]="true"
+
+        [enableCellTextSelection]="true"
+
+        (gridReady)="onGridReady($event)">
+
+      </ag-grid-angular>
+
+    </div>
+
+
+    <!-- =====================================================
+         SIN INFORMACIÓN
+    ====================================================== -->
+
+    <div
+      class="empty-state"
+      *ngIf="
+        !cargando
+        &&
+        consultado
+        &&
+        !hayResultados
+      ">
+
+      <mat-icon>
+        search_off
+      </mat-icon>
+
+
+      <strong>
+        No existen provisiones
+      </strong>
+
+
+      <span>
+        No se encontraron registros para el período seleccionado.
+      </span>
+
+    </div>
+
   </div>
+
 </div>

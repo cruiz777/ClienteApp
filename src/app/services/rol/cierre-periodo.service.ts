@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
@@ -70,14 +70,35 @@ export interface CerrarQuincenaRequest {
   tipo: 'Q' | string;
 }
 
+export interface ReportesContablesMensualesResponse {
+  reporteProvision: string | null;
+  reporteResumenMensual: string | null;
+  reporteAsientoMensual: string | null;
+}
+
+/*
+ * Se conserva para no romper imports anteriores.
+ * El flujo nuevo usa ReportesContablesMensualesResponse.
+ */
+export interface ReportesContablesGeneradosResponse
+  extends ReportesContablesMensualesResponse {
+  fechaPeriodo?: string;
+  tieneReportes?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CierrePeriodoService {
-  private readonly cierrePeriodoUrl = environment.nominaUrl + '/CierrePeriodo';
-  private readonly rolNominaUrl = environment.nominaUrl + '/RolNomina';
+  private readonly cierrePeriodoUrl =
+    environment.nominaUrl + '/CierrePeriodo';
 
-  constructor(private http: HttpClient) {}
+  private readonly rolNominaUrl =
+    environment.nominaUrl + '/RolNomina';
+
+  constructor(
+    private readonly http: HttpClient
+  ) {}
 
   validar(
     request: ValidarCierrePeriodoRequest
@@ -183,9 +204,50 @@ export class CierrePeriodoService {
     );
   }
 
-  descargarReportePdf(url: string): Observable<Blob> {
-    return this.http.get(url, {
-      responseType: 'blob'
-    });
+  // ===========================================================
+  // NUEVO:
+  // GENERAR LOS 3 PDF SIN CREAR NI BUSCAR ASIENTOS CONTABLES
+  // ===========================================================
+
+  generarReportes(
+    request: ContabilizarMensualRequest
+  ): Observable<ApiResponse<ReportesContablesMensualesResponse>> {
+    return this.http.post<ApiResponse<ReportesContablesMensualesResponse>>(
+      `${this.cierrePeriodoUrl}/generar-reportes`,
+      request
+    );
+  }
+
+  /*
+   * Se conserva temporalmente si todavía existe el endpoint viejo.
+   * La pantalla ImpresionContabilidad YA NO utiliza este método.
+   */
+  obtenerReportesGenerados(
+    fechaPeriodo: string
+  ): Observable<ApiResponse<ReportesContablesGeneradosResponse>> {
+    const params =
+      new HttpParams()
+        .set(
+          'fechaPeriodo',
+          fechaPeriodo
+        );
+
+    return this.http.get<ApiResponse<ReportesContablesGeneradosResponse>>(
+      `${this.cierrePeriodoUrl}/reportes-generados`,
+      {
+        params
+      }
+    );
+  }
+
+  descargarReportePdf(
+    url: string
+  ): Observable<Blob> {
+    return this.http.get(
+      url,
+      {
+        responseType: 'blob'
+      }
+    );
   }
 }

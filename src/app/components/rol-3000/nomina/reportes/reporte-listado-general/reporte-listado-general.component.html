@@ -5,9 +5,9 @@
     [formGroup]="form">
 
 
-    <!-- ================================================
+    <!-- =========================================
          HEADER
-    ================================================= -->
+    ========================================== -->
 
     <div class="card-header">
 
@@ -18,14 +18,16 @@
     </div>
 
 
-    <!-- ================================================
+    <!-- =========================================
          FILTROS
-    ================================================= -->
+    ========================================== -->
 
     <div class="form-grid">
 
 
-      <!-- PERIODO INICIAL -->
+      <!-- =====================================
+           PERIODO INICIAL
+      ====================================== -->
 
       <mat-form-field
         appearance="outline">
@@ -39,6 +41,7 @@
           type="date"
           formControlName="periodoInicial"
           [disabled]="generando" />
+
 
         <mat-error
           *ngIf="
@@ -54,7 +57,9 @@
       </mat-form-field>
 
 
-      <!-- PERIODO FINAL -->
+      <!-- =====================================
+           PERIODO FINAL
+      ====================================== -->
 
       <mat-form-field
         appearance="outline">
@@ -68,6 +73,7 @@
           type="date"
           formControlName="periodoFinal"
           [disabled]="generando" />
+
 
         <mat-error
           *ngIf="
@@ -83,40 +89,210 @@
       </mat-form-field>
 
 
-      <!-- EMPLEADO -->
+      <!-- =====================================
+           EMPLEADO
+      ====================================== -->
 
       <mat-form-field
-        appearance="outline">
+        appearance="outline"
+        class="campo-empleado">
 
         <mat-label>
-          Empleado
+          Buscar empleado
         </mat-label>
+
+
+        <mat-icon matPrefix>
+          search
+        </mat-icon>
+
 
         <input
           matInput
-          type="number"
-          formControlName="empleado"
-          [disabled]="generando" />
+          type="text"
+          formControlName="empleadoBusqueda"
+          [matAutocomplete]="autoEmpleado"
+          autocomplete="off"
+          placeholder="Código, cédula o nombre"
+          [disabled]="generando"
+          (focus)="abrirBusquedaEmpleado()" />
 
-        <mat-hint>
-          Código del empleado
-        </mat-hint>
+
+        <!-- =================================
+             LIMPIAR EMPLEADO
+        ================================== -->
+
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          *ngIf="
+            form.get('empleadoBusqueda')?.value
+          "
+          (click)="
+            limpiarBusquedaEmpleado(
+              $event
+            )
+          ">
+
+          <mat-icon>
+            close
+          </mat-icon>
+
+        </button>
+
+
+        <!-- =================================
+             AUTOCOMPLETE
+        ================================== -->
+
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="displayEmpleado">
+
+
+          <!-- ===============================
+               CARGANDO
+          ================================ -->
+
+          <mat-option
+            *ngIf="cargandoEmpleados"
+            disabled>
+
+            <div class="opcion-cargando">
+
+              Buscando empleados...
+
+            </div>
+
+          </mat-option>
+
+
+          <!-- ===============================
+               RESULTADOS
+          ================================ -->
+
+          <mat-option
+            *ngFor="
+              let empleado
+              of empleadosFiltrados
+            "
+            [value]="empleado"
+            (onSelectionChange)="
+              $event.isUserInput
+              &&
+              seleccionarEmpleadoBusqueda(
+                empleado
+              )
+            ">
+
+
+            <div class="empleado-opcion">
+
+
+              <!-- ===========================
+                   CÓDIGO + NOMBRE
+              ============================ -->
+
+              <div class="empleado-linea-principal">
+
+
+                <span class="empleado-codigo">
+
+                  {{ empleado.idEmpleado }}
+
+                </span>
+
+
+                <span class="empleado-separador">
+
+                  -
+
+                </span>
+
+
+                <span class="empleado-nombre">
+
+                  {{ empleado.nombreCompleto }}
+
+                </span>
+
+
+              </div>
+
+
+              <!-- ===========================
+                   DOCUMENTO
+              ============================ -->
+
+              <div
+                class="empleado-documento"
+                *ngIf="
+                  empleado.documento
+                ">
+
+                {{ empleado.documento }}
+
+              </div>
+
+
+            </div>
+
+          </mat-option>
+
+
+          <!-- ===============================
+               SIN RESULTADOS
+          ================================ -->
+
+          <mat-option
+            *ngIf="
+              !cargandoEmpleados
+              &&
+              empleadosFiltrados.length === 0
+              &&
+              form.get('empleadoBusqueda')?.value
+            "
+            disabled>
+
+            <div class="sin-resultados">
+
+              No existen empleados
+
+            </div>
+
+          </mat-option>
+
+
+        </mat-autocomplete>
 
       </mat-form-field>
 
 
-      <!-- INICIAL -->
+      <!-- =====================================
+           ÁREA / DEPARTAMENTO INICIAL
+      ====================================== -->
 
       <mat-form-field
         appearance="outline">
 
         <mat-label>
+
           {{ labelInicial }}
+
         </mat-label>
 
+
         <mat-select
-          formControlName="areaInicial"
-          [disabled]="generando">
+          formControlName="idInicial"
+          [disabled]="
+            generando
+            ||
+            cargandoCatalogos
+          ">
+
+
+          <!-- TODAS -->
 
           <mat-option
             [value]="null">
@@ -126,31 +302,49 @@
           </mat-option>
 
 
+          <!-- OPCIONES -->
+
           <mat-option
-            *ngFor="let opcion of opcionesFiltro"
+            *ngFor="
+              let opcion
+              of opcionesFiltro
+            "
             [value]="opcion.id">
 
             {{ opcion.nombre }}
 
           </mat-option>
 
+
         </mat-select>
 
       </mat-form-field>
 
 
-      <!-- FINAL -->
+      <!-- =====================================
+           ÁREA / DEPARTAMENTO FINAL
+      ====================================== -->
 
       <mat-form-field
         appearance="outline">
 
         <mat-label>
+
           {{ labelFinal }}
+
         </mat-label>
 
+
         <mat-select
-          formControlName="areaFinal"
-          [disabled]="generando">
+          formControlName="idFinal"
+          [disabled]="
+            generando
+            ||
+            cargandoCatalogos
+          ">
+
+
+          <!-- TODAS -->
 
           <mat-option
             [value]="null">
@@ -160,30 +354,75 @@
           </mat-option>
 
 
+          <!-- OPCIONES -->
+
           <mat-option
-            *ngFor="let opcion of opcionesFiltro"
+            *ngFor="
+              let opcion
+              of opcionesFiltro
+            "
             [value]="opcion.id">
 
             {{ opcion.nombre }}
 
           </mat-option>
 
+
         </mat-select>
 
       </mat-form-field>
+
 
     </div>
 
 
-    <!-- ================================================
+    <!-- =========================================
+         EMPLEADO SELECCIONADO
+    ========================================== -->
+
+    <div
+      class="empleado-seleccionado"
+      *ngIf="
+        form.get('idEmpleado')?.value
+      ">
+
+      <mat-icon>
+        person
+      </mat-icon>
+
+
+      <div>
+
+        <span class="seleccion-label">
+
+          Empleado seleccionado
+
+        </span>
+
+
+        <strong>
+
+          Código
+          {{ form.get('idEmpleado')?.value }}
+
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================================
          TIPO LISTADO
-    ================================================= -->
+    ========================================== -->
 
     <div class="radio-group">
 
       <mat-radio-group
         formControlName="tipoListado">
 
+
+        <!-- ÁREAS -->
 
         <mat-radio-button
           value="areas"
@@ -194,6 +433,8 @@
         </mat-radio-button>
 
 
+        <!-- DEPARTAMENTOS -->
+
         <mat-radio-button
           value="departamentos"
           [disabled]="generando">
@@ -202,56 +443,91 @@
 
         </mat-radio-button>
 
+
       </mat-radio-group>
 
     </div>
 
 
-    <!-- ================================================
-         GENERANDO
-    ================================================= -->
+    <!-- =========================================
+         CARGANDO CATÁLOGOS
+    ========================================== -->
 
     <div
-      class="generando-container"
-      *ngIf="generando">
+      class="estado-carga"
+      *ngIf="
+        cargandoCatalogos
+      ">
 
-      <mat-spinner
-        diameter="30">
-      </mat-spinner>
-
-      <span>
-        Generando reportes...
-      </span>
+      Cargando áreas y departamentos...
 
     </div>
 
 
-    <!-- ================================================
+    <!-- =========================================
+         GENERANDO
+    ========================================== -->
+
+    <div
+      class="estado-carga"
+      *ngIf="
+        generando
+      ">
+
+      Generando reportes...
+
+    </div>
+
+
+    <!-- =========================================
          ACCIONES
-    ================================================= -->
+    ========================================== -->
 
     <div class="actions">
 
+
+      <!-- GENERAR -->
 
       <button
         mat-flat-button
         color="primary"
         type="button"
-        [disabled]="generando"
+        [disabled]="
+          generando
+          ||
+          cargandoCatalogos
+        "
         (click)="aceptar()">
 
-        <mat-icon
-          *ngIf="!generando">
+        <mat-icon>
           picture_as_pdf
         </mat-icon>
 
-        {{ generando
-          ? 'Generando...'
-          : 'Aceptar'
-        }}
+
+        <span
+          *ngIf="
+            !generando
+          ">
+
+          Generar Reportes
+
+        </span>
+
+
+        <span
+          *ngIf="
+            generando
+          ">
+
+          Generando...
+
+        </span>
+
 
       </button>
 
+
+      <!-- CANCELAR -->
 
       <button
         mat-stroked-button
@@ -266,6 +542,7 @@
         Cancelar
 
       </button>
+
 
     </div>
 
