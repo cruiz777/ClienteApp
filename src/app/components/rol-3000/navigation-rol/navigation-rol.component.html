@@ -266,10 +266,10 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
 
-            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-aviso-nuevo-sueldo-iess']">
               <span *ngIf="isExpanded" class="menu-text">Aviso Nuevo Sueldo</span>
             </a>
-            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-aviso-nuevo-sueldo-iess']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
               <span *ngIf="isExpanded" class="menu-text">Aviso Valores Extras IESS</span>
             </a>
           </mat-expansion-panel>
@@ -303,13 +303,13 @@
           <a mat-list-item [routerLink]="['/rol-3000', 'utilidades']">
             <span *ngIf="isExpanded" class="menu-text">Utilidades</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/generar-ats">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Impuesto a la Renta</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/generar-ats">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Jubilación Patronal</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/generar-ats">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Bono Empleado</span>
           </a>
           </mat-expansion-panel>
@@ -321,19 +321,19 @@
                 <span *ngIf="isExpanded" class="menu-text">Liquidación</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
-            <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Acta de Finiquito</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Reversa de Liquidación</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Reimpresión Liquidación</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Vacaciones</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+          <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Reimpresión de Vacaciones</span>
           </a>
           </mat-expansion-panel>
@@ -355,13 +355,24 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <!-- Subgrupo: Bancos -->
-          
 
-          <a mat-list-item [routerLink]="'/cg-3000/tipocomprobantesri'">
+
+          
+          <!-- Subgrupo: Acumulados -->
+          
+          <a mat-list-item
+            [routerLink]="((menuRol$ | async)?.acumulados) ? ['/rol-3000', 'explorador-nomina'] : null"
+            [class.disabled]="!((menuRol$ | async)?.acumulados)">
             <span *ngIf="isExpanded" class="menu-text">Acumulados</span>
+            <mat-icon *ngIf="!((menuRol$ | async)?.acumulados)" class="lock-icon">lock</mat-icon>
           </a>
 
+          <a mat-list-item
+            [routerLink]="((menuRol$ | async)?.exploradorEmpleados) ? ['/rol-3000', 'explorador-empleados'] : null"
+            [class.disabled]="!((menuRol$ | async)?.exploradorEmpleados)">
+            <span *ngIf="isExpanded" class="menu-text">Explorador Empleados</span>
+            <mat-icon *ngIf="!((menuRol$ | async)?.exploradorEmpleados)" class="lock-icon">lock</mat-icon>
+          </a>
          
 
         </mat-expansion-panel>

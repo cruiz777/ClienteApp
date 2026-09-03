@@ -6,6 +6,9 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { PermissionsService } from 'src/app/services/permission.service'; // 👈 NUEVO
+import { Observable } from 'rxjs'; // 👈 NUEVO
+import { map } from 'rxjs/operators'; // 👈 NUEVO
 
 
 @Component({
@@ -19,9 +22,13 @@ export class NavigationRolComponent implements OnInit{
   isHandset: boolean = false;
   isExpanded: boolean = true;
 
+  // 👇 NUEVO: observable con los permisos del menú de ROL-3000
+  menuRol$!: Observable<any>;
+
   constructor(private breakpointObserver: BreakpointObserver
     , private router: Router,
-    private usuarioService:UsuarioService
+    private usuarioService:UsuarioService,
+    private permissionsService: PermissionsService // 👈 NUEVO
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
@@ -69,6 +76,7 @@ export class NavigationRolComponent implements OnInit{
         // Novedades - Procesos
         procesarVacaciones: permisos.includes('rol-3000.novedades.procesos.periodo-de-vacaciones'),
         exploradorVacaciones: permisos.includes('rol-3000.novedades.procesos.periodo-de-vacaciones'),
+
 
         // Nómina - Roles
         rolMensual: permisos.includes('rol-3000.nomina.roles.rol-mensual'),
@@ -147,8 +155,8 @@ export class NavigationRolComponent implements OnInit{
     //this.router.navigate([ruta]);
   //}
   goTo(ruta: string): void {
-  this.router.navigate(['/sic-3000', ruta]);
-}
+    this.router.navigate(['/rol-3000', ruta]); //corregido: apuntaba a '/sic-3000'
+  }
   salir(): void {
 
     this.router.navigate(['/inicio']).then(() => {
@@ -158,4 +166,3 @@ export class NavigationRolComponent implements OnInit{
   }
 
 }
-

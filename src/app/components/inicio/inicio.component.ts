@@ -141,12 +141,12 @@ export class InicioComponent implements OnInit, OnDestroy {
           case 'sic-3000':
             sistema.tienePermiso = this.tieneAccesoSistema('sic-3000', permisos);
             break;
-          // case 'cg-3000':
-          //   sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
-          //   break;
-          // case 'rol-3000':
-          //   sistema.tienePermiso = this.tieneAccesoSistema('rol-3000', permisos);
-          //   break;
+          case 'cg-3000':
+            sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
+            break;
+          case 'rol-3000':
+            sistema.tienePermiso = this.tieneAccesoSistema('rol-3000', permisos);
+            break;
           case 'seguridades':
             sistema.tienePermiso = this.tieneAccesoSistema('seguridades', permisos);
             break;

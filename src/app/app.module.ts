@@ -42,7 +42,7 @@ import { CheckboxRendererComponents } from './components/utils/grid/checkbox-ren
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UppercaseDirective } from './directives/uppercase.directive';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { ApiKeyInterceptor } from './interceptors/api-key.interceptor';
+// import { ApiKeyInterceptor } from './interceptors/api-key.interceptor';
 import { SecurityInterceptor } from './interceptors/security.interceptor';
 import { SinPermisosComponent } from './guards/sin-permisos.component';
 import { ConfirmPasswordDialogComponent } from './components/utils/messages/confirm-password/confirm-password-dialog.component';
@@ -93,11 +93,11 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy },
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: ApiKeyInterceptor,
-      multi: true
-    },
+    // {
+    //   provide: HTTP_INTERCEPTORS,
+    //   useClass: ApiKeyInterceptor,
+    //   multi: true
+    // },
     {
       provide: HTTP_INTERCEPTORS,
       useClass: SecurityInterceptor,

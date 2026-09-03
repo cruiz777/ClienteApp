@@ -10,23 +10,25 @@
 
   <!-- Sistemas con permisos dinámicos -->
   <div class="product-icons">
-    <div *ngFor="let sistema of sistemas"
-         class="sistema-container"
-         [class.sin-permisos]="!sistema.tienePermiso"
-         [class.con-permisos]="sistema.tienePermiso"
-         (click)="navegarA(sistema, $event)">
+    <ng-container *ngFor="let sistema of sistemas">
+      <div *ngIf="sistema.id !== 'seguridades' || sistema.tienePermiso"
+           class="sistema-container"
+           [class.sin-permisos]="!sistema.tienePermiso"
+           [class.con-permisos]="sistema.tienePermiso"
+           (click)="navegarA(sistema, $event)">
 
-      <img [src]="sistema.imagenInactiva"
-           [alt]="sistema.nombre"
-           class="sistema-icon"
-           [style.cursor]="sistema.tienePermiso ? 'pointer' : 'not-allowed'"
-           [style.opacity]="sistema.tienePermiso ? '1' : '0.4'" />
+        <img [src]="sistema.imagenInactiva"
+             [alt]="sistema.nombre"
+             class="sistema-icon"
+             [style.cursor]="sistema.tienePermiso ? 'pointer' : 'not-allowed'"
+             [style.opacity]="sistema.tienePermiso ? '1' : '0.4'" />
 
-      <!-- Imagen hover (solo se muestra en hover si tiene permisos) -->
-      <img [src]="sistema.imagenActiva"
-           [alt]="sistema.nombre"
-           class="sistema-icon sistema-icon-hover" />
-    </div>
+        <!-- Imagen hover (solo se muestra en hover si tiene permisos) -->
+        <img [src]="sistema.imagenActiva"
+             [alt]="sistema.nombre"
+             class="sistema-icon sistema-icon-hover" />
+      </div>
+    </ng-container>
   </div>
     <!-- NUEVO: Botón de ayuda -->
   <div class="help-button-container">

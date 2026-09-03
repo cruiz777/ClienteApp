@@ -102,6 +102,7 @@ import { PeriodosVacacionesDialogComponent } from './novedades/dialogs/registro-
 import { ImprimirVacacionesDialogComponent } from './novedades/dialogs/imprimir-vacaciones-dialog.component';
 import { VacacionesExploradorComponent } from './novedades/registro-vacaciones/explorador/vacaciones-explorador.component';
 import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/editar/editar-vacacion-dialog.component';
+
 @NgModule({
   declarations: [
     NavigationRolComponent,
@@ -156,7 +157,8 @@ import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/e
     PeriodosVacacionesDialogComponent,
     ImprimirVacacionesDialogComponent,
     VacacionesExploradorComponent,
-    EditarVacacionDialogComponent
+    EditarVacacionDialogComponent    
+v
   ],
   imports: [
     CommonModule,
@@ -204,7 +206,8 @@ import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/e
         RpBancosComponent,
         RpEmpresaComplementariaComponent,
         TipoNominaEspComponent,
-    Rol3000RoutingModule
+        DialogBancoNominaComponent,
+        Rol3000RoutingModule
   ]
 })
 export class Rol3000Module { }

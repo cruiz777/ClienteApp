@@ -854,14 +854,27 @@ Revise la consola para más detalles.`;
     return `https://${w}`;
   }
 
- private sanitizeContactPoint(cp: any[] | undefined): Array<{ email?: string; telephone?: string; website?: string }> {
+private sanitizeContactPoint(
+  cp: any[] | undefined
+): Array<{
+  email?: string;
+  telephone?: string;
+  website?: string;
+}> {
   const list = Array.isArray(cp) ? cp : [];
 
-  const isBad = (v: any) => {
-    const s = (v ?? '').toString().trim();
-    if (!s) return true;
-    const u = s.toUpperCase();
-    return u === 'N/A' || u === 'NULL' || u === 'UNDEFINED';
+  const isBad = (value: any): boolean => {
+    const text = (value ?? '').toString().trim();
+
+    if (!text) return true;
+
+    const upper = text.toUpperCase();
+
+    return (
+      upper === 'N/A' ||
+      upper === 'NULL' ||
+      upper === 'UNDEFINED'
+    );
   };
 
   let email: string | undefined;
@@ -869,28 +882,49 @@ Revise la consola para más detalles.`;
   let website: string | undefined;
 
   for (const item of list) {
-    const e = item?.email;
-    const t = item?.telephone;
-    const w = item?.website;
+    if (!email && !isBad(item?.email)) {
+      email = item.email.toString().trim();
+    }
 
-    if (!email && !isBad(e)) email = e.toString().trim();
-    if (!telephone && !isBad(t)) telephone = t.toString().trim();
-    if (!website && !isBad(w)) website = w.toString().trim();
+    if (!telephone && !isBad(item?.telephone)) {
+      telephone = this.normalizeTelephone(
+        item.telephone.toString()
+      );
+    }
 
-    if (email && telephone && website) break;
+    if (!website && !isBad(item?.website)) {
+      website = item.website.toString().trim();
+    }
+
+    if (email && telephone && website) {
+      break;
+    }
   }
 
   website = this.normalizeWebsite(website);
 
-  // ✅ Retorna SOLO 1 contactPoint (Verified suele aceptar arreglo, pero sin duplicados)
-  const single: any = {};
-  if (email) single.email = email;
-  if (telephone) single.telephone = telephone;
-  if (website) single.website = website;
+  const contactPoint: {
+    email?: string;
+    telephone?: string;
+    website?: string;
+  } = {};
 
-  return Object.keys(single).length ? [single] : [];
+  if (email) {
+    contactPoint.email = email;
+  }
+
+  if (telephone) {
+    contactPoint.telephone = telephone;
+  }
+
+  if (website) {
+    contactPoint.website = website;
+  }
+
+  return Object.keys(contactPoint).length > 0
+    ? [contactPoint]
+    : [];
 }
-
 
 private sanitizeLicensesForVerified(items: ExportLicenseItem[]): ExportLicenseItem[] {
   return (items ?? []).map((it) => {
@@ -944,5 +978,40 @@ private sanitizeLicensesForVerified(items: ExportLicenseItem[]): ExportLicenseIt
   });
 }
 
+
+private normalizeTelephone(telephone?: string): string | undefined {
+  let tel = (telephone ?? '').toString().trim();
+
+  if (!tel) return undefined;
+
+  const upper = tel.toUpperCase();
+
+  if (
+    upper === 'N/A' ||
+    upper === 'NULL' ||
+    upper === 'UNDEFINED'
+  ) {
+    return undefined;
+  }
+
+  // Elimina espacios, guiones, paréntesis y otros caracteres.
+  // Conserva inicialmente solo números y el signo +.
+  tel = tel.replace(/[^\d+]/g, '');
+
+  // Evita signos + repetidos o ubicados en medio.
+  tel = tel.replace(/\+/g, '');
+
+  // VERIFIED requiere formato internacional con +
+  if (tel.startsWith('593')) {
+    tel = `+${tel}`;
+  } else if (tel.startsWith('0')) {
+    // Convierte número nacional ecuatoriano a internacional.
+    tel = `+593${tel.substring(1)}`;
+  } else {
+    tel = `+${tel}`;
+  }
+
+  return tel;
+}
 
 }

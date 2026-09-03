@@ -80,6 +80,7 @@ import { ExportService } from 'src/app/services/export.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { HttpClientModule } from '@angular/common/http';
 import { defineLocale } from 'moment';
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
 
 interface LineaFactura {
   codpro: string | null;
@@ -1815,17 +1816,51 @@ private cargarClienteDetalle(id: number): void {
             );
 
           }),
-          // 3) Generar XML en el servidor
+          // 3) Generar XML en el servidor-----  Sin alerta para descargar PDF factura ACABRERA 17072026
+          // switchMap(() => {
+          //   return this.facturacionService.generarXmlEnServidor(idNota).pipe(
+          //     tap(r => {
+          //       if (r?.success) {
+          //         this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
+          //         // 4) Descargar el PDF
+          //         this.descargarPdf(idNota);
+          //       } else {
+          //         this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
+          //       }
+          //     }),
+          //     catchError(err => {
+          //       console.error('[crearFactura] Error generando XML en el servidor:', err);
+          //       this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
+          //       return of(null);
+          //     })
+          //   );
+          // }),
+          // 3) Generar XML en el servidor con alerta 
           switchMap(() => {
             return this.facturacionService.generarXmlEnServidor(idNota).pipe(
-              tap(r => {
+              switchMap((r: any) => {
                 if (r?.success) {
                   this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
-                  // 4) Descargar el PDF
-                  this.descargarPdf(idNota);
+
+                  //Pregunta antes de descargar (no bloquea el flujo principal)
+                  this.dialog.open(CustomMessageBoxComponent, {
+                    width: '380px',
+                    data: {
+                      title: 'Factura generada',
+                      message: '¿Desea descargar el PDF de la factura?',
+                      type: 'success',
+                      confirmText: 'Descargar',
+                      cancelText: 'Cerrar',
+                      showCancel: true
+                    } as MessageBoxData
+                  }).afterClosed().subscribe(confirmado => {
+                    if (confirmado) this.descargarPdf(idNota);
+                  });
+
                 } else {
                   this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
                 }
+                return of(null);
               }),
               catchError(err => {
                 console.error('[crearFactura] Error generando XML en el servidor:', err);

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from 'src/app/guards/auth.guard';
+import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { NavigationCgComponent } from './navigation-cg/navigation-cg.component';
 import { TipcuentaComponent } from './configuracion/tipcuenta/tipcuenta.component';
 import { InicioCgComponent } from './inicio-cg/inicio-cg.component';
@@ -50,45 +51,250 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: '', redirectTo: 'inicio-cg', pathMatch: 'full' },
+
+      // INICIO - libre, igual que seguridades/inicio y sic-3000/inicio-sic
+      // (no se exige el permiso raíz 'cg-3000' por el bug de backend ya reportado)
       { path: 'inicio-cg', component: InicioCgComponent },
-      { path: 'tipocuenta', component: TipcuentaComponent },
-      { path: 'tipocuentaform', component: TipocuentaFormComponent },
-      { path: 'tiporetencion', component: TipoRetencionComponent },
-      { path: 'tiporetencionform', component: TipoRetencionFormComponent },
-      { path: 'tipocomprobantesri', component: TipoComprobanteSriComponent },
-      { path: 'tipoasiento', component: TipoAsientoComponent },
-      { path: 'fechascontrol', component: FechasControlComponent },
-      { path: 'bancos', component: BancosComponent },
-      { path: 'bancosterceros', component: BancosTercerosComponent },
-      { path: 'bancosempresa', component: BancosEmpresaComponent },
-      { path: 'plancuentas', component: PlanCuentasTreeComponent },
-      { path: 'numeroCheques', component: NumeroChequesListComponent },
-      { path: 'codigoscontables', component: CodigosContablesComponent },
-      { path: 'asientoscontables', component: AsientoFormComponent },
-      { path: 'asientocontable', component: AsientoContableComponent },
-      { path: 'ingresodocumentos', component: FacturasProveedorComponent },
-      { path: 'anticipos', component: AnticipoCgFormComponent },
-      { path: 'diario', component: DiarioMoviminetoListComponent },
-      { path: 'balance', component: BalanceComprobacionComponent },
-      { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
-      { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
-      { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
-      {path: 'cierre-anual',component:CierreContableComponent},
-      {path: 'cierre-mensual',component:CierreMensualComponent},
-      { path: 'conciliacion', component: ConciliacionComponent},
-      { path: 'reversa-conciliacion', component: ReversaConciliacionComponent},
-      { path: 'mayor', component: MayorCuentasListComponent },
-      { path: 'mayor-codigos', component: MayorCodigosListComponent },      
-      { path: 'estado-financiero', component: EstadoFinancieroComponent },
-      { path: 'reporte-compras', component: ReporteComprasComponent },      
-      { path: 'generar-ats', component: GenerarAtsComponent },
-      { path: 'activo-fijo',component:ActivosFijosListComponent},
-      { path: 'activo-fijo/nuevo', component: ActivosFijosFormComponent },
-      { path: 'activo-fijo/editar/:id', component: ActivosFijosFormComponent },
-      { path: 'activo-fijo/depre', component: ReporteDepreciacionComponent },
-      { path: 'activo-fijo/general', component: ReporteGeneralComponent },
-      { path: 'planificacion-pagos', component: PlanificacionPagosComponent },
-         
+
+      // CONFIGURACIÓN
+      {
+        path: 'tipocuenta',
+        component: TipcuentaComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.registro-de-tipo-de-cuenta' }
+      },
+      {
+        path: 'tipocuentaform',
+        component: TipocuentaFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.registro-de-tipo-de-cuenta' }
+      },
+      {
+        path: 'tiporetencion',
+        component: TipoRetencionComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.tipo-de-retenciones' }
+      },
+      {
+        path: 'tiporetencionform',
+        component: TipoRetencionFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.tipo-de-retenciones' }
+      },
+      {
+        path: 'tipocomprobantesri',
+        component: TipoComprobanteSriComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.comprobantes-sri' }
+      },
+      {
+        path: 'tipoasiento',
+        component: TipoAsientoComponent,
+        canActivate: [PermissionGuard],
+        // Nota: 'tipo-documentos' es el único permiso de configuración sin
+        // ruta asignada, y esta era la única ruta sin permiso — por
+        // eliminación es el match más probable. Confirmar con backend.
+        data: { permission: 'cg-3000.configuracion.tipo-documentos' }
+      },
+      {
+        path: 'fechascontrol',
+        component: FechasControlComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.fechas-de-control' }
+      },
+      {
+        path: 'bancos',
+        component: BancosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.bancos' }
+      },
+      {
+        path: 'bancosterceros',
+        component: BancosTercerosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.bancos.bancos-terceros' }
+      },
+      {
+        path: 'bancosempresa',
+        component: BancosEmpresaComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.bancos' }
+      },
+      {
+        path: 'plancuentas',
+        component: PlanCuentasTreeComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.plan-de-cuentas' }
+      },
+      {
+        path: 'numeroCheques',
+        component: NumeroChequesListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.numeracion-de-cheques' }
+      },
+      {
+        path: 'codigoscontables',
+        component: CodigosContablesComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.configuracion.codigos-contables' }
+      },
+
+      // TRANSACCIONES
+      {
+        path: 'asientoscontables',
+        component: AsientoFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.transacciones.transacciones-generales' }
+      },
+      {
+        path: 'asientocontable',
+        component: AsientoContableComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.transacciones.transacciones-generales' }
+      },
+
+      // CUENTAS POR PAGAR
+      {
+        path: 'ingresodocumentos',
+        component: FacturasProveedorComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cuentas-por-pagar.ingreso-documentos.facturas' }
+      },
+      {
+        path: 'anticipos',
+        component: AnticipoCgFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cuentas-por-pagar.pagos-a-proveedores.anticipos-a-proveedores' }
+      },
+      {
+        path: 'pago-proveedores',
+        component: RegistroPagosProveedorComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cuentas-por-pagar.pagos-a-proveedores.pagos-individuales' }
+      },
+      {
+        path: 'liquidacion-compra',
+        component: LiquidacionCompraFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cuentas-por-pagar.ingreso-documentos.liquidaciones-de-compra' }
+      },
+      {
+        path: 'liquidacion-compra-list',
+        component: LiquidacionCompraComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cuentas-por-pagar.ingreso-documentos.liquidaciones-de-compra' }
+      },
+      {
+        path: 'planificacion-pagos',
+        component: PlanificacionPagosComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cuentas-por-pagar.pagos-a-proveedores.planificacion-de-pagos' }
+      },
+
+      // CIERRES
+      {
+        path: 'cierre-anual',
+        component: CierreContableComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cierres.cierre-anual' }
+      },
+      {
+        path: 'cierre-mensual',
+        component: CierreMensualComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.cierres.cierre-mensual' }
+      },
+
+      // BALANCE
+      {
+        path: 'conciliacion',
+        component: ConciliacionComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.conciliacion.conciliacion-bancaria' }
+      },
+      {
+        path: 'reversa-conciliacion',
+        component: ReversaConciliacionComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.conciliacion.reversar-conciliacion' }
+      },
+      {
+        path: 'mayor',
+        component: MayorCuentasListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.balance.mayor-de-cuentas' }
+      },
+      {
+        path: 'mayor-codigos',
+        component: MayorCodigosListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.balance.mayor-de-codigos' }
+      },
+      {
+        path: 'diario',
+        component: DiarioMoviminetoListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.balance.diario-de-movimiento' }
+      },
+      {
+        path: 'balance',
+        component: BalanceComprobacionComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.balance.balance-de-comprobacion' }
+      },
+      {
+        path: 'estado-financiero',
+        component: EstadoFinancieroComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.balance.estados-financieros.estado-financiero' }
+      },
+
+      // ANEXO TRANSACCIONAL (SRI)
+      {
+        path: 'reporte-compras',
+        component: ReporteComprasComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.anexo-transaccional.reporte-de-compras' }
+      },
+      {
+        path: 'generar-ats',
+        component: GenerarAtsComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.anexo-transaccional.generar-ats' }
+      },
+
+      // ACTIVOS FIJOS
+      {
+        path: 'activo-fijo',
+        component: ActivosFijosListComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.activos-fijos.explorador-activos-fijos' }
+      },
+      {
+        path: 'activo-fijo/nuevo',
+        component: ActivosFijosFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.activos-fijos.explorador-activos-fijos' }
+      },
+      {
+        path: 'activo-fijo/editar/:id',
+        component: ActivosFijosFormComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.activos-fijos.explorador-activos-fijos' }
+      },
+      {
+        path: 'activo-fijo/depre',
+        component: ReporteDepreciacionComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.activos-fijos.explorador-activos-fijos' }
+      },
+      {
+        path: 'activo-fijo/general',
+        component: ReporteGeneralComponent,
+        canActivate: [PermissionGuard],
+        data: { permission: 'cg-3000.activos-fijos.explorador-activos-fijos' }
+      },
+
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

@@ -1,54 +1,314 @@
 .reporte-page {
   padding: 24px;
+
   background: #eef2f7;
+
   min-height: 100vh;
+
   box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: flex-start;
 }
+
+
+/* ================================
+   TARJETA
+================================ */
 
 .form-card {
-  background: #ffffff;
-  border: 1px solid #dbe3f0;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  width: 100%;
+
   max-width: 760px;
+
+  background: #ffffff;
+
+  border: 1px solid #dbe3f0;
+
+  border-radius: 10px;
+
+  padding: 20px;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    0 2px 8px
+    rgba(16, 24, 40, 0.08);
 }
 
+
+/* ================================
+   CABECERA
+================================ */
+
+.header-section {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding-bottom: 16px;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+
+.header-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 8px;
+
+  background: #eff6ff;
+
+  color: #1d4ed8;
+}
+
+
+.header-icon mat-icon {
+  font-size: 24px;
+
+  width: 24px;
+  height: 24px;
+}
+
+
 .form-card h2 {
-  margin: 0 0 22px 0;
+  margin: 0;
+
   color: #123b84;
-  font-size: 22px;
+
+  font-size: 21px;
+
   font-weight: 700;
 }
 
-.content-block {
-  min-height: 220px;
+
+.header-section p {
+  margin:
+    4px
+    0
+    0;
+
+  color: #6b7280;
+
+  font-size: 13px;
 }
 
+
+/* ================================
+   CONTENIDO
+================================ */
+
+.content-block {
+  min-height: 180px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+
 .periodo-field {
-  width: 280px;
+  width: 300px;
+
   max-width: 100%;
 }
 
+
+/* ================================
+   BOTONES
+================================ */
+
 .actions {
   display: flex;
+
   justify-content: center;
-  gap: 14px;
-  margin-top: 18px;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding-top: 16px;
+
+  border-top:
+    1px solid #e5e7eb;
+
   flex-wrap: wrap;
 }
 
-::ng-deep .mdc-text-field--outlined {
-  --mdc-outlined-text-field-container-shape: 6px;
+
+.actions button {
+  height: 38px;
+
+  min-width: 145px;
+
+  border-radius: 7px;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 7px;
 }
 
-@media (max-width: 768px) {
+
+.actions button mat-icon {
+  font-size: 18px;
+
+  width: 18px;
+
+  height: 18px;
+
+  line-height: 18px;
+}
+
+
+/* ================================
+   REPORTE
+================================ */
+
+.btn-reporte {
+  color: #b91c1c !important;
+
+  border-color:
+    #ef4444 !important;
+}
+
+
+.btn-reporte mat-icon {
+  color: #dc2626;
+}
+
+
+.btn-reporte:hover:not(:disabled) {
+  background:
+    #fef2f2 !important;
+}
+
+
+/* ================================
+   CANCELAR
+================================ */
+
+.btn-cancelar {
+  color: #475569 !important;
+
+  border-color:
+    #cbd5e1 !important;
+}
+
+
+.btn-cancelar:hover:not(:disabled) {
+  background:
+    #f8fafc !important;
+}
+
+
+/* ================================
+   MATERIAL
+================================ */
+
+::ng-deep
+.mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape:
+    6px;
+}
+
+
+/* ================================
+   SNACKBAR
+================================ */
+
+::ng-deep
+.snackbar-success {
+  --mdc-snackbar-container-color:
+    #16a34a;
+
+  --mdc-snackbar-supporting-text-color:
+    #ffffff;
+}
+
+
+::ng-deep
+.snackbar-warning {
+  --mdc-snackbar-container-color:
+    #f59e0b;
+
+  --mdc-snackbar-supporting-text-color:
+    #111827;
+}
+
+
+::ng-deep
+.snackbar-error {
+  --mdc-snackbar-container-color:
+    #dc2626;
+
+  --mdc-snackbar-supporting-text-color:
+    #ffffff;
+}
+
+
+/* ================================
+   RESPONSIVE
+================================ */
+
+@media (
+  max-width: 768px
+) {
+
+  .reporte-page {
+    padding: 14px;
+  }
+
+
+  .form-card {
+    padding: 16px;
+  }
+
+
   .periodo-field {
     width: 100%;
   }
 
+
   .content-block {
-    min-height: 120px;
+    min-height: 130px;
   }
+
+
+  .actions {
+    flex-direction: column;
+  }
+
+
+  .actions button {
+    width: 100%;
+  }
+
 }

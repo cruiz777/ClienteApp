@@ -7,7 +7,12 @@
       </div>
     </div>
 
-    <button class="btn-close" type="button" (click)="cerrar()">X</button>
+    <button
+  type="button"
+  class="close-button"
+  (click)="salir()">
+  x
+</button>
   </div>
 
   <div *ngIf="cargando" class="loading-box">
@@ -103,18 +108,109 @@
       <strong>$ {{ liquidoRecibir | number:'1.2-2' }}</strong>
     </div>
 
-    <div class="acciones">
-      <button type="button" class="btn secondary" (click)="calcular()" [disabled]="guardando">
-        Calcular
-      </button>
+  <div class="acciones-rol-individual">
 
-      <button type="button" class="btn primary" (click)="grabar(false)" [disabled]="guardando">
+  <!-- ACCIONES SECUNDARIAS -->
+  <div class="acciones-secundarias">
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="btn-accion-secundaria"
+      (click)="imprimirRolIndividual()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+
+      <mat-icon>
+        {{ imprimiendo ? 'hourglass_top' : 'print' }}
+      </mat-icon>
+
+      <span>
+        {{ imprimiendo ? 'Generando...' : 'Imprimir' }}
+      </span>
+    </button>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="btn-accion-secundaria btn-mail"
+      (click)="enviarRolPorCorreo()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+
+      <mat-icon>
+        {{ enviandoCorreo ? 'hourglass_top' : 'mail' }}
+      </mat-icon>
+
+      <span>
+        {{ enviandoCorreo ? 'Enviando...' : 'Mail' }}
+      </span>
+    </button>
+
+  </div>
+
+  <!-- ACCIONES PRINCIPALES -->
+  <div class="acciones-principales">
+
+    <button
+      mat-flat-button
+      type="button"
+      class="btn-calcular"
+      (click)="calcularDesdeBackend()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+      Calcular
+    </button>
+
+    <button
+      mat-flat-button
+      color="primary"
+      type="button"
+      class="btn-grabar"
+      (click)="grabar()"
+      [disabled]="
+        cargando ||
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+
+      <mat-icon *ngIf="!guardando">
+        save
+      </mat-icon>
+
+      <span>
         {{ guardando ? 'Grabando...' : 'Grabar' }}
-      </button>
+      </span>
+    </button>
 
-      <button type="button" class="btn light" (click)="salir()" [disabled]="guardando">
-        Salir
-      </button>
-    </div>
+    <button
+      mat-stroked-button
+      type="button"
+      class="btn-salir"
+      (click)="salir()"
+      [disabled]="
+        guardando ||
+        imprimiendo ||
+        enviandoCorreo
+      ">
+      Salir
+    </button>
+
+  </div>
+
+</div>
   </ng-container>
 </div>

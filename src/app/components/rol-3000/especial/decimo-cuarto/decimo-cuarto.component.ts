@@ -10,7 +10,10 @@ import { LoginUsuarioResponse } from 'src/app/interfaces/responses/usuario-log-r
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
 import { RpTipEmpService } from 'src/app/services/tipo-empleado.service';
 import { TipoNominaEspService } from 'src/app/services/rol/tipo-nomina-esp.service';
-import { DecimosService } from 'src/app/services/rol/decimos.service';
+import {
+  BancoDecimosRequest,
+  DecimosService
+} from 'src/app/services/rol/decimos.service';
 import { RpTipEmpResponse } from 'src/app/interfaces/responses/tipo-empleado-response';
 import { RpRegimenResponse } from 'src/app/interfaces/responses/regimen-response';
 import { RpRegimenService } from 'src/app/services/rol/regimen.service';
@@ -19,19 +22,27 @@ import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/mat
 import { DecimosExportConfig, DecimosExportService } from 'src/app/reports/decimos-export.service';
 import { PeriodosNominaDialogComponent, PeriodosNominaDialogData, PeriodosNominaDialogResult } from '../dialogs/periodos-nomina-dialog.component';
 import { GenerarArchivoPichinchaRequest } from 'src/app/interfaces/requests/generar-archivo-request';
+import {
+  DialogBancoNominaComponent,
+  DialogBancoNominaResult
+} from '../../nomina/dialog-banco-nomina/dialog-banco-nomina.component';
+import { PeriodoNominaResponse } from 'src/app/interfaces/responses/periodo-nomina-response';
+
+
 
 @Component({
   selector: 'app-decimo-cuarto',
   templateUrl: './decimo-cuarto.component.html',
   styleUrls: ['./decimo-cuarto.component.css'],
   providers: [
-      { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
-      {
-        provide: DateAdapter,
-        useClass: MomentDateAdapter,
-        deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS]
-      },
-      { provide: MAT_DATE_FORMATS, useValue: {
+    { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
+    {
+      provide: DateAdapter,
+      useClass: MomentDateAdapter,
+      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS]
+    },
+    {
+      provide: MAT_DATE_FORMATS, useValue: {
         parse: { dateInput: 'DD/MM/YYYY' },
         display: {
           dateInput: 'DD/MM/YYYY',
@@ -39,8 +50,9 @@ import { GenerarArchivoPichinchaRequest } from 'src/app/interfaces/requests/gene
           dateA11yLabel: 'LL',
           monthYearA11yLabel: 'MMMM YYYY'
         }
-      }}
-    ]
+      }
+    }
+  ]
 })
 export class DecimoCuartoComponent implements OnInit {
 
@@ -48,8 +60,9 @@ export class DecimoCuartoComponent implements OnInit {
   form!: FormGroup;
   loading = false;
   grabando = false;
+  procesandoBanco = false;
   periodoLabel = '';
-  mostrarPeriodo = false; 
+  mostrarPeriodo = false;
   // ===== SESIÓN =====
   usuarioActual: LoginUsuarioResponse | null = null;
   idUsuario!: number;
@@ -75,21 +88,21 @@ export class DecimoCuartoComponent implements OnInit {
     { headerName: 'Nombre', field: 'nombreEmpleado', width: 250 },
     { headerName: 'Días', field: 'dias', width: 90, type: 'rightAligned' },
     {
-      headerName: 'Décimo Tercero',
+      headerName: 'Décimo Cuarto',
       field: 'valorDecimo',
       width: 140,
       type: 'rightAligned',
       valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
     },
-    { 
-      headerName: 'Fec. Ingreso', 
-      field: 'fechaIngreso', 
+    {
+      headerName: 'Fec. Ingreso',
+      field: 'fechaIngreso',
       width: 120,
       valueFormatter: (p: ValueFormatterParams) => this.formatFecha(p.value)
     },
-    { 
-      headerName: 'Fec. Salida', 
-      field: 'fechaSalida', 
+    {
+      headerName: 'Fec. Salida',
+      field: 'fechaSalida',
       width: 120,
       valueFormatter: (p: ValueFormatterParams) => this.formatFecha(p.value)
     },
@@ -135,9 +148,9 @@ export class DecimoCuartoComponent implements OnInit {
 
   // ===== SUBTOTALES =====
   totalValorDecimo = 0;
-  totalDescuento   = 0;
+  totalDescuento = 0;
   totalRetJudicial = 0;
-  totalLiquido     = 0;
+  totalLiquido = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -149,8 +162,7 @@ export class DecimoCuartoComponent implements OnInit {
     private tipoNominaService: TipoNominaEspService,
     private decimosService: DecimosService,
     private exportService: DecimosExportService
-
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargarSesion();
@@ -169,9 +181,9 @@ export class DecimoCuartoComponent implements OnInit {
   // ===== FORMULARIO =====
   private inicializarFormulario(): void {
     this.form = this.fb.group({
-      idEmpresa:   [null, Validators.required],
-      idTipEmp:    [null, Validators.required],
-      fechaHasta:  [new Date(), Validators.required],
+      idEmpresa: [null, Validators.required],
+      idTipEmp: [null, Validators.required],
+      fechaHasta: [new Date(), Validators.required],
       idRegimen: [null, Validators.required]
     });
   }
@@ -192,7 +204,7 @@ export class DecimoCuartoComponent implements OnInit {
         if (emp) this.form.patchValue({ idEmpresa: emp.idEmpresa });
       }
     });
-    
+
     // Tipos de empleado solo escoge fijos 
     this.tipEmpService.getAll().subscribe({
       next: (resp) => {
@@ -255,10 +267,10 @@ export class DecimoCuartoComponent implements OnInit {
     this.calcularPeriodoLabel();
     this.mostrarPeriodo = true;
     const fechaHastaRaw = this.form.value.fechaHasta;
-    const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
-                          ? fechaHastaRaw.toDate()
-                          : new Date(fechaHastaRaw);
-    const periodo       = fechaHasta.getFullYear().toString();
+    const fechaHasta = typeof fechaHastaRaw?.toDate === 'function'
+      ? fechaHastaRaw.toDate()
+      : new Date(fechaHastaRaw);
+    const periodo = fechaHasta.getFullYear().toString();
     // Si ya cargué desde DB, recalcula directo sin verificar
     if (this.datosDesdeDB) {
       this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
@@ -268,7 +280,8 @@ export class DecimoCuartoComponent implements OnInit {
     this.decimosService.existe(
       empresaSeleccionada.numPatronal,
       periodo,
-      this.idTipoNomEsp
+      this.idTipoNomEsp,
+      this.form.value.idRegimen
     ).subscribe({
       next: (resp) => {
         if (resp.data) {
@@ -365,16 +378,17 @@ export class DecimoCuartoComponent implements OnInit {
         e => e.idEmpresa === this.form.value.idEmpresa
       );
       const fechaHastaRaw = this.form.value.fechaHasta;
-      const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
-                            ? fechaHastaRaw.toDate()
-                            : new Date(fechaHastaRaw);
+      const fechaHasta = typeof fechaHastaRaw?.toDate === 'function'
+        ? fechaHastaRaw.toDate()
+        : new Date(fechaHastaRaw);
 
       const periodo = new Date(this.form.value.fechaHasta).getFullYear().toString();
 
       this.decimosService.existe(
         empresaSeleccionada!.numPatronal!,
         periodo,
-        this.idTipoNomEsp
+        this.idTipoNomEsp,
+        this.form.value.idRegimen
       ).subscribe({
         next: (resp) => {
           if (resp.data) {
@@ -408,8 +422,9 @@ export class DecimoCuartoComponent implements OnInit {
       idTipoNomEsp: this.idTipoNomEsp,
       forzar,
       idUsuario: this.idUsuario,
-      fechaHasta: fechaHasta.toISOString().split('T')[0], 
-      empleados: this.rowData
+      fechaHasta: fechaHasta.toISOString().split('T')[0],
+      empleados: this.rowData,
+      idRegimen: this.form.value.idRegimen
     }).subscribe({
       next: (resp) => {
         if (resp.type === 'ERROR') {
@@ -439,12 +454,12 @@ export class DecimoCuartoComponent implements OnInit {
     );
 
     const config: DecimosExportConfig = {
-      tipoNomina:   'Décimo Tercero', // cambiar en D14
+      tipoNomina: 'Décimo Cuarto',
       periodoDesde: this.periodoLabel.split('—')[0].trim(),
       periodoHasta: this.periodoLabel.split('—')[1].trim(),
-      periodo:      new Date(this.form.value.fechaHasta).getFullYear().toString(),
-      empresa:      empresaSeleccionada?.nombre ?? '',
-      empleados:    this.rowData
+      periodo: new Date(this.form.value.fechaHasta).getFullYear().toString(),
+      empresa: empresaSeleccionada?.nombre ?? '',
+      empleados: this.rowData
     };
 
     if (formato === 'pdf') {
@@ -467,22 +482,23 @@ export class DecimoCuartoComponent implements OnInit {
     );
 
     const fechaHastaRaw = this.form.value.fechaHasta;
-    const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
-                          ? fechaHastaRaw.toDate()
-                          : new Date(fechaHastaRaw);
+    const fechaHasta = typeof fechaHastaRaw?.toDate === 'function'
+      ? fechaHastaRaw.toDate()
+      : new Date(fechaHastaRaw);
 
     const request: GenerarArchivoPichinchaRequest = {
-      numPatronal:  empresaSeleccionada!.numPatronal!,
-      periodo:      fechaHasta.getFullYear().toString(),
-      idTipoNomEsp: this.idTipoNomEsp
+      numPatronal: empresaSeleccionada!.numPatronal!,
+      periodo: fechaHasta.getFullYear().toString(),
+      idTipoNomEsp: this.idTipoNomEsp,
+      idRegimen: this.form.value.idRegimen 
     };
 
     this.decimosService.generarArchivoPichincha(request).subscribe({
       next: (blob) => {
-        const url      = window.URL.createObjectURL(blob);
-        const a        = document.createElement('a');
-        a.href         = url;
-        a.download     = `ARCHIVO_DECIMO_${request.periodo}_PICHINCHA.txt`;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ARCHIVO_DECIMO_${request.periodo}_PICHINCHA.txt`;
         a.click();
         window.URL.revokeObjectURL(url);
       },
@@ -495,7 +511,7 @@ export class DecimoCuartoComponent implements OnInit {
     this.rowData = [];
     this.datosDesdeDB = false;
     this.mostrarPeriodo = false;
-    this.periodoLabel   = '';
+    this.periodoLabel = '';
     this.gridApi?.setGridOption('rowData', []);
     this.calcularSubtotales();
 
@@ -504,10 +520,10 @@ export class DecimoCuartoComponent implements OnInit {
   }
   // ===== SUBTOTALES =====
   private calcularSubtotales(): void {
-    this.totalValorDecimo = this.rowData.reduce((s, r) => s + (r.valorDecimo  ?? 0), 0);
-    this.totalDescuento   = this.rowData.reduce((s, r) => s + (r.descuento    ?? 0), 0);
-    this.totalRetJudicial = this.rowData.reduce((s, r) => s + (r.retJudicial  ?? 0), 0);
-    this.totalLiquido     = this.rowData.reduce((s, r) => s + (r.liquidoARecibir ?? 0), 0);
+    this.totalValorDecimo = this.rowData.reduce((s, r) => s + (r.valorDecimo ?? 0), 0);
+    this.totalDescuento = this.rowData.reduce((s, r) => s + (r.descuento ?? 0), 0);
+    this.totalRetJudicial = this.rowData.reduce((s, r) => s + (r.retJudicial ?? 0), 0);
+    this.totalLiquido = this.rowData.reduce((s, r) => s + (r.liquidoARecibir ?? 0), 0);
   }
 
   private calcularLiquido(row: DecimosEmpleadoResponse): number {
@@ -519,7 +535,13 @@ export class DecimoCuartoComponent implements OnInit {
     if (value == null) return '$0.00';
     return '$' + Number(value).toFixed(2);
   }
-
+  private construirFechaHastaDesdePeriodo(p: PeriodoNominaResponse): Date {
+    const esSierra = p.regimen?.toUpperCase().includes('SIERRA') ?? true;
+    const anio = parseInt(p.periodo, 10);
+    return esSierra
+      ? new Date(anio, 6, 31)   // 31 de julio (mes 6 = julio, 0-indexed)
+      : new Date(anio, 1, 28);  // 28 de febrero (mes 1 = febrero, 0-indexed)
+  }
   private showError(message: string): void {
     this.dialog.open(CustomMessageBoxComponent, {
       data: { title: 'Error', message, type: 'error', confirmText: 'Aceptar', showCancel: false } as MessageBoxData
@@ -531,22 +553,22 @@ export class DecimoCuartoComponent implements OnInit {
       data: { title: 'Éxito', message, type: 'success', confirmText: 'Aceptar', showCancel: false } as MessageBoxData
     });
   }
-  
+
   private calcularPeriodoLabel(): void {
     const fechaRaw = this.form.value.fechaHasta;
     if (!fechaRaw) return;
 
-    const fechaFin  = typeof fechaRaw?.toDate === 'function'
+    const fechaFin = typeof fechaRaw?.toDate === 'function'
       ? fechaRaw.toDate()
       : new Date(fechaRaw);
 
-    const año       = fechaFin.getFullYear();
+    const año = fechaFin.getFullYear();
     const regimenId = this.form.value.idRegimen;
-    const regimen   = this.regimenes.find(r => r.id_regimen === regimenId);
-    const esSierra  = regimen?.descripcion.toUpperCase().includes('SIERRA') ?? true;
+    const regimen = this.regimenes.find(r => r.id_regimen === regimenId);
+    const esSierra = regimen?.descripcion.toUpperCase().includes('SIERRA') ?? true;
     const mesInicio = esSierra ? 8 : 3;
     const añoInicio = fechaFin.getMonth() + 1 >= mesInicio ? año : año - 1;
-    const inicio    = new Date(añoInicio, mesInicio - 1, 1);
+    const inicio = new Date(añoInicio, mesInicio - 1, 1);
 
     this.periodoLabel = `${this.formatFechaDate(inicio)} — ${this.formatFechaDate(fechaFin)}`;
   }
@@ -575,18 +597,19 @@ export class DecimoCuartoComponent implements OnInit {
     this.dialog.open(PeriodosNominaDialogComponent, {
       width: '700px',
       data: {
-        numPatronal:  empresaSeleccionada.numPatronal,
+        numPatronal: empresaSeleccionada.numPatronal,
         idTipoNomEsp: this.idTipoNomEsp
       } as PeriodosNominaDialogData
     }).afterClosed().subscribe((result: PeriodosNominaDialogResult | null) => {
       if (!result?.seleccionado) return;
 
       const p = result.seleccionado;
-      
+
       this.decimosService.recuperar(
         empresaSeleccionada.numPatronal!,
         p.periodo,
-        p.idTipoNomEsp
+        p.idTipoNomEsp,
+        p.idRegimen
       ).subscribe({
         next: (resp) => {
           if (resp.type === 'ERROR') {
@@ -594,15 +617,20 @@ export class DecimoCuartoComponent implements OnInit {
             return;
           }
 
-          this.rowData     = resp.data ?? [];
+          this.rowData = resp.data ?? [];
           this.datosDesdeDB = true;
           this.mostrarPeriodo = true;
+
+          // Sincronizar el formulario con el régimen y período cargados
+          this.form.patchValue({
+            idRegimen: p.idRegimen,
+            fechaHasta: this.construirFechaHastaDesdePeriodo(p)
+          });
 
           const esSierra = p.regimen?.toUpperCase().includes('SIERRA') ?? true;
           this.periodoLabel = esSierra
             ? `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`
             : `01/03/${parseInt(p.periodo) - 1} — 28/02/${p.periodo}`;
-          // Para D14 Sierra: this.periodoLabel = `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`;
 
           this.gridApi?.setGridOption('rowData', this.rowData);
           this.calcularSubtotales();
@@ -611,5 +639,285 @@ export class DecimoCuartoComponent implements OnInit {
       });
     });
   }
+  abrirModalBanco(): void {
+    if (!this.datosDesdeDB || !this.rowData.length) {
+      this.mostrarAdvertencia(
+        'Primero debe cargar información grabada del décimo cuarto.'
+      );
+      return;
+    }
 
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(
+      this.form.get('fechaHasta')?.value
+    );
+
+    if (!fechaPeriodo) {
+      this.mostrarAdvertencia('Debe seleccionar el periodo.');
+      return;
+    }
+
+    const dialogRef = this.dialog.open<
+      DialogBancoNominaComponent,
+      any,
+      DialogBancoNominaResult | null
+    >(
+      DialogBancoNominaComponent,
+      {
+        width: '470px',
+        disableClose: true,
+        data: {
+          fechaPeriodo,
+          idUsuario: this.usuarioActual?.id_usuario ?? 1,
+          origen: 'DECIMO_CUARTO'
+        }
+      }
+    );
+
+    dialogRef.componentInstance.archivoSolicitado.subscribe(
+      (result: DialogBancoNominaResult) => {
+        this.generarArchivoBancoDesdeModal(result);
+      }
+    );
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result?.accion === 'REPORTE') {
+        this.imprimirReporteFormaPagoDesdeModal(result);
+      }
+    });
+  }
+
+  private generarArchivoBancoDesdeModal(
+    result: DialogBancoNominaResult
+  ): void {
+    const request = this.construirRequestBanco(result);
+
+    if (!request) {
+      return;
+    }
+
+    this.procesandoBanco = true;
+
+    this.decimosService.generarArchivoBanco(request).subscribe({
+      next: (resp) => {
+        this.procesandoBanco = false;
+
+        const esExito =
+          (resp.type ?? '').toString().toUpperCase() === 'SUCCESS';
+
+        if (!esExito || !resp.data?.procesado) {
+          this.mostrarAdvertencia(
+            resp.message ??
+            resp.data?.mensaje ??
+            'No se pudo generar el archivo bancario.'
+          );
+          return;
+        }
+
+        if (!resp.data.contenidoBase64 || !resp.data.nombreArchivo) {
+          this.mostrarAdvertencia(
+            'El backend no devolvió el contenido del archivo bancario.'
+          );
+          return;
+        }
+
+        this.descargarArchivoBancoBase64(
+          resp.data.contenidoBase64,
+          resp.data.nombreArchivo,
+          resp.data.contentType || 'text/plain'
+        );
+
+        this.mostrarExito(
+          resp.data.mensaje ??
+          'Archivo bancario generado correctamente.'
+        );
+      },
+      error: (err: any) => {
+        this.procesandoBanco = false;
+        console.error('Error generando archivo bancario:', err);
+
+        this.mostrarError(
+          err?.error?.message ??
+          err?.error?.title ??
+          'Error al generar el archivo bancario.'
+        );
+      }
+    });
+  }
+
+  private imprimirReporteFormaPagoDesdeModal(
+    result: DialogBancoNominaResult
+  ): void {
+    const request = this.construirRequestBanco(result);
+
+    if (!request) {
+      return;
+    }
+
+    this.procesandoBanco = true;
+
+    this.decimosService.imprimirReporteFormaPago(request).subscribe({
+      next: (blob: Blob) => {
+        this.procesandoBanco = false;
+
+        if (!blob || blob.size === 0) {
+          this.mostrarAdvertencia('El reporte se generó vacío.');
+          return;
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const ventana = window.open(url, '_blank');
+
+        if (!ventana) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Reporte_Decimo_Cuarto_${request.periodo}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+        }, 30000);
+      },
+      error: (err: any) => {
+        this.procesandoBanco = false;
+        console.error('Error generando reporte bancario:', err);
+
+        this.mostrarError(
+          err?.error?.message ??
+          err?.error?.title ??
+          'Error al generar el reporte de forma de pago.'
+        );
+      }
+    });
+  }
+
+  private construirRequestBanco(
+    result: DialogBancoNominaResult
+  ): BancoDecimosRequest | null {
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === Number(this.form.get('idEmpresa')?.value)
+    );
+
+    if (!empresaSeleccionada?.numPatronal) {
+      this.mostrarAdvertencia(
+        'La empresa seleccionada no tiene número patronal.'
+      );
+      return null;
+    }
+
+    const idTipEmp = Number(this.form.get('idTipEmp')?.value);
+    const idRegimen = Number(this.form.get('idRegimen')?.value);
+    const codBanco = Number(result.codBanco);
+
+    if (!idTipEmp || !idRegimen || !codBanco || !this.idTipoNomEsp) {
+      this.mostrarAdvertencia(
+        'Faltan datos obligatorios para generar el proceso bancario.'
+      );
+      return null;
+    }
+
+    return {
+      numPatronal: empresaSeleccionada.numPatronal,
+      periodo: result.fechaPeriodo,
+      codBanco,
+      descripcionPago: result.descripcionPago ?? '',
+      idTipEmp,
+      idRegimen,
+      idTipoNomEsp: this.idTipoNomEsp,
+      idUsuario: Number(result.idUsuario || this.idUsuario || 1)
+    };
+  }
+
+  private descargarArchivoBancoBase64(
+    contenidoBase64: string,
+    nombreArchivo: string,
+    contentType: string = 'text/plain'
+  ): void {
+    const byteCharacters = atob(contenidoBase64);
+    const byteNumbers = new Array<number>(byteCharacters.length);
+
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+
+    const blob = new Blob(
+      [new Uint8Array(byteNumbers)],
+      { type: contentType }
+    );
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = nombreArchivo;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(url);
+  }
+
+  private formatearFechaYYYYMMDD(value: any): string {
+    if (!value) {
+      return '';
+    }
+
+    if (typeof value?.format === 'function') {
+      return value.format('YYYY-MM-DD');
+    }
+
+    if (typeof value?.toDate === 'function') {
+      value = value.toDate();
+    }
+
+    if (typeof value === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+        return value.substring(0, 10);
+      }
+
+      const partes = value.split('/');
+
+      if (partes.length === 3) {
+        return `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+      }
+
+      return '';
+    }
+
+    const fecha = value as Date;
+
+    if (Number.isNaN(fecha.getTime())) {
+      return '';
+    }
+
+    const anio = fecha.getFullYear();
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dia = String(fecha.getDate()).padStart(2, '0');
+
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  private mostrarAdvertencia(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '420px',
+      data: {
+        title: 'Advertencia',
+        message: mensaje,
+        type: 'warning',
+        confirmText: 'Aceptar',
+        showCancel: false
+      } as MessageBoxData
+    });
+  }
+
+  private mostrarExito(mensaje: string): void {
+    this.showSuccess(mensaje);
+  }
+
+  private mostrarError(mensaje: string): void {
+    this.showError(mensaje);
+  }
 }

@@ -108,11 +108,29 @@
             <div class="form-grid-2">
               <mat-form-field appearance="outline">
                 <mat-label>Ciudad</mat-label>
-                <mat-select formControlName="ciudad">
-                  <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id_ciudad">
-                    {{ ciudad.ciudad }}
+
+                <input matInput type="text" [formControl]="ciudadCtrl" [matAutocomplete]="autoCiudad"
+                  placeholder="Buscar ciudad, cantón o provincia">
+
+                <button mat-icon-button matSuffix type="button" *ngIf="ciudadCtrl.value" (click)="limpiarCiudad()">
+
+                  <mat-icon>close</mat-icon>
+                </button>
+
+                <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad">
+
+                  <mat-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad" (onSelectionChange)="
+        $event.isUserInput && seleccionarCiudad(ciudad)
+      ">
+
+                    <strong>{{ ciudad.ciudad }}</strong>
+
+                    <span>
+                      - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                    </span>
                   </mat-option>
-                </mat-select>
+
+                </mat-autocomplete>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
@@ -162,11 +180,30 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Ciudad de Trabajo</mat-label>
-              <mat-select formControlName="ciudadTrabajo">
-                <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id_ciudad">
-                  {{ ciudad.ciudad }}
+
+              <input matInput type="text" [formControl]="ciudadTrabajoCtrl" [matAutocomplete]="autoCiudadTrabajo"
+                placeholder="Buscar ciudad, cantón o provincia">
+
+              <button mat-icon-button matSuffix type="button" *ngIf="ciudadTrabajoCtrl.value"
+                (click)="limpiarCiudadTrabajo()">
+
+                <mat-icon>close</mat-icon>
+              </button>
+
+              <mat-autocomplete #autoCiudadTrabajo="matAutocomplete" [displayWith]="displayCiudad">
+
+                <mat-option *ngFor="let ciudad of ciudadesTrabajoFiltradas" [value]="ciudad" (onSelectionChange)="
+        $event.isUserInput && seleccionarCiudadTrabajo(ciudad)
+      ">
+
+                  <strong>{{ ciudad.ciudad }}</strong>
+
+                  <span>
+                    - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                  </span>
                 </mat-option>
-              </mat-select>
+
+              </mat-autocomplete>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -234,7 +271,7 @@
           <div>
             <mat-form-field appearance="outline" class="empleado-nombre-box">
               <mat-label>Empleado</mat-label>
-              <input matInput formControlName="empleado">
+              <input matInput formControlName="empleado" readonly>
             </mat-form-field>
 
             <div class="card-section">
@@ -354,18 +391,16 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-  <mat-label>Empresa Complementaria</mat-label>
+                  <mat-label>Empresa Complementaria</mat-label>
 
-  <mat-select formControlName="rucEmpresaComplementaria">
-    <mat-option [value]="null">-- NINGUNA --</mat-option>
+                  <mat-select formControlName="rucEmpresaComplementaria">
+                    <mat-option [value]="null">-- NINGUNA --</mat-option>
 
-    <mat-option
-      *ngFor="let emp of empresaComplementaria"
-      [value]="emp.idEmpresaComplementaria">
-      {{ emp.empresa }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+                    <mat-option *ngFor="let emp of empresaComplementaria" [value]="emp.idEmpresaComplementaria">
+                      {{ emp.empresa }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Libreta Militar</mat-label>
@@ -379,7 +414,7 @@
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
           <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
           <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
           <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
           <button mat-stroked-button (click)="cancelar()">Cancelar</button>
@@ -394,7 +429,7 @@
 
         <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
-          <input matInput formControlName="empleado">
+          <input matInput formControlName="empleado" readonly>
         </mat-form-field>
 
         <div class="grid-2">
@@ -453,6 +488,14 @@
             </div>
           </div>
         </div>
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
       </div>
     </mat-tab>
 
@@ -489,7 +532,7 @@
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
           <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
           <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
           <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
           <button mat-stroked-button (click)="cancelar()">Cancelar</button>
@@ -522,7 +565,7 @@
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
           <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
           <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
           <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
           <button mat-stroked-button (click)="cancelar()">Cancelar</button>
@@ -537,7 +580,7 @@
 
         <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
-          <input matInput formControlName="empleado">
+          <input matInput formControlName="empleado" readonly>
         </mat-form-field>
 
         <div class="grid-toolbar">
@@ -556,7 +599,7 @@
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
           <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
           <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
           <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
           <button mat-stroked-button (click)="cancelar()">Cancelar</button>
@@ -591,7 +634,7 @@
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
           <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
           <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
           <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
           <button mat-stroked-button (click)="cancelar()">Cancelar</button>
@@ -606,7 +649,7 @@
 
         <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
-          <input matInput formControlName="empleado">
+          <input matInput formControlName="empleado" readonly>
         </mat-form-field>
 
         <div class="grid-2">
@@ -683,17 +726,15 @@
                   <input matInput formControlName="condicionTrabajador">
                 </mat-form-field>
 
-            <mat-form-field appearance="outline">
-  <mat-label>Tipo de Discapacidad</mat-label>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Discapacidad</mat-label>
 
-  <mat-select formControlName="idTipoDiscapacidad">
-    <mat-option
-      *ngFor="let item of tiposDiscapacidad"
-      [value]="item.idTipoDiscapacidad">
-      {{ item.descripcion }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+                  <mat-select formControlName="idTipoDiscapacidad">
+                    <mat-option *ngFor="let item of tiposDiscapacidad" [value]="item.idTipoDiscapacidad">
+                      {{ item.descripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Porcentaje de Discapacidad</mat-label>
@@ -731,7 +772,7 @@
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
           <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
           <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
           <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
           <button mat-stroked-button (click)="cancelar()">Cancelar</button>

@@ -93,10 +93,15 @@ export class PermissionsService {
     '/codbar/validacion/validacionsri': 'codbar.validacion.validacion-sri',
     '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licencias-verified',
     '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos-verified',
-
+    '/codbar/validacion/editar-licenses': 'codbar.validacion.inactivar-licencias-verified',
+    '/codbar/validacion/eliminar-productos': 'codbar.validacion.eliminar-productos-verified',
+    '/codbar/validacion/eliminar-bloque': 'codbar.validacion.borrar-en-bloque',
     // Reportes
     '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-clientes',
     '/codbar/reportes/gerencia': 'codbar.reportes.reporte-gerencia-clientes',
+    '/codbar/reportes/gerenciate': 'codbar.reportes.reporte-gerencia-empresas',
+    '/codbar/reportes/gerenciafactuacion': 'codbar.reportes.reporte-facturacion',
+    '/codbar/reportes/datamatrix': 'codbar.validacion.datamatrix',
 
     // Configuración
     '/codbar/configuracion/localizacion-establecimiento': 'codbar.configuracion.localizacion-establecimiento',
@@ -455,12 +460,18 @@ export class PermissionsService {
             modulo: permisos.includes('codbar.validacion') || permisos.includes('codbar'),
             validacionSri: permisos.includes('codbar.validacion.validacion-sri'),
             validacionLicenses: permisos.includes('codbar.validacion.validacion-licencias-verified'),
-            validacionProductos: permisos.includes('codbar.validacion.validacion-productos-verified')
+            validacionProductos: permisos.includes('codbar.validacion.validacion-productos-verified'),
+            inactivarLicencias: permisos.includes('codbar.validacion.inactivar-licencias-verified'),
+            eliminarProductos: permisos.includes('codbar.validacion.eliminar-productos-verified'),
+            borrarEnBloque: permisos.includes('codbar.validacion.borrar-en-bloque')
           },
           reportes: {
             modulo: permisos.includes('codbar.reportes') || permisos.includes('codbar'),
             exploradorCliente: permisos.includes('codbar.reportes.explorador-clientes'),
-            gerencia: permisos.includes('codbar.reportes.reporte-gerencia-clientes')
+            gerencia: permisos.includes('codbar.reportes.reporte-gerencia-clientes'),
+            gerenciaEmpresas: permisos.includes('codbar.reportes.reporte-gerencia-empresas'),
+            reporteFacturacion: permisos.includes('codbar.reportes.reporte-facturacion'),
+            datamatrix: permisos.includes('codbar.validacion.datamatrix')
           },
           configuracion: {
             modulo: permisos.includes('codbar.configuracion') || permisos.includes('codbar'),

@@ -809,3 +809,27 @@ ag-grid-angular {
     margin-top: 12px;
   }
 }
+
+.grid-bottom {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.grid-bottom ag-grid-angular {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.grid-bottom .ag-root-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.grid-bottom .ag-center-cols-viewport,
+.grid-bottom .ag-header-viewport {
+  overflow-x: hidden !important;
+}

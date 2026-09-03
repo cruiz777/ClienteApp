@@ -1,13 +1,19 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  Component,
+  OnInit
+} from '@angular/core';
 
-interface Banco {
-  id: number;
-  codigo: string;
-  cuentaCorriente: string;
-  cuentaContable: string;
-  nombreBanco: string;
-}
+import {
+  RpBancosService
+} from 'src/app/services/rol/bancos-rol.service';
+
+import {
+  RpBancosResponse
+} from 'src/app/interfaces/responses/bancos-rol-response';
+
+import {
+  ApiResponse
+} from 'src/app/interfaces/responses/api-response';
 
 @Component({
   selector: 'app-banco-rol',
@@ -15,136 +21,52 @@ interface Banco {
   styleUrls: ['./banco-rol.component.css']
 })
 export class BancoRolComponent implements OnInit {
-  form!: FormGroup;
 
   displayedColumns: string[] = [
-    'codigo',
-    'cuentaCorriente',
-    'cuentaContable',
-    'nombreBanco'
+    'codban',
+    'desban',
+    'codcue',
+    'ctacontabilidad'
   ];
 
-  bancos: Banco[] = [];
-  bancoSeleccionadoId: number | null = null;
+  bancos: RpBancosResponse[] = [];
 
-  nombresBanco: string[] = [
-    'Banco Pichincha',
-    'Banco Guayaquil',
-    'Produbanco',
-    'Banco del Pacífico',
-    'Cooperativa JEP'
-  ];
+  cargando = false;
+  mensajeError = '';
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private readonly rpBancosService: RpBancosService
+  ) {}
 
   ngOnInit(): void {
-    this.inicializarFormulario();
-    this.cargarMock();
+    this.cargarBancos();
   }
 
-  inicializarFormulario(): void {
-    this.form = this.fb.group({
-      id: [0],
-      codigo: ['', Validators.required],
-      cuentaCorriente: [''],
-      cuentaContable: [''],
-      nombreBanco: ['', Validators.required]
+  cargarBancos(): void {
+    this.cargando = true;
+    this.mensajeError = '';
+
+    this.rpBancosService.getAll().subscribe({
+      next: (
+        resp: ApiResponse<RpBancosResponse[]>
+      ) => {
+        this.bancos = resp.data ?? [];
+        this.cargando = false;
+      },
+
+      error: (err: any) => {
+        console.error(
+          'Error al cargar bancos:',
+          err
+        );
+
+        this.bancos = [];
+        this.cargando = false;
+
+        this.mensajeError =
+          err?.error?.message ??
+          'No se pudo cargar el listado de bancos.';
+      }
     });
-  }
-
-  cargarMock(): void {
-    this.bancos = [
-      {
-        id: 1,
-        codigo: 'BAN001',
-        cuentaCorriente: '2100012458',
-        cuentaContable: '1.01.01.001',
-        nombreBanco: 'Banco Pichincha'
-      },
-      {
-        id: 2,
-        codigo: 'BAN002',
-        cuentaCorriente: '9988776655',
-        cuentaContable: '1.01.01.002',
-        nombreBanco: 'Banco Guayaquil'
-      },
-      {
-        id: 3,
-        codigo: 'BAN003',
-        cuentaCorriente: '4455667788',
-        cuentaContable: '1.01.01.003',
-        nombreBanco: 'Produbanco'
-      }
-    ];
-  }
-
-  seleccionarBanco(item: Banco): void {
-    this.bancoSeleccionadoId = item.id;
-    this.form.patchValue(item);
-  }
-
-  nuevo(): void {
-    this.bancoSeleccionadoId = null;
-    this.form.reset();
-    this.form.patchValue({ id: 0 });
-  }
-
-  grabar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    const valor = this.form.getRawValue() as Banco;
-
-    if (!valor.id || valor.id === 0) {
-      const nuevoId =
-        this.bancos.length > 0
-          ? Math.max(...this.bancos.map(x => x.id)) + 1
-          : 1;
-
-      const nuevoBanco: Banco = {
-        ...valor,
-        id: nuevoId
-      };
-
-      this.bancos = [...this.bancos, nuevoBanco];
-      this.bancoSeleccionadoId = nuevoId;
-      this.form.patchValue({ id: nuevoId });
-    } else {
-      this.bancos = this.bancos.map(item =>
-        item.id === valor.id ? { ...valor } : item
-      );
-      this.bancoSeleccionadoId = valor.id;
-    }
-
-    console.log('Banco guardado:', valor);
-  }
-
-  borrar(): void {
-    const id = this.form.get('id')?.value;
-
-    if (!id || id === 0) {
-      return;
-    }
-
-    this.bancos = this.bancos.filter(item => item.id !== id);
-    this.nuevo();
-  }
-
-  cancelar(): void {
-    if (this.bancoSeleccionadoId) {
-      const actual = this.bancos.find(x => x.id === this.bancoSeleccionadoId);
-      if (actual) {
-        this.form.patchValue(actual);
-      }
-    } else {
-      this.nuevo();
-    }
-  }
-
-  esCampoInvalido(nombreCampo: string): boolean {
-    const control = this.form.get(nombreCampo);
-    return !!control && control.invalid && (control.dirty || control.touched);
   }
 }

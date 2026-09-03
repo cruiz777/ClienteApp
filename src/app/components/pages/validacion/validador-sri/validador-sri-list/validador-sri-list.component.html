@@ -90,7 +90,6 @@
               [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
               [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
               [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
-              matInput
             />
             Marcar validación
           </label>
@@ -100,7 +99,6 @@
               [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
               [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
               [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
-              matInput
             />
             Marcar actualización
           </label>
@@ -156,7 +154,6 @@
                           [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
                           [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
                           [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
-                          matInput
                          />
                 </td>
                 <td>
@@ -176,7 +173,6 @@
                           [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
                           [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
                           [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
-                          matInput
                          />
                 </td>
                 <td>{{ cliente.clientes_codigo }}</td>

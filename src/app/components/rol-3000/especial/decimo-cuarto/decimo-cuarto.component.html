@@ -1,7 +1,7 @@
 <div class="decimo-cuarto-container" [formGroup]="form">
-  <!-- Título con período -->
   <div class="title">
     <h2>Décimo Cuarto</h2>
+
     <span class="periodo-label" *ngIf="mostrarPeriodo">
       Período: {{ periodoLabel }}
     </span>
@@ -10,9 +10,12 @@
   <div class="filters-grid">
     <div class="field-group">
       <label>Empresa:</label>
+
       <mat-form-field appearance="outline">
         <mat-select formControlName="idEmpresa">
-          <mat-option *ngFor="let emp of empresas" [value]="emp.idEmpresa">
+          <mat-option
+            *ngFor="let emp of empresas"
+            [value]="emp.idEmpresa">
             {{ emp.nombre }}
           </mat-option>
         </mat-select>
@@ -21,21 +24,26 @@
 
     <div class="field-group">
       <label>Tipo de Empleado:</label>
+
       <mat-form-field appearance="outline">
         <mat-select formControlName="idTipEmp">
-          <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.idTipemp">
+          <mat-option
+            *ngFor="let tipo of tiposEmpleado"
+            [value]="tipo.idTipemp">
             {{ tipo.desTipemp }}
           </mat-option>
         </mat-select>
       </mat-form-field>
     </div>
 
-    <!-- Solo D14 tiene región -->
     <div class="field-group">
       <label>Región:</label>
+
       <mat-form-field appearance="outline">
         <mat-select formControlName="idRegimen">
-          <mat-option *ngFor="let reg of regimenes" [value]="reg.id_regimen">
+          <mat-option
+            *ngFor="let reg of regimenes"
+            [value]="reg.id_regimen">
             {{ reg.descripcion }}
           </mat-option>
         </mat-select>
@@ -43,16 +51,24 @@
     </div>
 
     <div class="field-group">
-      <label>Periodo:</label>
+      <label>Período:</label>
+
       <mat-form-field appearance="outline">
-        <input matInput [matDatepicker]="picker" formControlName="fechaHasta" />
-        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          formControlName="fechaHasta">
+
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="picker">
+        </mat-datepicker-toggle>
+
         <mat-datepicker #picker></mat-datepicker>
       </mat-form-field>
     </div>
   </div>
 
-  <!-- AG GRID -->
   <div class="grid-wrapper">
     <ag-grid-angular
       class="ag-theme-alpine"
@@ -67,46 +83,75 @@
 
   <div class="bottom-section">
     <div class="actions">
-      <button mat-stroked-button type="button" (click)="calcular()" [disabled]="loading">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="calcular()"
+        [disabled]="loading || procesandoBanco">
+
         <span *ngIf="!loading">Calcular</span>
         <span *ngIf="loading">Calculando...</span>
       </button>
-      
-      <button mat-stroked-button type="button" (click)="cargar()">
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="cargar()"
+        [disabled]="loading || procesandoBanco">
         Cargar
       </button>
 
-      <button mat-stroked-button type="button" (click)="grabar()" [disabled]="grabando || !rowData.length">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="grabar()"
+        [disabled]="grabando || !rowData.length || procesandoBanco">
+
         <span *ngIf="!grabando">Grabar</span>
         <span *ngIf="grabando">Grabando...</span>
       </button>
-      <button mat-stroked-button [matMenuTriggerFor]="menuExportar"
-              [disabled]="!datosDesdeDB || !rowData.length">
+
+      <button
+        mat-stroked-button
+        type="button"
+        [matMenuTriggerFor]="menuExportar"
+        [disabled]="!datosDesdeDB || !rowData.length || procesandoBanco">
         Exportar ▾
       </button>
 
       <mat-menu #menuExportar="matMenu">
-        <button mat-menu-item (click)="exportar('pdf')">
+        <button
+          mat-menu-item
+          type="button"
+          (click)="exportar('pdf')">
           PDF
         </button>
-        <button mat-menu-item (click)="exportar('excel')">
+
+        <button
+          mat-menu-item
+          type="button"
+          (click)="exportar('excel')">
           Excel
         </button>
       </mat-menu>
-      <button mat-stroked-button [matMenuTriggerFor]="menuBanco"
-        [disabled]="!datosDesdeDB || !rowData.length">
-        Banco ▾
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="abrirModalBanco()"
+        [disabled]="!datosDesdeDB || !rowData.length || procesandoBanco">
+
+        <span *ngIf="!procesandoBanco">Banco</span>
+        <span *ngIf="procesandoBanco">Procesando...</span>
       </button>
 
-      <mat-menu #menuBanco="matMenu">
-        <button mat-menu-item (click)="generarArchivo()">
-          Generar Archivo Trans.
-        </button>
-        <button mat-menu-item disabled>
-          Listado
-        </button>
-      </mat-menu>
-      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="cancelar()"
+        [disabled]="procesandoBanco">
+        Cancelar
+      </button>
     </div>
 
     <div class="summary-box">
@@ -114,14 +159,17 @@
         <span>Total Décimo Cuarto</span>
         <strong>{{ formatMoneda(totalValorDecimo) }}</strong>
       </div>
+
       <div class="summary-row">
         <span>Descuento</span>
         <strong>{{ formatMoneda(totalDescuento) }}</strong>
       </div>
+
       <div class="summary-row">
         <span>Retención Judicial</span>
         <strong>{{ formatMoneda(totalRetJudicial) }}</strong>
       </div>
+
       <div class="summary-row total-row">
         <span>Líquido a Recibir</span>
         <strong>{{ formatMoneda(totalLiquido) }}</strong>

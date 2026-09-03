@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { AuthGuard } from 'src/app/guards/auth.guard';
+import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { NavigationRolComponent } from './navigation-rol/navigation-rol.component';
 import { InicioRolComponent } from './inicio-rol/inicio-rol.component';
 import { EstructuraEmpleadosComponent } from './empleados/estructura-empleados/estructura-empleados.component';
@@ -75,8 +76,10 @@ const routes: Routes = [
       canActivate: [AuthGuard],
       children: [
         { path: '', redirectTo: 'inicio-rol', pathMatch: 'full' },
-        { path: 'inicio-rol', component: InicioRolComponent },
 
+        // INICIO - libre, mismo patrón que seguridades/inicio, sic-3000/inicio-sic
+        // y cg-3000/inicio-cg (sin exigir el permiso raíz por el bug de backend)
+        { path: 'inicio-rol', component: InicioRolComponent },
         // EMPLEADO - Archivo
         {
           path: 'empleado-estructura',
@@ -470,7 +473,7 @@ const routes: Routes = [
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.acumulados.explorador-de-empleados' }
         },
-                {
+        {
           path: 'explorador-vacaciones',
           component: VacacionesExploradorComponent
         },
