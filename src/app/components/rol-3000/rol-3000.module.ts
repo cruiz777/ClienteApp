@@ -98,6 +98,10 @@ import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomin
 import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-individual-dialog.component';
 import { DialogCargaGlobalRubrosFijosComponent } from './nomina/rubros-fijos/dialog-carga-global-rubros-fijo/dialog-carga-global-rubros-fijo.component';
 import { DialogBancoNominaComponent } from './nomina/dialog-banco-nomina/dialog-banco-nomina.component';
+import { PeriodosVacacionesDialogComponent } from './novedades/dialogs/registro-vacaciones-dialog';
+import { ImprimirVacacionesDialogComponent } from './novedades/dialogs/imprimir-vacaciones-dialog.component';
+import { VacacionesExploradorComponent } from './novedades/registro-vacaciones/explorador/vacaciones-explorador.component';
+import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/editar/editar-vacacion-dialog.component';
 
 @NgModule({
   declarations: [
@@ -149,7 +153,12 @@ import { DialogBancoNominaComponent } from './nomina/dialog-banco-nomina/dialog-
     UtilidadesComponent,
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,
-    DialogCargaGlobalRubrosFijosComponent
+    DialogCargaGlobalRubrosFijosComponent,
+    PeriodosVacacionesDialogComponent,
+    ImprimirVacacionesDialogComponent,
+    VacacionesExploradorComponent,
+    EditarVacacionDialogComponent    
+v
   ],
   imports: [
     CommonModule,

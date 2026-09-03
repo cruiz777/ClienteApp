@@ -1,21 +1,37 @@
 const { env } = require('process');
 
-const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
-  env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'http://localhost:64159';
+const target = 'http://localhost:8000';
 
 const PROXY_CONFIG = [
   {
     context: [
-      "/weatherforecast",
-      "/api/rol",
-      "/api/usuario",
-      "/api/categoria",
-      "/api/producto",
-      "/api/venta",
-      "/api/dashboard",
-   ],
+      "/security/api",
+      "/clients/api",
+      "/invoices/api",
+      "/validations/api",
+      "/reports/api",
+      "/balance/api",
+      "/inventories/api",
+      "/transaction/api",
+      "/maintenance-cg/api",
+      "/invoices-sic/api",
+      "/docs/api",
+      "/docs-local/api",
+      "/anexo/api",
+      "/cxp/api",
+      "/conciliacion/api",
+      "/maintenance-rol/api",
+      "/employees/api",
+      "/nomina-especial/api",
+      "/nomina/api",
+      "/novedades/api"
+    ],
     target: target,
-    secure: false
+    secure: false,
+    changeOrigin: true,
+    onProxyReq: (proxyReq) => {
+      proxyReq.setHeader('X-API-Key', env.FRONTEND_API_KEY || '');
+    }
   }
 ]
 
