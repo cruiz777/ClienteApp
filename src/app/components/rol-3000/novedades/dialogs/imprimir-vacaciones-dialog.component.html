@@ -1,0 +1,20 @@
+<h2 mat-dialog-title>Por favor, revise la información presentada para el informe y presione continuar.</h2>
+
+<mat-dialog-content class="contenido">
+  <textarea
+    class="texto-preview"
+    rows="14"
+    [formControl]="textoCtrl"
+    style="width: 100%; box-sizing: border-box; min-height: 260px; display: block;"
+  ></textarea>
+
+  <p class="nota">
+    Este texto es solo una vista previa de referencia — la carta que se genera en PDF
+    la arma el sistema automáticamente con los datos reales de la solicitud.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" (click)="continuar()">Continuar</button>
+</mat-dialog-actions>
