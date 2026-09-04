@@ -1,0 +1,230 @@
+<div class="ir-page" [formGroup]="form">
+
+  <!-- HEADER -->
+  <div class="page-header">
+
+    <div class="header-title">
+
+      <div class="header-icon">
+        <mat-icon>
+          request_quote
+        </mat-icon>
+      </div>
+
+      <div>
+        <h2>
+          Impuesto a la Renta
+        </h2>
+
+        <p>
+          Cálculo anual del Impuesto a la Renta de empleados.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- FILTROS -->
+  <div class="filter-card">
+
+    <div class="section-title">
+
+      <mat-icon>
+        tune
+      </mat-icon>
+
+      <span>
+        Parámetros de cálculo
+      </span>
+
+    </div>
+
+
+    <div class="filters">
+
+      <mat-form-field appearance="outline" class="field-periodo">
+
+        <mat-label>
+          Periodo
+        </mat-label>
+
+        <input matInput type="date" formControlName="fechaPeriodo">
+
+      </mat-form-field>
+
+
+      
+
+      
+
+
+      <div class="filter-actions">
+
+        <!-- CALCULAR -->
+        
+        <div class="filter-actions">
+
+          <button mat-flat-button color="primary" type="button" class="btn-consultar" [disabled]="cargando || guardando"
+            (click)="consultar()">
+
+            <mat-spinner *ngIf="cargando" diameter="16">
+            </mat-spinner>
+
+            <mat-icon *ngIf="!cargando">
+              calculate
+            </mat-icon>
+
+            <span>
+              {{
+              cargando
+              ? 'Calculando...'
+              : 'Calcular'
+              }}
+            </span>
+
+          </button>
+
+
+          <button mat-flat-button type="button" class="btn-grabar" [disabled]="
+      cargando ||
+      guardando ||
+      rowData.length === 0
+    " (click)="grabar()">
+
+            <mat-spinner *ngIf="guardando" diameter="16">
+            </mat-spinner>
+
+            <mat-icon *ngIf="!guardando">
+              save
+            </mat-icon>
+
+            <span>
+              {{
+              guardando
+              ? 'Grabando...'
+              : 'Grabar'
+              }}
+            </span>
+
+          </button>
+
+
+          <!-- IMPRIMIR -->
+          <button mat-stroked-button type="button" class="btn-imprimir" [disabled]="
+      cargando ||
+      guardando ||
+      rowData.length === 0
+    " (click)="imprimir()">
+
+            <mat-icon>
+              print
+            </mat-icon>
+
+            Imprimir
+
+          </button>
+
+
+          
+
+        </div>
+
+        <!-- LIMPIAR -->
+        <button mat-stroked-button type="button" class="btn-limpiar" [disabled]="cargando || guardando"
+          (click)="limpiar()">
+
+          <mat-icon>
+            restart_alt
+          </mat-icon>
+
+          Limpiar
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- GRID -->
+  <div class="grid-card">
+
+    <div class="grid-header">
+
+      <div class="grid-title">
+
+        <mat-icon>
+          table_view
+        </mat-icon>
+
+        <div>
+
+          <strong>
+            Detalle de Impuesto a la Renta
+          </strong>
+
+          <small>
+            Resultado del cálculo por empleado
+          </small>
+
+        </div>
+
+      </div>
+
+
+      <div class="grid-counter">
+
+        <mat-icon>
+          groups
+        </mat-icon>
+
+        <span>
+          {{ rowData.length }}
+          empleado{{
+          rowData.length === 1
+          ? ''
+          : 's'
+          }}
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="info-bar">
+
+      <mat-icon>
+        info
+      </mat-icon>
+
+      <span>
+        Puede ordenar, filtrar y redimensionar las columnas.
+      </span>
+
+    </div>
+
+
+    <div class="grid-container">
+
+      <ag-grid-angular class="ag-theme-alpine ir-grid" [rowData]="rowData" [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef" [pinnedBottomRowData]="
+          pinnedBottomRowData
+        " [pagination]="true" [paginationPageSize]="50" [animateRows]="true" [rowHeight]="30" [headerHeight]="36"
+        [suppressCellFocus]="true" [overlayNoRowsTemplate]="
+          overlayNoRowsTemplate
+        " (gridReady)="
+          onGridReady($event)
+        ">
+
+      </ag-grid-angular>
+
+    </div>
+
+  </div>
+
+</div>

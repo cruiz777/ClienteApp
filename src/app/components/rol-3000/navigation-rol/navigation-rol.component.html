@@ -303,9 +303,9 @@
           <a mat-list-item [routerLink]="['/rol-3000', 'utilidades']">
             <span *ngIf="isExpanded" class="menu-text">Utilidades</span>
           </a>
-          <a mat-list-item routerLink="/rol-3000/inicio-rol">
-            <span *ngIf="isExpanded" class="menu-text">Impuesto a la Renta</span>
-          </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'impuestos-renta']">
+              <span *ngIf="isExpanded" class="menu-text">Impuesto Renta</span>
+            </a>
           <a mat-list-item routerLink="/rol-3000/inicio-rol">
             <span *ngIf="isExpanded" class="menu-text">Jubilación Patronal</span>
           </a>
