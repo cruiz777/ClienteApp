@@ -158,7 +158,6 @@ import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/e
     ImprimirVacacionesDialogComponent,
     VacacionesExploradorComponent,
     EditarVacacionDialogComponent    
-v
   ],
   imports: [
     CommonModule,

@@ -88,6 +88,8 @@ import { TipoCuentaBancoService } from 'src/app/services/rol/tipo-cuenta.service
 import { RpBanTerceroService } from 'src/app/services/rol/bancos-terceros-rol.service';
 import { CargasEmpleadoService, CargaEmpleadoResponse } from 'src/app/services/rol/cargas-empleado.service';
 import { SectorialService } from 'src/app/services/sectorial.service';
+import { PermisoService } from 'src/app/services/rol/permisos-rol.service';
+import { VacacionesService } from 'src/app/services/rol/vacaciones-rol.service';
 
 function formatFechaGrid(value: any): string {
   if (!value) return '';
@@ -843,6 +845,36 @@ ciudadesTrabajoFiltradas: Ciudad[] = [];
         justifyContent: 'center',
         padding: '0'
       },
+      cellRenderer: (params: any) => {
+        const idTipo = Number(params.data?.idTipoObservacion);
+        const idDoc = Number(params.data?.idDoc);
+      
+        const puedeImprimir =
+          idDoc > 0 && (idTipo === 1 || idTipo === 3);
+      
+        if (!puedeImprimir) {
+          return '';
+        }
+      
+        return `<button class="btn-grid-delete" title="Imprimir">
+          <span class="material-icons">print</span>
+        </button>`;
+      },
+      onCellClicked: p => this.imprimirObservacion(p.data)
+    },
+    {
+      headerName: '',
+      width: 34,
+      minWidth: 34,
+      maxWidth: 34,
+      pinned: 'right',
+      suppressSizeToFit: true,
+      cellStyle: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0'
+      },
       cellRenderer: () => `
       <button class="btn-grid-delete" title="Eliminar">
         <span class="material-icons">delete</span>
@@ -1023,6 +1055,8 @@ ciudadesTrabajoFiltradas: Ciudad[] = [];
     private tipoGastoService: TipoGastoService,
     private RpEmpresaComplementariaService: RpEmpresaComplementariaService,
     private empleadoDiscapacidadService: EmpleadoDiscapacidadService,
+    private permisoService: PermisoService,
+    private vacacionesService: VacacionesService,
     private dialog: MatDialog
   ) { }
 
@@ -2385,6 +2419,53 @@ cargarFichaEmpleado(idEmpleado?: number): void {
       }
     });
   }
+
+  imprimirObservacion(row: any): void {
+    if (!row?.idDoc) {
+      alert('Esta observación no tiene un documento asociado para imprimir.');
+      return;
+    }
+
+    const idDoc = Number(row.idDoc);
+
+    if (row.idTipoObservacion === 1) {
+      // PERMISO
+      this.permisoService.imprimirPdf(idDoc).subscribe({
+        next: blob => this.abrirPdfBlob(blob, `Permiso_${idDoc}.pdf`),
+        error: () => alert('No se pudo generar el PDF del permiso.')
+      });
+    } else if (row.idTipoObservacion === 3) {
+      // VACACIONES
+      this.vacacionesService.imprimirPdf(idDoc).subscribe({
+        next: blob => this.abrirPdfBlob(blob, `Vacaciones_${idDoc}.pdf`),
+        error: () => alert('No se pudo generar el PDF de vacaciones.')
+      });
+    } else {
+      alert('Este tipo de observación no tiene impresión disponible.');
+    }
+  }
+
+  private abrirPdfBlob(blob: Blob, nombreArchivo: string): void {
+    if (!blob || blob.size === 0) {
+      alert('El PDF se generó vacío.');
+      return;
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const ventana = window.open(url, '_blank');
+
+    if (!ventana) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = nombreArchivo;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    setTimeout(() => window.URL.revokeObjectURL(url), 30000);
+  }
+
   eliminarFilaObservacion(row: any): void {
     if (!row) return;
 
