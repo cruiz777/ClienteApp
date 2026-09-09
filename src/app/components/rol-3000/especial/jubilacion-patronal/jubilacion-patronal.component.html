@@ -1,0 +1,942 @@
+<div
+  class="jubilacion-page"
+  [formGroup]="form">
+
+  <!-- =====================================================
+       CABECERA
+  ====================================================== -->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+        Jubilación Patronal
+      </h2>
+
+      <p>
+        Seleccione un empleado y consulte la información
+        necesaria para el cálculo de Jubilación Patronal.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       FILTROS
+  ====================================================== -->
+
+  <div class="toolbar-card">
+
+    <div class="toolbar-content">
+
+
+      <!-- =================================================
+           EMPLEADO
+      ================================================== -->
+
+      <mat-form-field
+        appearance="outline"
+        class="empleado-field">
+
+        <mat-label>
+          Empleado
+        </mat-label>
+
+
+        <mat-icon
+          matPrefix>
+          person_search
+        </mat-icon>
+
+
+        <input
+          matInput
+          type="text"
+          formControlName="empleadoBusqueda"
+          placeholder="Código, cédula o nombre"
+          autocomplete="off"
+          [matAutocomplete]="autoEmpleado">
+
+
+        <!-- LIMPIAR -->
+
+        <button
+          *ngIf="
+            form.get('empleadoBusqueda')?.value
+          "
+          mat-icon-button
+          matSuffix
+          type="button"
+          title="Limpiar empleado"
+          (click)="
+            limpiarBusquedaEmpleado($event)
+          ">
+
+          <mat-icon>
+            close
+          </mat-icon>
+
+        </button>
+
+
+        <!-- AUTOCOMPLETE -->
+
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="displayEmpleado"
+          (optionSelected)="
+            seleccionarEmpleadoBusqueda(
+              $event.option.value
+            )
+          ">
+
+
+          <!-- CARGANDO -->
+
+          <mat-option
+            *ngIf="cargandoEmpleados"
+            disabled>
+
+            Cargando empleados...
+
+          </mat-option>
+
+
+          <!-- EMPLEADOS -->
+
+          <mat-option
+            *ngFor="
+              let emp of empleadosFiltrados
+            "
+            [value]="emp">
+
+            <div class="empleado-option">
+
+              <div class="empleado-option-codigo">
+
+                {{ emp.idEmpleado }}
+
+              </div>
+
+
+              <div class="empleado-option-info">
+
+                <strong>
+                  {{
+                    emp.nombreCompleto
+                    ||
+                    '-'
+                  }}
+                </strong>
+
+                <small>
+
+                  Cédula:
+                  {{
+                    emp.documento
+                    ||
+                    '-'
+                  }}
+
+                </small>
+
+              </div>
+
+            </div>
+
+          </mat-option>
+
+
+          <!-- SIN RESULTADOS -->
+
+          <mat-option
+            *ngIf="
+              !cargandoEmpleados &&
+              empleadosFiltrados.length === 0
+            "
+            disabled>
+
+            No se encontraron empleados.
+
+          </mat-option>
+
+        </mat-autocomplete>
+
+
+        <mat-error
+          *ngIf="
+            form.get('idEmpleado')?.hasError('required')
+          ">
+
+          Debe seleccionar un empleado.
+
+        </mat-error>
+
+      </mat-form-field>
+
+
+      <!-- =================================================
+           FECHA CÁLCULO
+      ================================================== -->
+
+      <mat-form-field
+        appearance="outline"
+        class="fecha-field">
+
+        <mat-label>
+          Fecha de cálculo
+        </mat-label>
+
+        <input
+          matInput
+          type="date"
+          formControlName="fechaCalculo">
+
+        <mat-error
+          *ngIf="
+            form.get('fechaCalculo')?.hasError('required')
+          ">
+
+          Seleccione una fecha.
+
+        </mat-error>
+
+      </mat-form-field>
+
+
+      <!-- =================================================
+           TIPO SALIDA
+      ================================================== -->
+
+      <div class="tipo-salida-box">
+
+        <div class="tipo-salida-label">
+
+          Tipo de salida
+
+        </div>
+
+
+        <mat-radio-group
+          formControlName="tipoSalida"
+          class="tipo-salida-radio">
+
+          <mat-radio-button
+            value="RENUNCIA">
+
+            Renuncia
+
+          </mat-radio-button>
+
+
+          <mat-radio-button
+            value="DESPIDO">
+
+            Despido
+
+          </mat-radio-button>
+
+        </mat-radio-group>
+
+      </div>
+
+
+      <!-- =================================================
+           BOTONES
+      ================================================== -->
+
+      <div class="toolbar-actions">
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          class="btn-calcular"
+          [disabled]="
+            cargando ||
+            !form.get('idEmpleado')?.value
+          "
+          (click)="calcular()">
+
+          <mat-icon>
+            calculate
+          </mat-icon>
+
+          {{
+            cargando
+              ? 'Calculando...'
+              : 'Calcular'
+          }}
+
+        </button>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="cargando"
+          (click)="limpiar()">
+
+          <mat-icon>
+            cleaning_services
+          </mat-icon>
+
+          Limpiar
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       CARGANDO
+  ====================================================== -->
+
+  <div
+    class="loading-calculo"
+    *ngIf="cargando">
+
+    <mat-spinner
+      diameter="42">
+    </mat-spinner>
+
+
+    <strong>
+      Calculando Jubilación Patronal...
+    </strong>
+
+
+    <span>
+      Consultando cronología, remuneraciones
+      y fondos de reserva.
+    </span>
+
+  </div>
+
+
+  <!-- =====================================================
+       SIN RESULTADO
+  ====================================================== -->
+
+  <div
+    class="empty-result"
+    *ngIf="
+      !resultado &&
+      !cargando
+    ">
+
+    <mat-icon>
+      account_balance
+    </mat-icon>
+
+
+    <h3>
+      Jubilación Patronal
+    </h3>
+
+
+    <p
+      *ngIf="
+        !form.get('idEmpleado')?.value
+      ">
+
+      Seleccione un empleado para comenzar.
+
+    </p>
+
+
+    <p
+      *ngIf="
+        form.get('idEmpleado')?.value
+      ">
+
+      Empleado seleccionado.
+      Presione
+      <strong>
+        Calcular
+      </strong>
+      para consultar la información.
+
+    </p>
+
+  </div>
+
+
+  <!-- =====================================================
+       RESULTADOS
+  ====================================================== -->
+
+  <ng-container
+    *ngIf="
+      resultado &&
+      !cargando
+    ">
+
+
+    <!-- ===================================================
+         DATOS DEL EMPLEADO
+    ==================================================== -->
+
+    <div class="panel resultado-card">
+
+      <div class="section-header">
+
+        <div class="section-title">
+
+          <mat-icon>
+            badge
+          </mat-icon>
+
+          <span>
+            Datos del Empleado
+          </span>
+
+        </div>
+
+
+        <span
+          class="estado-badge"
+          [ngClass]="claseEstado">
+
+          {{ textoEstado }}
+
+        </span>
+
+      </div>
+
+
+      <div class="datos-grid">
+
+
+        <!-- NOMBRE -->
+
+        <div class="dato-item dato-amplio">
+
+          <span>
+            Empleado
+          </span>
+
+          <strong>
+            {{
+              resultado.nombreEmpleado
+              ||
+              '-'
+            }}
+          </strong>
+
+        </div>
+
+
+        <!-- CÓDIGO -->
+
+        <div class="dato-item">
+
+          <span>
+            Código
+          </span>
+
+          <strong>
+            {{ resultado.idEmpleado }}
+          </strong>
+
+        </div>
+
+
+        <!-- CÉDULA -->
+
+        <div class="dato-item">
+
+          <span>
+            Cédula
+          </span>
+
+          <strong>
+            {{
+              resultado.cedula
+              ||
+              '-'
+            }}
+          </strong>
+
+        </div>
+
+
+        <!-- CARGO -->
+
+        <div class="dato-item dato-amplio">
+
+          <span>
+            Cargo
+          </span>
+
+          <strong>
+            {{
+              resultado.cargo
+              ||
+              '-'
+            }}
+          </strong>
+
+        </div>
+
+
+        <!-- FECHA NACIMIENTO -->
+
+        <div class="dato-item">
+
+          <span>
+            Fecha nacimiento
+          </span>
+
+          <strong>
+
+            {{
+              formatearFecha(
+                resultado.fechaNacimiento
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+
+        <!-- SUELDO -->
+
+        <div class="dato-item">
+
+          <span>
+            Sueldo actual
+          </span>
+
+          <strong class="valor">
+
+            $
+            {{
+              formatearNumero(
+                resultado.sueldoActual
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+
+        <!-- FECHA INGRESO -->
+
+        <div class="dato-item">
+
+          <span>
+            Fecha ingreso
+          </span>
+
+          <strong>
+
+            {{
+              formatearFecha(
+                resultado.fechaIngreso
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+
+        <!-- FECHA SALIDA -->
+
+        <div class="dato-item">
+
+          <span>
+            Fecha salida
+          </span>
+
+          <strong>
+
+            {{
+              formatearFecha(
+                resultado.fechaSalida
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+
+        <!-- TIPO SALIDA -->
+
+        <div class="dato-item">
+
+          <span>
+            Tipo salida
+          </span>
+
+          <strong>
+            {{ resultado.tipoSalida }}
+          </strong>
+
+        </div>
+
+
+        <!-- TIEMPO SERVICIO -->
+
+        <div class="dato-item dato-amplio">
+
+          <span>
+            Tiempo de servicio
+          </span>
+
+          <strong>
+            {{ tiempoServicio }}
+          </strong>
+
+        </div>
+
+
+        <!-- DÍAS -->
+
+        <div class="dato-item">
+
+          <span>
+            Total días de servicio
+          </span>
+
+          <strong>
+            {{ resultado.totalDiasServicio }}
+          </strong>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================================
+         RESUMEN
+    ==================================================== -->
+
+    <div class="resumen-grid">
+
+
+      <!-- TOTAL REMUNERACIONES -->
+
+      <div class="resumen-card">
+
+        <span>
+          Total Remuneraciones
+        </span>
+
+        <strong>
+
+          $
+          {{
+            formatearNumero(
+              resultado.totalRemuneraciones
+            )
+          }}
+
+        </strong>
+
+      </div>
+
+
+      <!-- APORTABLE -->
+
+      <div class="resumen-card">
+
+        <span>
+          Remuneraciones Aportables
+        </span>
+
+        <strong>
+
+          $
+          {{
+            formatearNumero(
+              resultado.totalRemuneracionesAportables
+            )
+          }}
+
+        </strong>
+
+      </div>
+
+
+      <!-- PROMEDIO -->
+
+      <div class="resumen-card">
+
+        <span>
+          Promedio Remuneraciones
+        </span>
+
+        <strong>
+
+          $
+          {{
+            formatearNumero(
+              resultado.promedioRemuneraciones
+            )
+          }}
+
+        </strong>
+
+      </div>
+
+
+      <!-- FONDOS RESERVA -->
+
+      <div class="resumen-card">
+
+        <span>
+          Fondos de Reserva
+        </span>
+
+        <strong>
+
+          $
+          {{
+            formatearNumero(
+              resultado.totalFondosReserva
+            )
+          }}
+
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================================
+         AG GRID DETALLE
+    ==================================================== -->
+
+    <div class="panel detalle-panel">
+
+      <div class="section-header">
+
+        <div class="section-title">
+
+          <mat-icon>
+            table_view
+          </mat-icon>
+
+          <span>
+            Detalle de Remuneraciones
+          </span>
+
+        </div>
+
+
+        <span class="registro-count">
+
+          {{
+            rowData.length
+          }}
+
+          registro(s)
+
+        </span>
+
+      </div>
+
+
+      <div
+        class="ag-theme-alpine detalle-grid">
+
+        <ag-grid-angular
+
+          style="
+            width: 100%;
+            height: 100%;
+          "
+
+          [rowData]="rowData"
+
+          [columnDefs]="columnDefs"
+
+          [defaultColDef]="defaultColDef"
+
+          [pinnedBottomRowData]="pinnedBottomRowData"
+
+          [animateRows]="true"
+
+          [headerHeight]="38"
+
+          [rowHeight]="34"
+
+          [suppressMovableColumns]="true"
+
+          [enableBrowserTooltips]="true"
+
+          [overlayNoRowsTemplate]="overlayNoRowsTemplate"
+
+          (gridReady)="
+            onGridReady($event)
+          ">
+
+        </ag-grid-angular>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===================================================
+         RESULTADO FINANCIERO
+    ==================================================== -->
+
+    <div class="panel calculo-panel">
+
+      <div class="section-header">
+
+        <div class="section-title">
+
+          <mat-icon>
+            payments
+          </mat-icon>
+
+          <span>
+            Resultado Jubilación Patronal
+          </span>
+
+        </div>
+
+      </div>
+
+
+      <div class="calculo-grid">
+
+
+        <!-- BASE -->
+
+        <div class="calculo-item">
+
+          <span>
+            Base de cálculo
+          </span>
+
+          <strong>
+
+            $
+            {{
+              formatearNumero(
+                resultado.baseCalculo
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+
+        <!-- PENSIÓN -->
+
+        <div class="calculo-item principal">
+
+          <span>
+            Pensión mensual
+          </span>
+
+          <strong>
+
+            $
+            {{
+              formatearNumero(
+                resultado.pensionMensual
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+
+        <!-- FONDO GLOBAL -->
+
+        <div class="calculo-item">
+
+          <span>
+            Fondo global
+          </span>
+
+          <strong>
+
+            $
+            {{
+              formatearNumero(
+                resultado.fondoGlobal
+              )
+            }}
+
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           OBSERVACIÓN
+      ================================================== -->
+
+      <div
+        class="observacion-box"
+        [class.observacion-pendiente]="
+          !resultado.calculoDefinitivo
+        ">
+
+        <mat-icon>
+
+          {{
+            resultado.calculoDefinitivo
+              ? 'check_circle'
+              : 'warning'
+          }}
+
+        </mat-icon>
+
+
+        <div>
+
+          <strong>
+
+            {{
+              resultado.calculoDefinitivo
+                ? 'Cálculo definitivo'
+                : 'Cálculo financiero pendiente'
+            }}
+
+          </strong>
+
+
+          <p>
+
+            {{
+              resultado.observacion
+              ||
+              'Sin observaciones.'
+            }}
+
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </ng-container>
+
+</div>

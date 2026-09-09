@@ -397,3 +397,329 @@
   height: 18px;
   margin-right: 4px;
 }
+.btn-xml {
+  min-width: 110px;
+  height: 38px;
+}
+
+.btn-xml mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-right: 4px;
+}
+/* ============================================================
+   FILTRO EMPLEADO
+============================================================ */
+
+.employee-filter-wrapper {
+  position: relative;
+  width: 390px;
+  min-width: 330px;
+}
+
+.field-empleado {
+  width: 100%;
+}
+
+.field-empleado mat-icon[matPrefix] {
+  margin-right: 8px;
+  font-size: 19px;
+}
+
+
+/* ============================================================
+   LISTA EMPLEADOS
+============================================================ */
+
+.empleado-dropdown {
+  position: absolute;
+
+  top: 55px;
+  left: 0;
+
+  width: 100%;
+
+  max-height: 330px;
+
+  overflow-y: auto;
+
+  background: #ffffff;
+
+  border: 1px solid #d9deea;
+
+  border-radius: 4px;
+
+  box-shadow:
+    0 6px 18px
+    rgba(0, 0, 0, 0.18);
+
+  z-index: 9999;
+}
+
+
+/* ============================================================
+   OPCIÓN EMPLEADO
+============================================================ */
+
+.empleado-opcion {
+  display: block;
+
+  width: 100%;
+
+  padding: 9px 12px;
+
+  border: 0;
+
+  border-bottom:
+    1px solid #f0f1f5;
+
+  background: #ffffff;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.empleado-opcion:hover {
+  background: #f4f6ff;
+}
+
+.empleado-todos {
+  background: #f7f8ff;
+}
+
+
+/* ============================================================
+   TEXTO EMPLEADO
+============================================================ */
+
+.empleado-opcion-principal {
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  font-size: 12px;
+
+  color: #1f2937;
+}
+
+.empleado-opcion-principal mat-icon {
+  width: 18px;
+  height: 18px;
+
+  font-size: 18px;
+}
+
+.empleado-codigo {
+  font-weight: 600;
+
+  color: #2f3dad;
+}
+
+.empleado-nombre {
+  font-weight: 500;
+}
+
+.empleado-opcion-secundario {
+  margin-top: 4px;
+
+  padding-left: 2px;
+
+  font-size: 10px;
+
+  color: #8a91a3;
+}
+
+
+/* ============================================================
+   SIN RESULTADOS / CARGANDO
+============================================================ */
+
+.empleado-sin-resultados {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 14px;
+
+  font-size: 11px;
+
+  color: #737b8e;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 900px) {
+
+  .employee-filter-wrapper {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+/* ============================================================
+   MODAL CONFIRMACION
+============================================================ */
+
+.confirm-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background:
+    rgba(0, 0, 0, 0.35);
+
+  z-index: 99999;
+}
+
+
+.confirm-modal {
+  width: 330px;
+
+  padding: 24px 26px 20px;
+
+  background: #ffffff;
+
+  border-radius: 5px;
+
+  box-shadow:
+    0 10px 30px
+    rgba(0, 0, 0, 0.25);
+
+  text-align: center;
+
+  animation:
+    confirmEntrada
+    0.18s
+    ease-out;
+}
+
+
+/* ============================================================
+   ICONO
+============================================================ */
+
+.confirm-icon {
+  display: flex;
+
+  justify-content: center;
+
+  margin-bottom: 10px;
+}
+
+
+.confirm-icon mat-icon {
+  width: 44px;
+
+  height: 44px;
+
+  font-size: 44px;
+
+  color: #f59e0b;
+}
+
+
+/* ============================================================
+   TITULO
+============================================================ */
+
+.confirm-modal h3 {
+  margin:
+    0 0 10px;
+
+  font-size:
+    17px;
+
+  font-weight:
+    700;
+
+  color:
+    #30343b;
+}
+
+
+/* ============================================================
+   MENSAJE
+============================================================ */
+
+.confirm-modal p {
+  margin:
+    0 0 22px;
+
+  font-size:
+    13px;
+
+  line-height:
+    1.4;
+
+  color:
+    #656b76;
+}
+
+
+/* ============================================================
+   BOTONES
+============================================================ */
+
+.confirm-actions {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 12px;
+}
+
+
+.confirm-cancel {
+  min-width: 100px;
+
+  background:
+    #e5e7eb !important;
+
+  color:
+    #555 !important;
+}
+
+
+.confirm-accept {
+  min-width: 120px;
+
+  font-weight: 600;
+}
+
+
+/* ============================================================
+   ANIMACION
+============================================================ */
+
+@keyframes confirmEntrada {
+
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(-8px)
+      scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}

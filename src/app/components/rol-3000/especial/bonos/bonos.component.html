@@ -1,0 +1,423 @@
+<div
+  class="bonos-container"
+  [formGroup]="form">
+
+  <!-- =========================================================
+       FILTROS
+  ========================================================== -->
+
+  <div class="card filtros">
+
+    <!-- =======================================================
+         PERIODO + BOTONES
+    ======================================================== -->
+
+    <div class="barra-superior">
+
+      <!-- PERIODO -->
+
+      <div class="campo periodo-campo">
+
+        <label>
+          Período
+        </label>
+
+        <input
+          type="date"
+          formControlName="fechaPeriodo">
+
+      </div>
+
+
+      <!-- BOTONES -->
+
+      <div class="botones-superiores">
+
+        <!-- LIMPIAR -->
+
+        <button
+          type="button"
+          class="btn"
+          (click)="nuevo()"
+          [disabled]="cargando">
+
+          Limpiar
+
+        </button>
+
+
+        <!-- CALCULAR -->
+
+        <button
+          type="button"
+          class="btn primario"
+          (click)="calcular(false)"
+          [disabled]="
+            cargando ||
+            form.invalid
+          ">
+
+          Calcular
+
+        </button>
+
+
+      
+
+        
+
+
+        <!-- GRABAR -->
+
+        <button
+  type="button"
+  class="btn grabar"
+  (click)="grabar()"
+  [disabled]="
+    cargando ||
+    rowData.length === 0 ||
+    generado
+  ">
+
+  Grabar
+
+</button>
+
+
+        <!-- IMPRIMIR -->
+
+        <button
+          type="button"
+          class="btn"
+          (click)="imprimir()"
+          [disabled]="
+            cargando ||
+            rowData.length === 0 ||
+            !generado
+          ">
+
+          Imprimir
+
+        </button>
+
+
+       <button
+  type="button"
+  class="btn"
+  (click)="abrirModalBanco()"
+  [disabled]="
+    cargando ||
+    procesandoBanco ||
+    !generado ||
+    rowData.length === 0
+  ">
+
+  <span *ngIf="!procesandoBanco">
+    Banco
+  </span>
+
+  <span *ngIf="procesandoBanco">
+    Procesando...
+  </span>
+
+</button>
+
+
+        <!-- EXCEL -->
+
+        <button
+          type="button"
+          class="btn"
+          (click)="exportarExcel()"
+          [disabled]="
+            cargando ||
+            rowData.length === 0
+          ">
+
+          Excel
+
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- =======================================================
+         BONO / RANGO / REGION
+    ======================================================== -->
+
+    <div class="opciones-row">
+
+      <!-- =====================================================
+           TIPO BONO
+      ====================================================== -->
+
+      <fieldset>
+
+        <legend>
+          Bono
+        </legend>
+
+
+        <label>
+
+          <input
+            type="radio"
+            formControlName="tipo"
+            value="BD">
+
+          Empleado
+
+        </label>
+
+
+        <label>
+
+          <input
+            type="radio"
+            formControlName="tipo"
+            value="BH">
+
+          Hijos
+
+        </label>
+
+
+        <label>
+
+          <input
+            type="radio"
+            formControlName="tipo"
+            value="BE">
+
+          Estudiantil
+
+        </label>
+
+      </fieldset>
+
+
+      <!-- =====================================================
+           RANGO FECHAS
+      ====================================================== -->
+
+      <fieldset>
+
+        <legend>
+          Rango de fechas
+        </legend>
+
+
+        <div class="rango">
+
+          <div>
+
+            <strong>
+              Desde:
+            </strong>
+
+            <div>
+              {{
+                formatearFecha(
+                  fechaDesde
+                ) || '-'
+              }}
+            </div>
+
+          </div>
+
+
+          <div>
+
+            <strong>
+              Hasta:
+            </strong>
+
+            <div>
+              {{
+                formatearFecha(
+                  fechaHasta
+                ) || '-'
+              }}
+            </div>
+
+          </div>
+
+        </div>
+
+      </fieldset>
+
+
+      <!-- =====================================================
+           REGION
+      ====================================================== -->
+
+      <fieldset>
+
+        <legend>
+          Región
+        </legend>
+
+
+        <label>
+
+          <input
+            type="radio"
+            formControlName="region"
+            value="S">
+
+          Sierra
+
+        </label>
+
+
+        <label>
+
+          <input
+            type="radio"
+            formControlName="region"
+            value="C">
+
+          Costa
+
+        </label>
+
+      </fieldset>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================
+       MENSAJE
+  ========================================================== -->
+
+  <div
+    *ngIf="mensaje"
+    class="mensaje"
+    [ngClass]="tipoMensaje">
+
+    {{ mensaje }}
+
+  </div>
+
+
+  <!-- =========================================================
+       GRID
+  ========================================================== -->
+
+  <div class="card grid-container">
+
+    <!-- =======================================================
+         TITULO GRID
+    ======================================================== -->
+
+    <div class="grid-title">
+
+      <div>
+
+        <strong>
+          {{ nombreTipoBono }}
+        </strong>
+
+
+        <span>
+          {{ rowData.length }} registro(s)
+        </span>
+
+      </div>
+
+
+      <span
+        *ngIf="cargando"
+        class="procesando">
+
+        Procesando...
+
+      </span>
+
+    </div>
+
+
+    <!-- =======================================================
+         AG GRID
+    ======================================================== -->
+
+    <ag-grid-angular
+      class="ag-theme-alpine bonos-grid"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      [suppressRowClickSelection]="true"
+      (gridReady)="onGridReady($event)"
+      (cellValueChanged)="onCellValueChanged($event)">
+    </ag-grid-angular>
+
+  </div>
+
+
+  <!-- =========================================================
+       TOTALES
+  ========================================================== -->
+
+  <div class="totales">
+
+    <!-- TOTAL BONO -->
+
+    <div>
+
+      <span>
+        Total Bono
+      </span>
+
+      <strong>
+        {{
+          totalValor
+            | number:'1.2-2'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- DESCUENTOS -->
+
+    <div>
+
+      <span>
+        Descuentos
+      </span>
+
+      <strong>
+        {{
+          totalDescuento
+            | number:'1.2-2'
+        }}
+      </strong>
+
+    </div>
+
+
+    <!-- TOTAL RECIBIR -->
+
+    <div class="total-principal">
+
+      <span>
+        Total a Recibir
+      </span>
+
+      <strong>
+        {{
+          totalLiquido
+            | number:'1.2-2'
+        }}
+      </strong>
+
+    </div>
+
+  </div>
+
+</div>

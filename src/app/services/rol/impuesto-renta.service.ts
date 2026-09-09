@@ -1,7 +1,18 @@
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from 'src/environments/environment';
+import {
+  Injectable
+} from '@angular/core';
+
+import {
+  HttpClient
+} from '@angular/common/http';
+
+import {
+  Observable
+} from 'rxjs';
+
+import {
+  environment
+} from 'src/environments/environment';
 
 
 // ============================================================
@@ -9,9 +20,26 @@ import { environment } from 'src/environments/environment';
 // ============================================================
 
 export interface ApiResponse<T> {
-  type: string;
-  message: string;
-  data: T;
+
+  type:
+    string;
+
+  message:
+    string;
+
+  data:
+    T;
+}
+
+
+// ============================================================
+// REQUEST RDEP
+// ============================================================
+
+export interface GenerarRdepRequest {
+  anio: number;
+  idEmpresa: number;
+  idEmpleado?: number | null;
 }
 
 
@@ -20,94 +48,147 @@ export interface ApiResponse<T> {
 // ============================================================
 
 export interface CalcularImpuestoRentaRequest {
-  fechaPeriodo: string;
-  idEmpresa: number;
-  idLocal?: number | null;
-  idEmpleado?: number | null;
+
+  fechaPeriodo:
+    string;
+
+  idEmpresa:
+    number;
+
+  idLocal?:
+    number |
+    null;
+
+  idEmpleado?:
+    number |
+    null;
 }
 
 
 // ============================================================
-// RESPONSE CALCULAR
+// RESPONSE
 // ============================================================
 
 export interface ImpuestoRentaResponse {
 
-  idEmpleado: number;
+  idEmpleado:
+    number;
 
-  idLocal: number | null;
+  idLocal:
+    number |
+    null;
 
-  local: string;
+  local:
+    string;
 
-  numeroAfiliacion: string;
+  numeroAfiliacion:
+    string;
 
-  cedula: string;
+  cedula:
+    string;
 
-  codigoSectorial: string;
+  codigoSectorial:
+    string;
 
-  empleado: string;
+  empleado:
+    string;
 
-  diasTrabajados: number;
+  diasTrabajados:
+    number;
 
-  baseImponible: number;
+  baseImponible:
+    number;
 
-  impuestoRentaAnual: number;
+  impuestoRentaAnual:
+    number;
 
-  rebaja: number;
+  rebaja:
+    number;
 
-  impuestoCausado: number;
+  impuestoCausado:
+    number;
 
-  impuestoPagado: number;
+  impuestoPagado:
+    number;
 
-  diferencia: number;
+  diferencia:
+    number;
 
-  fechaIngreso: string | null;
+  fechaIngreso:
+    string |
+    null;
 
-  fechaSalida: string | null;
+  fechaSalida:
+    string |
+    null;
 
-  cargas: number;
+  cargas:
+    number;
 
-  gastosPersonales: number;
+  gastosPersonales:
+    number;
 }
 
 
 // ============================================================
-// DETALLE PARA GRABAR
+// DETALLE GRABAR
 // ============================================================
 
 export interface GrabarImpuestoRentaDetalleRequest {
 
-  idEmpleado: number;
+  idEmpleado:
+    number;
 
-  idLocal?: number | null;
+  idLocal?:
+    number |
+    null;
 
-  cedula?: string | null;
+  cedula?:
+    string |
+    null;
 
-  numeroAfiliacion?: string | null;
+  numeroAfiliacion?:
+    string |
+    null;
 
-  codigoSectorial?: string | null;
+  codigoSectorial?:
+    string |
+    null;
 
-  diasTrabajados: number;
+  diasTrabajados:
+    number;
 
-  fechaIngreso?: string | null;
+  fechaIngreso?:
+    string |
+    null;
 
-  fechaSalida?: string | null;
+  fechaSalida?:
+    string |
+    null;
 
-  baseImponible: number;
+  baseImponible:
+    number;
 
-  impuestoRentaAnual: number;
+  impuestoRentaAnual:
+    number;
 
-  rebaja: number;
+  rebaja:
+    number;
 
-  impuestoCausado: number;
+  impuestoCausado:
+    number;
 
-  impuestoPagado: number;
+  impuestoPagado:
+    number;
 
-  diferencia: number;
+  diferencia:
+    number;
 
-  cargas: number;
+  cargas:
+    number;
 
-  gastosPersonales: number;
+  gastosPersonales:
+    number;
 }
 
 
@@ -117,13 +198,17 @@ export interface GrabarImpuestoRentaDetalleRequest {
 
 export interface GrabarImpuestoRentaRequest {
 
-  fechaPeriodo: string;
+  fechaPeriodo:
+    string;
 
-  idEmpresa: number;
+  idEmpresa:
+    number;
 
-  idUsuario: number;
+  idUsuario:
+    number;
 
-  empleados: GrabarImpuestoRentaDetalleRequest[];
+  empleados:
+    GrabarImpuestoRentaDetalleRequest[];
 }
 
 
@@ -132,15 +217,19 @@ export interface GrabarImpuestoRentaRequest {
 // ============================================================
 
 @Injectable({
-  providedIn: 'root'
+  providedIn:
+    'root'
 })
 export class ImpuestoRentaService {
+
 
   private readonly baseUrl =
     `${environment.nominaEspecialUrl}/ImpuestoRenta`;
 
+
   constructor(
-    private readonly http: HttpClient
+    private readonly http:
+      HttpClient
   ) {}
 
 
@@ -149,11 +238,18 @@ export class ImpuestoRentaService {
   // ==========================================================
 
   calcular(
-    request: CalcularImpuestoRentaRequest
-  ): Observable<ApiResponse<ImpuestoRentaResponse[]>> {
+    request:
+      CalcularImpuestoRentaRequest
+  ): Observable<
+    ApiResponse<
+      ImpuestoRentaResponse[]
+    >
+  > {
 
     return this.http.post<
-      ApiResponse<ImpuestoRentaResponse[]>
+      ApiResponse<
+        ImpuestoRentaResponse[]
+      >
     >(
       `${this.baseUrl}/calcular`,
       request
@@ -166,14 +262,37 @@ export class ImpuestoRentaService {
   // ==========================================================
 
   grabar(
-    request: GrabarImpuestoRentaRequest
-  ): Observable<ApiResponse<boolean>> {
+    request:
+      GrabarImpuestoRentaRequest
+  ): Observable<
+    ApiResponse<boolean>
+  > {
 
     return this.http.post<
       ApiResponse<boolean>
     >(
       `${this.baseUrl}/grabar`,
       request
+    );
+  }
+
+
+  // ==========================================================
+  // XML RDEP
+  // ==========================================================
+
+  generarRdepXml(
+    request:
+      GenerarRdepRequest
+  ): Observable<Blob> {
+
+    return this.http.post(
+      `${this.baseUrl}/rdep/xml`,
+      request,
+      {
+        responseType:
+          'blob'
+      }
     );
   }
 }

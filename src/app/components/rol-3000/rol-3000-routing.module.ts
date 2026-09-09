@@ -300,6 +300,7 @@ import {
   RpBanTerceroComponent
 } from './configuracion/bancos/bancos-terceros/list/bancos-terceros-rol.component';
 
+import { BonosComponent } from './especial/bonos/bonos.component';
 import {
   RpBancosComponent
 } from './configuracion/bancos/bancos/list/bancos-rol.component';
@@ -323,6 +324,7 @@ import {
 import {
   ExploradorNominaComponent
 } from './nomina/explorador-nomina/explorador-nomina.component';
+import { JubilacionPatronalComponent } from './especial/jubilacion-patronal/jubilacion-patronal.component';
 
 
 // ============================================================
@@ -1030,7 +1032,16 @@ const routes: Routes = [
         component: ImpuestosRentaComponent,
        
       },
-
+       {
+        path: 'jubilacion-patronal',
+        component: JubilacionPatronalComponent,
+       
+      },
+      {
+        path: 'bonos',
+        component: BonosComponent,
+       
+      },
       {
         path: 'sectorial',
         component: SectorialComponent,

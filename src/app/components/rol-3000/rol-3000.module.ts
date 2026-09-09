@@ -355,7 +355,9 @@ import {
   DialogBancoNominaComponent
 } from './nomina/dialog-banco-nomina/dialog-banco-nomina.component';
 
+import { JubilacionPatronalComponent } from './especial/jubilacion-patronal/jubilacion-patronal.component'; 
 
+import { BonosComponent } from './especial/bonos/bonos.component';
 // ============================================================
 // MODULE
 // ============================================================
@@ -426,7 +428,8 @@ import {
     FondoReservaComponent,
     UtilidadesComponent,
     ImpuestosRentaComponent,
-
+    JubilacionPatronalComponent,
+    BonosComponent,
     // DIÁLOGOS
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,
