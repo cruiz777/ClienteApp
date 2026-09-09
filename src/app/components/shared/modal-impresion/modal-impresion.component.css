@@ -1,0 +1,13 @@
+.prefijo-item {
+  cursor: pointer;
+  padding: 4px;
+}
+
+.prefijo-item:hover {
+  background-color: #f0f0f0;
+}
+
+.prefijo-item.seleccionado {
+  background-color: #d0f0d0;
+  font-weight: bold;
+}

@@ -1,0 +1,166 @@
+:host {
+  display: contents;
+}
+
+.person-form-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px;
+  font-family: "Inter", sans-serif;
+  background-color: #ffffff;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.form-title {
+  color: #002c6c;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 30px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  width: calc(50% - 10px);
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .form-field {
+    width: 100%;
+  }
+}
+
+.field-label {
+  color: #002c6c;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.field-input,
+.dropdown-field select {
+  font-size: 14px;
+  color: #002c6c;
+  padding: 8px 10px;
+  border: 1px solid #ccd5e2;
+  border-radius: 5px;
+  background-color: #fff;
+  transition: border-color 0.2s ease;
+}
+
+.field-input:focus,
+.dropdown-field select:focus {
+  border-color: #0066cc;
+  outline: none;
+}
+
+.error {
+  color: #d32f2f;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.dropdown-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+  width: 100%;
+}
+
+.add-button {
+  cursor: pointer;
+  padding-left: 10px;
+  width: max-content;
+  display: flex;
+  align-items: center;
+}
+
+.add-icon {
+  width: 16px;
+  height: 16px;
+  stroke: #f26334;
+  transition: transform 0.2s ease;
+}
+
+.add-button:hover .add-icon {
+  transform: scale(1.1);
+}
+
+.item-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-tag {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafc;
+  border: 1px solid #ccd5e2;
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #002c6c;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #d32f2f;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.delete-btn .material-icons {
+  font-size: 18px;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  gap: 16px;
+}
+
+.action-button {
+  padding: 10px 30px;
+  border: none;
+  border-radius: 5px;
+  background-color: #002c6c;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #004ea2;
+}
+
+@media (max-width: 640px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+}

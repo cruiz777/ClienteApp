@@ -1,0 +1,330 @@
+<div class="reporte-page">
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
+
+    <div class="report-header">
+
+      <div>
+
+        <h2>
+          Reporte de Provisiones
+        </h2>
+
+        <p>
+          Consulte las provisiones generadas por período.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTROS
+    ====================================================== -->
+
+    <div class="filter-row">
+
+
+      <!-- ===================================================
+           PERÍODO
+      ==================================================== -->
+
+      <mat-form-field
+        appearance="outline"
+        class="periodo-field">
+
+        <mat-label>
+          Período
+        </mat-label>
+
+
+        <!--
+          El usuario NO escribe la fecha.
+
+          Selecciona año + mes.
+
+          El TS coloca automáticamente
+          el último día del mes.
+        -->
+
+        <input
+          matInput
+          [matDatepicker]="pickerPeriodo"
+          formControlName="periodoInicial"
+          readonly>
+
+
+        <mat-datepicker-toggle
+          matSuffix
+          [for]="pickerPeriodo">
+
+        </mat-datepicker-toggle>
+
+
+        <!--
+          startView multi-year:
+
+          1. Selecciona año
+          2. Selecciona mes
+          3. monthSelected ejecuta seleccionarMes()
+          4. Se coloca último día del mes
+        -->
+
+        <mat-datepicker
+          #pickerPeriodo
+          startView="multi-year"
+          (monthSelected)="
+            seleccionarMes(
+              $event,
+              pickerPeriodo
+            )
+          ">
+
+        </mat-datepicker>
+
+
+        <mat-error
+          *ngIf="
+            form.get('periodoInicial')?.touched
+            &&
+            form.get('periodoInicial')?.invalid
+          ">
+
+          El período es obligatorio.
+
+        </mat-error>
+
+      </mat-form-field>
+
+
+      <!-- ===================================================
+           CONSULTAR
+      ==================================================== -->
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="cargando"
+        (click)="aceptar()">
+
+        <mat-icon>
+          search
+        </mat-icon>
+
+
+        {{
+          cargando
+            ? 'Consultando...'
+            : 'Consultar'
+        }}
+
+      </button>
+
+
+      <!-- ===================================================
+           EXPORTAR EXCEL
+      ==================================================== -->
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="
+          cargando
+          ||
+          !hayResultados
+        "
+        (click)="exportarExcel()">
+
+        <mat-icon>
+          table_view
+        </mat-icon>
+
+        Exportar Excel
+
+      </button>
+
+
+      <!-- ===================================================
+           LIMPIAR
+      ==================================================== -->
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="cargando"
+        (click)="cancelar()">
+
+        <mat-icon>
+          refresh
+        </mat-icon>
+
+        Limpiar
+
+      </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         RESUMEN
+    ====================================================== -->
+
+    <div
+      class="report-summary"
+      *ngIf="hayResultados">
+
+
+      <!-- GENERALES -->
+
+      <div class="summary-item">
+
+        <span>
+          Empleados Generales
+        </span>
+
+        <strong>
+          {{ cantidadGenerales }}
+        </strong>
+
+      </div>
+
+
+      <!-- PASANTES -->
+
+      <div class="summary-item">
+
+        <span>
+          Pasantes / Becarios
+        </span>
+
+        <strong>
+          {{ cantidadPasantes }}
+        </strong>
+
+      </div>
+
+
+      <!-- TOTAL -->
+
+      <div class="summary-item">
+
+        <span>
+          Total Registros
+        </span>
+
+        <strong>
+          {{ totalRegistros }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CARGANDO
+    ====================================================== -->
+
+    <div
+      class="loading-container"
+      *ngIf="cargando">
+
+      <mat-spinner
+        diameter="38">
+
+      </mat-spinner>
+
+
+      <span>
+        Consultando provisiones...
+      </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         AG GRID
+    ====================================================== -->
+
+    <div
+      class="grid-container"
+      *ngIf="
+        !cargando
+        &&
+        hayResultados
+      ">
+
+      <ag-grid-angular
+
+        class="ag-theme-alpine"
+
+        style="
+          width: 100%;
+          height: 620px;
+        "
+
+        [rowData]="rowData"
+
+        [columnDefs]="columnDefs"
+
+        [defaultColDef]="defaultColDef"
+
+        [pinnedBottomRowData]="pinnedBottomRowData"
+
+        [pagination]="true"
+
+        [paginationPageSize]="25"
+
+        [animateRows]="true"
+
+        [enableCellTextSelection]="true"
+
+        (gridReady)="onGridReady($event)">
+
+      </ag-grid-angular>
+
+    </div>
+
+
+    <!-- =====================================================
+         SIN INFORMACIÓN
+    ====================================================== -->
+
+    <div
+      class="empty-state"
+      *ngIf="
+        !cargando
+        &&
+        consultado
+        &&
+        !hayResultados
+      ">
+
+      <mat-icon>
+        search_off
+      </mat-icon>
+
+
+      <strong>
+        No existen provisiones
+      </strong>
+
+
+      <span>
+        No se encontraron registros para el período seleccionado.
+      </span>
+
+    </div>
+
+  </div>
+
+</div>

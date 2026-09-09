@@ -1,0 +1,32 @@
+<h2 mat-dialog-title class="dialog-title">
+  {{ modoEdicion ? 'Editar Departamento' : 'Crear Departamento' }}
+</h2>
+
+<mat-dialog-content class="dialog-content">
+  <form [formGroup]="departamentoForm" class="dialog-form">
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="form-field">
+        <mat-label>Nombre del Departamento</mat-label>
+        <input matInput formControlName="nombre" appUppercase />
+        <mat-error *ngIf="departamentoForm.get('nombre')?.hasError('required')">
+          Campo obligatorio
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="form-field" *ngIf="modoEdicion">
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="estado">
+          <mat-option [value]="true">ACTIVO</mat-option>
+          <mat-option [value]="false">INACTIVO</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button mat-button class="btn-cancel" (click)="cerrar()">Cancelar</button>
+  <button mat-raised-button class="btn-save" (click)="guardar()" [disabled]="departamentoForm.invalid">
+    Guardar
+  </button>
+</mat-dialog-actions>

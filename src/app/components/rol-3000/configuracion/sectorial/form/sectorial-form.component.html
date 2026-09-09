@@ -1,0 +1,117 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Sectorial' : 'Nuevo Sectorial' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- DESCRIPCIÓN -->
+    <div class="form-group">
+      <label for="desSectorial">Descripción <span class="required">*</span></label>
+      <input
+        id="desSectorial"
+        type="text"
+        formControlName="desSectorial"
+        placeholder="Ej: Sector Manufacturero"
+        maxlength="248"
+      />
+      <div class="error" *ngIf="form.get('desSectorial')?.touched && form.get('desSectorial')?.errors">
+        <span *ngIf="form.get('desSectorial')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('desSectorial')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ESTRUCTURA OCUPACIONAL -->
+    <div class="form-group">
+      <label for="estructuraOcupacional">Estructura Ocupacional</label>
+      <input
+        id="estructuraOcupacional"
+        type="text"
+        formControlName="estructuraOcupacional"
+        placeholder="Ej: Trabajadores en General"
+        maxlength="248"
+      />
+      <div class="error" *ngIf="form.get('estructuraOcupacional')?.touched && form.get('estructuraOcupacional')?.errors">
+        <span *ngIf="form.get('estructuraOcupacional')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- CÓDIGO IESS e ID EMPRESA -->
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="codigoIess">Código IESS</label>
+        <input
+          id="codigoIess"
+          type="text"
+          formControlName="codigoIess"
+          placeholder="Ej: 010101"
+          maxlength="50"
+        />
+        <div class="error" *ngIf="form.get('codigoIess')?.touched && form.get('codigoIess')?.errors">
+          <span *ngIf="form.get('codigoIess')?.hasError('maxlength')">Máximo 50 caracteres.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="idEmpresa">Id Empresa <span class="required">*</span></label>
+        <input
+          id="idEmpresa"
+          type="number"
+          formControlName="idEmpresa"
+          placeholder="Ej: 1"
+          min="1"
+        />
+        <div class="error" *ngIf="form.get('idEmpresa')?.touched && form.get('idEmpresa')?.errors">
+          <span *ngIf="form.get('idEmpresa')?.hasError('required')">Campo obligatorio.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SALARIO MÍNIMO y TARIFA MÍNIMA -->
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="salarioMinimo">Salario Mínimo</label>
+        <input
+          id="salarioMinimo"
+          type="number"
+          formControlName="salarioMinimo"
+          placeholder="Ej: 460.00"
+          min="0"
+          step="0.01"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="tarifaMinima">Tarifa Mínima</label>
+        <input
+          id="tarifaMinima"
+          type="number"
+          formControlName="tarifaMinima"
+          placeholder="Ej: 2.88"
+          min="0"
+          step="0.01"
+        />
+      </div>
+    </div>
+
+    <!-- ESTADO -->
+    <div class="form-group checkboxes-group">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estado" />
+        <span class="checkbox-custom"></span>
+        Activo
+      </label>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>

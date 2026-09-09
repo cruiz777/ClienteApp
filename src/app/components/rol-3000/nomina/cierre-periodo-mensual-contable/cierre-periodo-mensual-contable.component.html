@@ -1,0 +1,61 @@
+<div class="cierre-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Cierre de Periodo Mensual</h2>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="fecha-field">
+        <mat-label>Fecha de Periodo</mat-label>
+
+        <input
+          matInput
+          [matDatepicker]="pickerPeriodo"
+          formControlName="fecha"
+          [matDatepickerFilter]="soloUltimoDiaMes"
+          readonly
+        />
+
+        <mat-datepicker-toggle matSuffix [for]="pickerPeriodo"></mat-datepicker-toggle>
+        <mat-datepicker #pickerPeriodo></mat-datepicker>
+
+        <mat-error *ngIf="form.get('fecha')?.hasError('required')">
+          La fecha es obligatoria
+        </mat-error>
+
+        <mat-error *ngIf="form.get('fecha')?.hasError('fechaInvalida')">
+          Solo puede seleccionar el último día del mes.
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="procesando"
+        (click)="cierre()"
+      >
+        {{ procesando ? 'Contabilizando...' : 'Cierre' }}
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="procesando"
+        (click)="cancelar()"
+      >
+        Cancelar
+      </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        type="button"
+        [disabled]="procesando || !tieneReportes"
+        (click)="imprimir()"
+      >
+        Imprimir
+      </button>
+    </div>
+  </div>
+</div>

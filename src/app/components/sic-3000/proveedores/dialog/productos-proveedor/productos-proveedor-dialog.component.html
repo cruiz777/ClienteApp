@@ -1,0 +1,57 @@
+<div class="dialog-container">
+  <!-- Header -->
+  <div class="dialog-header">
+    <h2 mat-dialog-title>
+      <mat-icon>inventory_2</mat-icon>
+      Productos del Proveedor
+    </h2>
+    <button mat-icon-button (click)="cerrar()" class="btn-close">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Info del proveedor -->
+  <div class="proveedor-info">
+    <div class="info-item">
+      <strong>Proveedor:</strong> {{ proveedor.nombre_prov || proveedor.nombre_comercial }}
+    </div>
+    <div class="info-item">
+      <strong>RUC:</strong> {{ proveedor.ruc_prov }}
+    </div>
+    <div class="info-item">
+      <strong>Código:</strong> {{ proveedor.codigo_proveedor }}
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <mat-dialog-content>
+
+    <!-- Grid -->
+    <div class="grid-container" *ngIf="!isLoading">
+      <ag-grid-angular
+        style="width: 100%; height: 500px;"
+        class="ag-theme-alpine"
+        [rowData]="productos"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[10, 20, 50]"
+        (gridReady)="onGridReady($event)"
+      >
+      </ag-grid-angular>
+    </div>
+
+    <!-- Sin datos -->
+    <div class="sin-datos" *ngIf="!isLoading && productos.length === 0">
+      <mat-icon>inbox</mat-icon>
+      <p>Este proveedor no tiene productos asociados</p>
+    </div>
+  </mat-dialog-content>
+
+  <!-- Footer -->
+  <mat-dialog-actions align="end">
+    <button mat-raised-button (click)="cerrar()">Cerrar</button>
+  </mat-dialog-actions>
+</div>

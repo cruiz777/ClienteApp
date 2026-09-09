@@ -1,0 +1,275 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'Transferir'" (click)="cambiarTab('Transferir')">Transferir</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')"
+  [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.listado'))"
+  [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.listado')) ? 'Sin permisos' : ''"
+  >Listado</button>
+  <button [class.active]="activeTab === 'Asignar'" (click)="cambiarTab('Asignar')">Asignar GLN Entidad</button>
+</div>
+
+<div class="contenido-tablas">
+
+  <!-- TAB TRANSFERIR -->
+  <ng-container *ngIf="activeTab === 'Transferir'">
+    <h2>Transferencia de Prefijos</h2>
+
+    <!-- Campo ORIGEN -->
+
+
+    <mat-form-field appearance="outline" class="form-campo-largo">
+      <mat-label>Cliente</mat-label>
+      <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
+        placeholder="Buscar cliente..." 
+        [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+        [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+        matInput
+        />
+      <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+        (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+        <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+          <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+
+
+
+
+    <!-- Campo DESTINO -->
+    <mat-form-field appearance="outline" class="form-campo-largo">
+      <mat-label>Destino</mat-label>
+      <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
+        placeholder="Buscar cliente..." 
+        [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+        [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+        matInput
+        />
+      <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
+        (optionSelected)="seleccionarClienteDestino($event.option.value)">
+        <mat-option *ngFor="let cliente of clientesDestinoFiltrados" [value]="cliente">
+          <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+    <h3>Prefijos del Cliente Origen</h3>
+    <table class="tabla-estilo" *ngIf="prefijosClienteOrigen.length > 0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Seleccionar</th>
+          <th style="display: none;">Id</th>
+          <th style="display: none;">bandera</th>
+          <th>Prefijo</th>
+          <th>Fecha</th>
+          <th>Fecha Cierre</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of prefijosClienteOrigen; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td><input type="checkbox" [(ngModel)]="item.seleccionado" /></td>
+          <td style="display: none;">{{ item.id_prefijos }}</td>
+          <td style="display: none;">{{ item.bandera }}</td>
+          <td>{{ item.codpre }}</td>
+          <td>{{ item.fecha | date: 'dd/MM/yyyy'}}</td>
+          <td>{{
+            item.fechaCierre && item.fechaCierre !== '0001-01-01T00:00:00'
+            ? (item.fechaCierre | date: 'dd/MM/yyyy')
+            : ''
+            }}</td>
+          <td>{{ item.estado ? 'Inactivo' : 'Activo' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="form-actions">
+      <div class="form-actions form-actions-horizontal alineado-derecha">
+        <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+          (click)="seleccionarBoton('nueva')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+          >
+          Nueva Búsqueda
+        </button>
+        <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
+          (click)="seleccionarBoton('asignar')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+          >Transferir</button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- TAB LISTADO -->
+  <ng-container *ngIf="activeTab === 'Listado'">
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Listado de Prefijos</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar:</label>
+            <input matInput type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button [matMenuTriggerFor]="menuExportar"
+        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.exportar'))"
+        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.exportar')) ? 'Sin permisos' : ''"
+         [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.exportar')) ? '1' : '0.5'"
+        >Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <table mat-table [dataSource]="auditoriasTransferencia" class="mat-elevation-z8 full-width-table">
+
+      <!-- Index -->
+      <ng-container matColumnDef="index">
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+      </ng-container>
+
+      <!-- Prefijo -->
+      <ng-container matColumnDef="prefijo">
+        <th mat-header-cell *matHeaderCellDef>Prefijo</th>
+        <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
+      </ng-container>
+
+      <!-- Empresa Anterior -->
+      <ng-container matColumnDef="origen">
+        <th mat-header-cell *matHeaderCellDef>Empresa Anterior</th>
+        <td mat-cell *matCellDef="let row">{{ row.origen }}</td>
+      </ng-container>
+
+      <!-- RUC Anterior -->
+      <ng-container matColumnDef="rucOrigen">
+        <th mat-header-cell *matHeaderCellDef>RUC Anterior</th>
+        <td mat-cell *matCellDef="let row">{{ row.rucOrigen }}</td>
+      </ng-container>
+
+      <!-- Empresa Actual -->
+      <ng-container matColumnDef="destino">
+        <th mat-header-cell *matHeaderCellDef>Empresa Actual</th>
+        <td mat-cell *matCellDef="let row">{{ row.destino }}</td>
+      </ng-container>
+
+      <!-- RUC Actual -->
+      <ng-container matColumnDef="rucDestino">
+        <th mat-header-cell *matHeaderCellDef>RUC Actual</th>
+        <td mat-cell *matCellDef="let row">{{ row.rucDestino }}</td>
+      </ng-container>
+
+      <!-- Fecha -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <mat-paginator #paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons></mat-paginator>
+
+
+  </ng-container>
+
+
+  <!-- TAB ASIGNAR -->
+  <ng-container *ngIf="activeTab === 'Asignar'">
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Asignación de GLN Entidad</h2>
+        <div class="form-row">
+
+          <div class="form-group">
+
+
+            <mat-form-field appearance="outline" class="form-campo-largo">
+              <mat-label>Cliente</mat-label>
+              <input type="text" matInput [formControl]="clienteEntidadControl" [matAutocomplete]="autoOrigen"
+                placeholder="Buscar cliente..." 
+                [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+                [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+                [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+                matInput
+                />
+              <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+                (optionSelected)="seleccionarClienteEntidad($event.option.value)">
+                <mat-option *ngFor="let cliente of clientesEntidadFiltrados" [value]="cliente">
+                  <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+
+          </div>
+
+          <div class="form-actions form-actions-horizontal alineado-derecha">
+            <button (click)="onBuscar('llive')" [class.activo]="botonActivo === 'buscar'"
+              (click)="seleccionarBoton('buscar')"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? 'Sin permisos' : ''"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? '1' : '0.5'"
+              >Buscar</button>
+            <button (click)="onNuevaBusqueda2()" [class.activo]="botonActivo === 'nueva'"
+              (click)="seleccionarBoton('nueva')"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? 'Sin permisos' : ''"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? '1' : '0.5'"
+              >Nueva Búsqueda</button>
+            <button (click)="asignarOrdenPrefijo()" [class.activo]="botonActivo === 'asignar'"
+              (click)="seleccionarBoton('asignar')"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? 'Sin permisos' : ''"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? '1' : '0.5'"
+              >Asignar</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <table class="tabla-estilo" *ngIf="prefijosClienteEntidad.length > 0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Seleccionar</th>
+          <th style="display: none;" >Id</th>
+          <th style="display: none;">bandera</th>
+          <th>Prefijo</th>
+          <th>Fecha</th>
+
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item2 of prefijosClienteEntidad; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td><input
+  type="checkbox"
+  [checked]="item2.orden === 1"
+  (change)="seleccionarUnico2(item2)"
+/></td>
+          <td style="display: none;">{{ item2.id_prefijos }}</td>
+          <td style="display: none;">{{ item2.orden }}</td>
+          <td>{{ item2.codpre }}</td>
+          <td>{{ item2.fecha | date: 'dd/MM/yyyy'}}</td>
+          <td>{{ item2.orden === 1 ? 'Entidad' : '---' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </ng-container>
+
+</div>

@@ -1,0 +1,294 @@
+<!-- perfiles-list.component.html -->
+<div class="tabs-limpias">
+  <div *ngFor="let sistema of sistemas"
+       class="tab-sistema"
+       [class.activo]="sistema.nombre === sistemaActivo">
+
+    <div class="contenido-tab" (click)="seleccionarSistema(sistema.nombre, sistema.id_sistema)">
+      {{ sistema.nombre }}
+    </div>
+
+    <div class="acciones-tab">
+      <button (click)="abrirMenuAcciones(sistema)" title="Más acciones"
+              [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-sistema'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-sistema')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-sistema')) ? 'auto' : 'none'"
+              matInput
+      >⋮</button>
+      <div class="dropdown" *ngIf="sistema === sistemaAccionesVisible">
+        <button (click)="editarGeneral('sistema', sistema.id_sistema)">✏️ Editar</button>
+        <button (click)="eliminarGeneral('sistema', sistema.id_sistema)">🗑️ Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-sistema nuevo">
+    <button (click)="crearEntidad('sistema')" title="Nuevo sistema"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-sistema'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-sistema')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-sistema')) ? 'auto' : 'none'"
+                        matInput
+    >+</button>
+  </div>
+</div>
+
+
+
+<div class="contenido-tablas">
+
+  <div class="encabezado-acciones">
+    <h2>Tabla de Perfiles</h2>
+
+    <div>
+      <input type="text" placeholder="🔍 Buscar por código o nombre" [(ngModel)]="filtroPerfil" class="input-filtro" />
+    </div>
+
+    <div class="form-actions form-actions-horizontal alineado-derecha">
+      <button mat-stroked-button (click)="seleccionarBoton('nuevo'); onNuevoPerfil()"
+        [class.activo]="botonActivo === 'nuevo'"
+        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-perfil'))"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-perfil')) ? '1' : '0.3'"
+        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-perfil')) ? 'auto' : 'none'"
+        matInput
+        >
+        Nuevo Perfil
+      </button>
+    </div>
+  </div>
+
+
+  <div class="tabla-scrollable">
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th class="col-reducida">Código</th>
+          <th>Perfil</th>
+          <th class="col-reducida" 
+              *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-perfil')">
+            Opciones
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let perfil of perfilesFiltrados" [class.fila-activa]="perfil.id_perfil === perfilSeleccionado"
+          (click)="seleccionarPerfil(perfil.id_perfil)" style="cursor: pointer;">
+          <td>{{ perfil.id_perfil }}</td>
+          <td>{{ perfil.nombre }}</td>
+          <td *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-perfil')">
+            <button (click)="editarPerfil(perfil); $event.stopPropagation()" title="Editar">
+              <img src="assets/icons/icon-modificar-3.png" width="20" />
+            </button>
+            <button (click)="eliminarPerfil(perfil.id_perfil); $event.stopPropagation()" title="Eliminar">
+              <img src="assets/icons/icon-basurero.png" width="20" />
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+      <!-- Módulos -->
+    <div class="panel-col">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Módulos</h3>
+        <button title="Nuevo módulo" (click)="crearEntidad('modulo')" class="btn-accion"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-modulo'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-modulo')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-modulo')) ? 'auto' : 'none'"
+                        matInput
+        >+</button>
+      </div>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Módulo</th>
+            <th>Todo</th>
+            <th class="col-reducida"
+            *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-modulo')"
+            >Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let modulo of modulos" 
+            [class.fila-activa]="modulo.id_modulo === moduloSeleccionado"
+            [ngClass]="{
+              'modulo-con-opciones': tieneModuloAlgunasOpciones(modulo.id_modulo),
+              'modulo-con-opciones-completo': esModuloCompletamenteAsignado(modulo.id_modulo)
+            }">
+            <td class="ocultar-id">{{ modulo.id_modulo }}</td>
+            <td (click)="seleccionarModulo(modulo.id_modulo)" style="cursor: pointer;">
+              {{ modulo.nombre }}
+            </td>
+            <td class="col-reducida">
+              <input type="checkbox" [checked]="esModuloCompletamenteAsignado(modulo.id_modulo)"
+                (click)="$event.stopPropagation()"
+                (change)="detenerYAplicarCambioModulo($event, modulo.id_modulo)" />
+            </td>
+            <td *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-modulo')">
+              <button (click)="editarGeneral('modulo', modulo.id_modulo)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('modulo', modulo.id_modulo)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+
+      </table>
+    </div>
+
+
+  <div class="tablas-panel">
+
+
+    <!-- Menús -->
+    <div class="panel-col">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Menús</h3>
+        <button title="Nuevo menú" (click)="crearEntidad('menu')" class="btn-accion"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-menu'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-menu')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-menu')) ? 'auto' : 'none'"
+                        matInput
+        >+</button>
+      </div>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Menú</th>
+            <th>Tiene_Acceso</th>
+            <th class="col-reducida"
+            *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-menu')"
+            >Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let menu of menus" [ngClass]="{
+            'fila-activa': menu.id_menu === menuSeleccionado,
+            'menu-con-opciones': menu.tieneOpciones,
+            'menu-con-opciones-completo': menu.todasAsignadas
+          }" (click)="seleccionarMenu(menu.id_menu)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ menu.id_menu }}</td>
+            <td>{{ menu.nombre }}</td>
+            <td class="col-reducida">
+              <input type="checkbox"
+                [checked]="menu.todasAsignadas"
+                (click)="$event.stopPropagation()"
+                (change)="onToggleTodoOpciones(menu, obtenerEstadoCheckBox($event))" />
+            </td>
+            <td *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-menu')">
+              <button (click)="editarGeneral('menu', menu.id_menu)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('menu', menu.id_menu)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- SubMenus  -->
+    <div class="panel-col">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>SubMenus</h3>
+        <button title="Nuevo submenu" (click)="crearEntidad('submenu')" class="btn-accion"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-submenu'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-submenu')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-submenu')) ? 'auto' : 'none'"
+                        matInput
+        >+</button>
+      </div>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>SubMenu</th>
+            <th>Tiene_Acceso</th>  <!-- Agregar esta columna -->
+            <th class="col-reducida"
+            *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-submenu')"
+            >Acciones</th>
+          </tr>
+        </thead>
+
+        <!-- Y en el tbody, agregar la columna del checkbox: -->
+        <tbody>
+          <tr *ngFor="let submenu of submenus" 
+            [class.fila-activa]="submenu.id_sub === submenuSeleccionado"
+            [ngClass]="{
+              'submenu-con-opciones': tieneSubMenuAlgunasOpciones(submenu.id_sub),
+              'submenu-con-opciones-completo': esSubMenuCompletamenteAsignado(submenu.id_sub)
+            }"
+            (click)="seleccionarSubMenu(submenu.id_sub)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ submenu.id_sub }}</td>
+            <td>{{ submenu.nombre }}</td>
+            <td class="col-reducida">
+              <input type="checkbox" [checked]="esSubMenuCompletamenteAsignado(submenu.id_sub)" 
+                    (click)="$event.stopPropagation()"
+                    (change)="onToggleTodoOpcionesSubMenu(submenu.id_sub, obtenerEstadoCheckBox($event))" />
+            </td>
+            <td
+              *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-submenu')"
+            >
+              <button (click)="editarGeneral('submenu', submenu.id_sub)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('submenu', submenu.id_sub)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Opciones -->
+    <div class="panel-col">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Opciones</h3>
+        <button title="Nueva opción" (click)="crearEntidad('opcion')" class="btn-accion"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-opcion'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-opcion')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-opcion')) ? 'auto' : 'none'"
+                        matInput
+        >+</button>
+      </div>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Opción</th>
+            <th>Tiene_Acceso</th>
+            <th class="col-reducida"
+              *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-opcion')"
+            >Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let opcion of opcionnes">
+            <td class="ocultar-id">{{ opcion.id_opcion }}</td>
+            <td>{{ opcion.nombre }}</td>
+            <td class="col-reducida">
+              <input type="checkbox" [(ngModel)]="opcion.status" (change)="onToggleOpcion(opcion)" />
+            </td>
+            <td
+              *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-opcion')"
+            >
+              <button (click)="editarGeneral('opcion', opcion.id_opcion)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('opcion', opcion.id_opcion)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+  </div>
+
+</div>

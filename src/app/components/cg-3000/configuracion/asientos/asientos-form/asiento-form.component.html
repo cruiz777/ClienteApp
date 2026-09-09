@@ -1,0 +1,65 @@
+<!-- src/app/asientos/asientos-form/asiento-form.component.html -->
+<div class="toolbar">
+  <button mat-raised-button color="primary" (click)="guardar()">💾 Guardar</button>
+  <button mat-stroked-button color="warn" (click)="cancelar()">✖ Cancelar</button>
+  <button mat-stroked-button color="accent" (click)="eliminarCheque()">🗓 Eliminar Cheque</button>
+</div>
+
+<div class="wrapper" [formGroup]="form">
+  <div class="header-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo Asiento *</mat-label>
+      <mat-select formControlName="tipoAsiento">
+        <mat-option value="DIARIO">DIARIO</mat-option>
+        <mat-option value="INGRESO">INGRESO</mat-option>
+        <mat-option value="EGRESO">EGRESO</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Número</mat-label>
+      <input matInput formControlName="numero" readonly>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha</mat-label>
+      <input matInput [matDatepicker]="dp" formControlName="fecha">
+      <mat-datepicker-toggle matSuffix [for]="dp"></mat-datepicker-toggle>
+      <mat-datepicker #dp></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field class="concepto" appearance="outline">
+      <mat-label>Concepto</mat-label>
+      <input matInput formControlName="concepto">
+    </mat-form-field>
+  </div>
+
+  <mat-tab-group>
+    <mat-tab label="Detalle Asiento">
+      <div class="seccion-titulo">
+          <button class="btn-add" (click)="agregarFila()">+ Agregar Detalle</button>
+         <button class="btn-template" (click)="agregarFila({ plantilla: true })">📑 Plantilla asiento</button>
+      </div>
+
+      <div class="grid-wrap ag-theme-quartz">
+        <ag-grid-angular
+  #agGrid
+  class="ag-theme-quartz"
+  [rowData]="rowData"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [gridOptions]="gridOptions"
+  [components]="components">
+</ag-grid-angular>
+      </div>
+    </mat-tab>
+
+    <mat-tab label="Movimiento Bancario">
+      <div class="placeholder">Aquí va tu formulario de movimiento bancario…</div>
+    </mat-tab>
+  </mat-tab-group>
+
+  <div class="tools">
+    <button mat-stroked-button (click)="simularSesionCaducada()">Simular sesión caducada</button>
+  </div>
+</div>

@@ -1,0 +1,329 @@
+/* ===== Layout general ===== */
+.wrap{
+  max-width: 1100px;
+  margin: 18px auto;
+  padding: 0 12px;
+}
+
+.card{
+  padding: 18px;
+  border-radius: 14px;
+}
+
+h2{
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* ===== NUEVO GRID PRINCIPAL (como tu screenshot) ===== */
+/* Areas:
+   [camArea | pasteArea]
+   [infoArea| pasteArea]  <- pasteArea ocupa 2 filas
+*/
+.scanGrid{
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  grid-template-areas:
+    "cam paste"
+    "info info";     /* ✅ info abajo, el paste ya NO se estira */
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+
+.camArea{ grid-area: cam; }
+.infoArea{ grid-area: info; }
+.pasteArea{ grid-area: paste; }
+
+/* Responsive: en pantallas pequeñas, apila */
+@media (max-width: 900px){
+  .scanGrid{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cam"
+      "paste"
+      "info";
+  }
+}
+
+/* ===== Video ===== */
+.video{
+  width: 100%;
+  height: 260px;
+  border-radius: 14px;
+  background: #111;
+  object-fit: cover;
+}
+
+/* ===== Panel info (abajo izquierda) ===== */
+.pasteInfo{
+  border: 1px solid #e6e6e6;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+  height: 100%;
+}
+
+.pasteTitle{
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.pasteHelp{
+  font-size: 13px;
+  color: #444;
+  line-height: 1.35;
+  margin-bottom: 10px;
+}
+
+.small{
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777;
+}
+
+.pasteActions{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pasteStatus{
+  font-size: 12.5px;
+  color: #444;
+  background: #f7f7f7;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+/* ===== Cuadro grande de pegado (derecha) ===== */
+.pasteTarget{
+  border: 2px dashed #e53935; /* rojo */
+  border-radius: 14px;
+  padding: 12px;
+  background: #fff;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: text;
+}
+
+/* ✅ grande y que “llene” la altura del grid (video+info) */
+.pasteTargetBig{
+  height: 100%;
+  min-height: 260px;
+}
+
+/* En móvil: tamaño razonable */
+@media (max-width: 900px){
+  .pasteTargetBig{
+    min-height: 240px;
+  }
+}
+
+.pasteTarget:focus{
+  box-shadow: 0 0 0 3px rgba(229, 57, 53, 0.18);
+  border-style: solid;
+}
+
+.pastePlaceholder{
+  text-align: center;
+}
+
+.pastePlaceholder .big{
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.pastePlaceholder .small2{
+  font-size: 12px;
+  color: #777;
+}
+
+/* Preview dentro del cuadro grande */
+.pasteImg{
+  max-width: 100%;
+  border-radius: 10px;
+  display: block;
+}
+
+.pasteImgBig{
+  max-height: 520px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ===== Form ===== */
+.w100{
+  width: 100%;
+}
+
+.btnProcess{
+  margin-top: 10px;
+  width: 100%;
+  height: 44px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.mt{
+  margin-top: 14px;
+}
+
+/* ===== Pills (GTIN validación) ===== */
+.pill{
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  margin-left: 8px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+}
+
+.pill.ok{
+  border-color: #2e7d32;
+  background: rgba(46, 125, 50, 0.10);
+}
+
+.pill.bad{
+  border-color: #c62828;
+  background: rgba(198, 40, 40, 0.10);
+}
+
+.pill.type{
+  border-color: #607d8b;
+  background: rgba(96, 125, 139, 0.12);
+}
+
+/* ===== Resultados (2 columnas + valores grandes) ===== */
+.resultGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 720px){
+  .resultGrid{
+    grid-template-columns: 1fr;
+  }
+}
+
+.resultItem{
+  border: 1px solid #e6e6e6;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.resultLabel{
+  font-size: 13px;
+  font-weight: 800;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.resultValue{
+  font-size: 26px;       /* ✅ grande */
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  line-height: 1.15;
+  color: #111;
+  word-break: break-word;
+}
+
+/* ===== JSON pre ===== */
+.pre{
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 12.5px;
+  overflow: auto;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.gtinRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.btnVerify{
+  min-width: 140px;
+}
+
+.resultItem.expired{
+  border: 2px solid #e53935;
+  border-radius: 12px;
+}
+
+.resultItem.expired .resultValue{
+  color:#e53935;
+  font-weight:700;
+}
+.snack-expired-big .mat-mdc-snack-bar-label{
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.snack-expired-big .mat-mdc-button.mat-mdc-snack-bar-action{
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+
+.snack-expired-big{
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+/* ===== 1) Tamaño y estilo (MDC) ===== */
+.snack-expired-big-center.mat-mdc-snack-bar-container .mdc-snackbar__surface{
+  padding: 22px 28px !important;
+  border-radius: 14px !important;
+  min-width: min(720px, 92vw) !important;
+}
+
+.snack-expired-big-center.mat-mdc-snack-bar-container .mdc-snackbar__label{
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+.snack-expired-big-center.mat-mdc-snack-bar-container .mat-mdc-button.mat-mdc-snack-bar-action{
+  font-size: 26px !important;
+  font-weight: 800 !important;
+}
+
+/* ===== 2) CENTRAR EN LA PANTALLA (vertical + horizontal) ===== */
+/* Chrome moderno soporta :has() */
+.cdk-overlay-pane:has(.snack-expired-big-center){
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+}
+.scanGridNoCam{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.pasteAreaFull{
+  grid-column: 1 / -1;
+}

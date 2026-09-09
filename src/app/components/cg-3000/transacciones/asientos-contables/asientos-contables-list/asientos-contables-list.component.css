@@ -1,0 +1,461 @@
+.zona-container { display: flex; flex-direction: column; gap: 12px; }
+.zona-header { display: flex; align-items: center; justify-content: space-between; }
+.btn-azul { background: #1976d2; color: #fff; border: none; 
+  padding: 8px 14px; border-radius: 6px; cursor: pointer; }
+
+
+.zona-busqueda { display: flex; align-items: center; gap: 12px; }
+.input-wrapper { position: relative; display: inline-flex; align-items: center; }
+.input-wrapper input { padding-right: 34px; }
+.input-wrapper img { position: absolute; right: 8px; width: 18px; height: 18px; opacity: 0.7; }
+
+.table-wrap { height: calc(100vh - 260px); }
+.grid { width: 100%; height: 100%; }
+
+.ag-action-btn {
+  background: transparent; border: none; cursor: pointer; padding: 0 6px;
+  display: inline-flex; align-items: center; height: 28px;
+}
+.ag-action-btn img { width: 18px; height: 18px; }
+.error { color: #b00020; }
+.loading { padding: 16px; }
+
+
+.zona-container {
+  padding: 5px;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.zona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: left;
+  margin-bottom: 25px;
+}
+
+.zona-header h2 {
+  font-size: 22px;
+  color: #002c6c;
+  font-weight: 700;
+}
+
+
+/* (Opcional) icono filtro y sort en blanco para cabecera oscura */
+.custom-grid .ag-icon {
+  filter: invert(1) brightness(1.8);
+}
+
+/* (Opcional) Botón de acciones coherente */
+.custom-grid .ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+}
+.custom-grid .ag-action-btn svg,
+.custom-grid .ag-action-btn img {
+  width: 18px; height: 18px;
+}
+
+/*:host ::ng-deep .custom-grid { variables aquí  }*/
+
+.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+}
+
+
+.custom-grid {
+  --ag-background-color:#dde3ee; /*fondo*/
+  --ag-foreground-color:#080808; /*color de letra*/
+  
+  --ag-header-background-color:#1d789f;/*cabecera  :#243760; */
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
+  --ag-even-row-background-color:#abc3f1;
+  
+  --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
+  --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
+  --ag-font-size: 12px;
+}
+
+
+.filtros-asientos {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filtro-busqueda,
+.filtro-fecha {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+}
+
+.filtro-busqueda label,
+.filtro-fecha label {
+  font-size: 13px;
+  margin-bottom: 2px;
+  color: #333;
+}
+
+/* input de fecha con estilo “bonito” */
+.fecha-control {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #2f6fbd;
+  outline: none;
+  font-size: 13px;
+  box-shadow: 0 0 0 2px rgba(47, 111, 189, 0.15);
+}
+
+/* al enfocar, un poco más de azul */
+.fecha-control:focus {
+  border-color: #1f4f9a;
+  box-shadow: 0 0 0 2px rgba(31, 79, 154, 0.3);
+}
+
+.filtro-texto {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+.btn-buscar {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #1f7ed0;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-buscar:hover {
+  background-color: #1762a4;
+}
+
+/* Contenedor general: todo alineado en una fila */
+.filtros-asientos {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Cada filtro (buscar, fecha desde, fecha hasta) */
+/* Cada item del filtro */
+.filtro-item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Campo Buscar más ancho */
+.filtro-item:first-child {
+  min-width: 280px;  /* <-- igual o más grande que las fechas */
+}
+
+/* Campos de fecha */
+.filtro-item:not(:first-child) {
+  min-width: 230px;
+}
+
+.filtro-item label {
+  font-size: 13px;
+  margin-bottom: 2px;
+  color: #333;
+}
+
+/* Estilo común para texto y fechas */
+.filtro-control {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #2f6fbd;
+  outline: none;
+  font-size: 13px;
+  box-shadow: 0 0 0 2px rgba(47, 111, 189, 0.15);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filtro-control:focus {
+  border-color: #1f4f9a;
+  box-shadow: 0 0 0 2px rgba(31, 79, 154, 0.3);
+}
+
+/* Input buscar con ícono */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon .filtro-control {
+  padding-right: 28px; /* espacio para el ícono */
+}
+
+.icon-search {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #666;
+  pointer-events: none;
+}
+
+/* Botón Buscar */
+.btn-buscar {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background-color: #1f7ed0;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  height: 32px;
+}
+
+.btn-buscar:hover {
+  background-color: #1762a4;
+}
+
+/* Ajustar altura del input de búsqueda para que coincida con los mat-form-field */
+.search-input {
+  height: 35px;              /* misma altura que tus controles de fecha */
+  padding: 0 36px 0 12px;    /* deja espacio para el icono de lupa si lo tienes */
+  box-sizing: border-box;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #c5ced8;
+  line-height: 40px;         /* centra el texto verticalmente */
+}
+
+/* Si el contenedor es un flex, asegúrate de centrarlo */
+.input-wrapper {
+  display: flex;
+  align-items: center;       /* lo alinea verticalmente con los otros controles */
+}
+
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  width: 100px;
+  height: 35px;
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+/* personalizacion del list*/
+
+/* Contenedor general de la página */
+.page-wrapper-asientos {
+  padding: 10px 20px;
+}
+
+/* Título centrado con poco espacio abajo */
+.page-title-row {
+  display: flex;
+  justify-content: left;
+  margin-bottom: 8px;   /* antes tenías mucho espacio, bajamos a ~8px */
+}
+
+.page-title-asientos {
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Fila de filtros + botón nuevo */
+.filters-row-asientos {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;   /* alinear a la misma altura de las fechas */
+  gap: 16px;
+  margin-bottom: 6px;      /* poco espacio antes del ag-grid */
+}
+
+/* Columna izquierda (buscar + fechas + botón buscar) */
+.filters-left-asientos {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+/* Cada control (label + input/botón) */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+/* Estilo base de inputs para que queden parejos */
+.control {
+  height: 36px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+/* Campo de búsqueda un poco más ancho */
+.search-input {
+  min-width: 260px;
+}
+
+/* Columna derecha con el botón “Nuevo Asiento” */
+.filters-right-asientos {
+  display: flex;
+  align-items: flex-end; /* misma línea que las fechas */
+}
+
+/* Botón “Nuevo Asiento” */
+.btn-nuevo-asiento {
+  height: 36px;
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+/* Opcional: quitar margen extra arriba del grid si lo hubiera */
+.ag-theme-alpine.grid.custom-grid {
+  margin-top: 0;
+}
+
+/* grid mas responsive*/
+
+.grid-wrapper {
+  height: calc(100vh - 200px); /* ajusta 220 según el alto de tus filtros / título */
+}
+
+.grid-wrapper .ag-theme-alpine {
+  height: 100%;
+  width: 100%;
+}
+
+
+.custom-grid {
+  --ag-selected-row-background-color: #a3c0e8; /* o el color que quieras */
+}
+
+/* barra de botones */
+
+/* Solo para este componente */
+:host ::ng-deep .custom-grid .ag-paging-panel {
+  padding: 4px 10px;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* Botones de paginación << < > >> */
+:host ::ng-deep .custom-grid .ag-paging-button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0 2px;
+  border-radius: 50px;           /* si quieres redondos: 50% */
+  border: 1px solid #b0bec5;
+  background-color: #a3c0e8;  /* #f5f5f5;*/
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Iconitos dentro del botón */
+:host ::ng-deep .custom-grid .ag-paging-button .ag-icon {
+  font-size: 16px;
+}
+
+/* Hover */
+:host ::ng-deep .custom-grid .ag-paging-button:hover {
+  background-color: #e0f2f1;
+}
+
+/* Combo de Page Size */
+:host ::ng-deep .custom-grid .ag-paging-panel .ag-paging-page-size-select {
+  height: 32px;
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+/* boton circulo*/
+.icon-circle {
+  width: 40px;        /* más grande el círculo */
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 0 2px #38b000;  /* borde verde (opcional) */
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease, transform 0.05s ease;
+}
+
+.icon-circle img {
+  width: 80%;   /* el icono ocupa casi todo el círculo */
+  height: 80%;
+  object-fit: contain;
+}
+
+.icon-circle:hover {
+  background-color: #f3f6fb;
+  box-shadow: 0 0 0 2px #1e88e5;
+  transform: translateY(-1px);
+}
+
+.icon-circle:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 1px #1e88e5;
+}
+
+
+.btn-tomate {
+  background: #e2a661;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  width: 100px;
+  height: 35px;
+}
+.btn-tomate:hover { background: #686fcd; border-color: #6291e8; }
+
+/* para los mensajes*/
+.snackbar-error {
+  background: #d32f2f;   /* rojo Material */
+  color: #ffffff;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.snackbar-error .mat-simple-snackbar-action {
+  color: #ffebee;        /* color del botón "Cerrar" */
+}

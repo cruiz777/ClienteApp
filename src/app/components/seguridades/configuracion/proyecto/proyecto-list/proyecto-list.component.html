@@ -1,0 +1,45 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Registro de Proyectos</h2>
+    <button class="btn-nueva-zona" (click)="nuevoProyecto()">Nuevo Proyecto</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="search()"
+        placeholder="Buscar por descripción"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <table class="zona-tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Id Proyecto</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Opción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let proyecto of filteredProyectos; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ proyecto.id }}</td>
+        <td>{{ proyecto.descripcion }}</td>
+        <td>{{ proyecto.estado ? 'Activo' : 'Inactivo' }}</td>
+        <td>
+          <button class="icon-btn" (click)="editarProyecto(proyecto.id)">
+            <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

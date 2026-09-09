@@ -1,0 +1,283 @@
+<div
+  class="rol-container"
+  [formGroup]="form">
+
+  <!-- =====================================================
+       CABECERA
+  ====================================================== -->
+  <div class="page-header">
+    <div>
+      <h2>
+        Consulta de Roles Mensuales
+      </h2>
+
+      <p>
+        Consulte las nóminas mensuales previamente generadas.
+      </p>
+    </div>
+  </div>
+
+
+  <!-- =====================================================
+       CONTENIDO PRINCIPAL
+  ====================================================== -->
+  <div class="main-layout">
+
+    <div class="card right-panel">
+
+      <!-- =================================================
+           TITULO DEL PANEL
+      ================================================== -->
+      <div class="panel-header">
+
+        <mat-icon>
+          table_view
+        </mat-icon>
+
+        <span>
+          Detalle del Rol
+        </span>
+
+      </div>
+
+
+      <!-- =================================================
+           BARRA SUPERIOR DE CONSULTA
+           Se mueve aquí Periodo + botones
+      ================================================== -->
+      <div class="actions-card actions-card-top">
+
+        <div class="actions-left">
+
+          <!-- =============================================
+               PERIODO
+          ============================================== -->
+          <div class="periodo-inline">
+
+            <label>
+              Periodo
+            </label>
+
+            <mat-form-field
+              appearance="outline"
+              class="fecha-field">
+
+              <mat-label>
+                Periodo
+              </mat-label>
+
+              <input
+                matInput
+                [matDatepicker]="pickerPeriodo"
+                formControlName="fechaPeriodo"
+                [matDatepickerFilter]="soloUltimoDiaMes"
+                readonly />
+
+              <mat-datepicker-toggle
+                matSuffix
+                [for]="pickerPeriodo">
+              </mat-datepicker-toggle>
+
+              <mat-datepicker
+                #pickerPeriodo>
+              </mat-datepicker>
+
+              <mat-error
+                *ngIf="
+                  form
+                    .get('fechaPeriodo')
+                    ?.hasError('fechaInvalida')
+                ">
+
+                Solo puede seleccionar el último día del mes.
+
+              </mat-error>
+
+            </mat-form-field>
+
+          </div>
+
+
+          <!-- =============================================
+               CONSULTAR
+          ============================================== -->
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+
+            class="action-button action-consultar"
+
+            [disabled]="cargando"
+
+            (click)="consultar()">
+
+            <mat-icon>
+              search
+            </mat-icon>
+
+            <span *ngIf="!cargando">
+              Consultar
+            </span>
+
+            <span *ngIf="cargando">
+              Consultando...
+            </span>
+
+          </button>
+
+
+          <!-- =============================================
+               MAIL
+          ============================================== -->
+          <button
+            mat-stroked-button
+            type="button"
+
+            class="action-button action-mail"
+
+            [disabled]="
+              detalleRol.length === 0 ||
+              enviandoCorreos
+            "
+
+            (click)="enviarPdfEmpleadosSeleccionados()">
+
+            <mat-icon>
+              mail
+            </mat-icon>
+
+            <span *ngIf="!enviandoCorreos">
+              Mail
+            </span>
+
+            <span *ngIf="enviandoCorreos">
+              Enviando...
+            </span>
+
+          </button>
+
+
+          <!-- =============================================
+               EXCEL
+          ============================================== -->
+          <button
+            mat-stroked-button
+            type="button"
+
+            class="action-button action-excel"
+
+            [disabled]="
+              detalleRol.length === 0 ||
+              exportandoExcel
+            "
+
+            (click)="exportarRolExcel()">
+
+            <mat-icon>
+              description
+            </mat-icon>
+
+            <span *ngIf="!exportandoExcel">
+              Excel
+            </span>
+
+            <span *ngIf="exportandoExcel">
+              Exportando...
+            </span>
+
+          </button>
+
+
+          <!-- =============================================
+               CANCELAR
+          ============================================== -->
+          <button
+            mat-stroked-button
+            type="button"
+
+            class="action-button action-cancelar"
+
+            (click)="cancelar()">
+
+            <mat-icon>
+              close
+            </mat-icon>
+
+            Cancelar
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           MENSAJE MODO CONSULTA
+      ================================================== -->
+      <div class="consulta-banner">
+
+        <mat-icon>
+          visibility
+        </mat-icon>
+
+        <span>
+          Modo consulta. La nómina no puede ser modificada desde esta pantalla.
+        </span>
+
+      </div>
+
+
+      <!-- =================================================
+           GRID
+      ================================================== -->
+      <div class="tabla-wrapper">
+
+        <ag-grid-angular
+          class="ag-theme-alpine rol-grid"
+
+          [rowData]="detalleRol"
+
+          [columnDefs]="columnDefs"
+
+          [defaultColDef]="defaultColDef"
+
+          [pinnedBottomRowData]="pinnedBottomRowData"
+
+          rowSelection="multiple"
+
+          [suppressRowClickSelection]="true"
+
+          (gridReady)="onGridReady($event)"
+
+          (gridSizeChanged)="onGridSizeChanged()"
+
+          (firstDataRendered)="onFirstDataRendered()">
+
+        </ag-grid-angular>
+
+
+        <!-- SIN DATOS -->
+        <div
+          class="sin-datos"
+
+          *ngIf="
+            !cargando &&
+            (
+              !detalleRol ||
+              detalleRol.length === 0
+            )
+          ">
+
+          Seleccione el periodo y presione Consultar.
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

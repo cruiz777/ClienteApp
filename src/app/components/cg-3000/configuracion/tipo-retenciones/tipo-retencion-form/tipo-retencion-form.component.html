@@ -1,0 +1,72 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Tipo de Retención' : 'Nuevo Tipo de Retención' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <!-- CodigoTipoRet -->
+    <div class="form-group">
+      <label for="CodigoTipoRet">Código Retención <span class="required">*</span></label>
+      <input
+        id="CodigoTipoRet"
+        type="text"
+        formControlName="CodigoTipoRet"
+        placeholder="Ej: 302"
+        maxlength="10"
+        style="text-transform: uppercase"
+        [readonly]="isEditMode"
+        [attr.title]="isEditMode ? 'Este campo es de solo lectura' : null"
+        autocomplete="off"
+      />
+
+      <div class="error" *ngIf="form.get('CodigoTipoRet')?.hasError('required') && form.get('CodigoTipoRet')?.touched">
+        Campo obligatorio.
+      </div>
+      <div class="error" *ngIf="form.get('CodigoTipoRet')?.hasError('maxlength') && form.get('CodigoTipoRet')?.touched">
+        Máximo 10 caracteres.
+      </div>
+      <div class="error" *ngIf="form.get('CodigoTipoRet')?.hasError('codigoNoUnico') && form.get('CodigoTipoRet')?.touched">
+        Ya existe registrado ese código.
+      </div>
+
+      <div class="hint" *ngIf="form.get('CodigoTipoRet')?.pending">Validando código...</div>
+      
+    </div>
+
+    <!-- Descripcion -->
+    <div class="form-group">
+      <label for="Descripcion">Descripción <span class="required">*</span></label>
+      <input id="Descripcion" type="text" formControlName="Descripcion" placeholder="Ej: Comercial" maxlength="200" />
+      <div class="error" *ngIf="form.get('Descripcion')?.invalid && form.get('Descripcion')?.touched">
+        Campo obligatorio (máx. 200).
+      </div>
+    </div>
+
+    <!-- Porcentaje -->
+    <div class="form-group">
+      <label for="Porcentaje">Porcentaje Ret. <span class="required">*</span></label>
+      <input
+        id="Porcentaje"
+        type="number"
+        formControlName="Porcentaje"
+        placeholder="Ej: 10"
+        min="0"
+        step="0.01"
+        (input)="onPorcentajeInput()"
+      />
+      <div class="error" *ngIf="form.get('Porcentaje')?.invalid && form.get('Porcentaje')?.touched">
+        Campo obligatorio. Debe ser ≥ 0.
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn-azul"
+        [disabled]="form.invalid || form.pending"
+        [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

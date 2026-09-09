@@ -1,0 +1,292 @@
+<div class="page">
+
+  <div class="card">
+
+
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
+
+    <div class="page-header">
+
+      <h2>
+        Personal Ocupado
+      </h2>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTROS
+    ====================================================== -->
+
+    <div class="filters">
+
+
+      <!-- MES -->
+
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Mes
+        </mat-label>
+
+
+        <mat-select
+          [(ngModel)]="mes">
+
+          <mat-option
+            *ngFor="let item of meses"
+            [value]="item.id">
+
+            {{ item.nombre }}
+
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
+
+      <!-- AÑO -->
+
+      <mat-form-field
+        appearance="outline">
+
+        <mat-label>
+          Año
+        </mat-label>
+
+
+        <mat-select
+          [(ngModel)]="anio">
+
+          <mat-option
+            *ngFor="let item of anios"
+            [value]="item">
+
+            {{ item }}
+
+          </mat-option>
+
+        </mat-select>
+
+      </mat-form-field>
+
+
+      <!-- ===================================================
+           AGRUPACIÓN
+      ==================================================== -->
+
+      <div class="radio-group">
+
+        <label>
+          Agrupar por:
+        </label>
+
+
+        <mat-radio-group
+
+          [(ngModel)]="agrupadoPor"
+
+          (change)="cambiarAgrupacion()">
+
+
+          <mat-radio-button
+            value="contrato">
+
+            Contrato
+
+          </mat-radio-button>
+
+
+          <mat-radio-button
+            value="edad">
+
+            Edad
+
+          </mat-radio-button>
+
+
+          <mat-radio-button
+            value="horas">
+
+            Horas-Salario
+
+          </mat-radio-button>
+
+
+        </mat-radio-group>
+
+      </div>
+
+
+      <!-- ===================================================
+           ACCIONES
+      ==================================================== -->
+
+      <div class="actions-top">
+
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="cargando"
+          (click)="generar()">
+
+          <mat-icon>
+            search
+          </mat-icon>
+
+
+          {{
+            cargando
+              ? 'Generando...'
+              : 'Generar'
+          }}
+
+        </button>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="cargando"
+          (click)="cancelar()">
+
+          <mat-icon>
+            refresh
+          </mat-icon>
+
+          Limpiar
+
+        </button>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="
+            cargando
+            ||
+            !hayResultados
+          "
+          (click)="exportar()">
+
+          <mat-icon>
+            table_view
+          </mat-icon>
+
+          Exportar Excel
+
+        </button>
+
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CARGANDO
+    ====================================================== -->
+
+    <div
+      class="loading-container"
+      *ngIf="cargando">
+
+      <mat-spinner
+        diameter="38">
+
+      </mat-spinner>
+
+
+      <span>
+        Generando reporte...
+      </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         AG GRID
+    ====================================================== -->
+
+    <div
+      class="grid-container"
+      *ngIf="
+        !cargando
+        &&
+        hayResultados
+      ">
+
+      <ag-grid-angular
+
+        class="ag-theme-alpine"
+
+        style="
+          width: 100%;
+          height: 620px;
+        "
+
+        [rowData]="rowData"
+
+        [columnDefs]="columnDefs"
+
+        [defaultColDef]="defaultColDef"
+
+        [pinnedBottomRowData]="pinnedBottomRowData"
+
+        [pagination]="false"
+
+        [animateRows]="true"
+
+        [enableCellTextSelection]="true"
+
+        (gridReady)="onGridReady($event)">
+
+      </ag-grid-angular>
+
+    </div>
+
+
+    <!-- =====================================================
+         SIN INFORMACIÓN
+    ====================================================== -->
+
+    <div
+      class="empty-state"
+      *ngIf="
+        !cargando
+        &&
+        consultado
+        &&
+        !hayResultados
+      ">
+
+      <mat-icon>
+        search_off
+      </mat-icon>
+
+
+      <strong>
+        Sin información
+      </strong>
+
+
+      <span>
+        {{
+          mensaje
+          ||
+          'No existen registros para el período seleccionado.'
+        }}
+      </span>
+
+    </div>
+
+
+  </div>
+
+</div>

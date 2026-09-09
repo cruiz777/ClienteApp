@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 
 // Angular Material Core
@@ -26,6 +27,8 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatMenuModule } from '@angular/material/menu';
 // Fechas
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -33,16 +36,20 @@ import { MomentDateModule } from '@angular/material-moment-adapter';
 import { MatStepperModule } from '@angular/material/stepper';
 // CDK
 import { LayoutModule } from '@angular/cdk/layout';
+import { MatDividerModule } from '@angular/material/divider';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { MatChipsModule } from '@angular/material/chips';
+import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
 
 @NgModule({
-  declarations: [],
   imports: [
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
+    RouterModule,
     HttpClientModule,
 
-    // Material
+    // Angular Material Centralizado
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
@@ -69,16 +76,22 @@ import { LayoutModule } from '@angular/cdk/layout';
     MomentDateModule,
     MatButtonToggleModule,
     MatStepperModule,
-    // CDK
-    LayoutModule
+    MatRadioModule,
+    MatDividerModule,
+    MatChipsModule,
+    MatMenuModule,
+    // CDK y terceros
+    LayoutModule,
+    NgxMatSelectSearchModule
   ],
   exports: [
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
+    RouterModule,
     HttpClientModule,
 
-    // Material
+    // Exporta todos los módulos Material y terceros
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
@@ -105,8 +118,13 @@ import { LayoutModule } from '@angular/cdk/layout';
     MomentDateModule,
     MatButtonToggleModule,
     MatStepperModule,
-    // CDK
-    LayoutModule
+    MatRadioModule,
+    MatDividerModule,
+    MatChipsModule,
+    MatMenuModule,
+    LayoutModule,
+    NgxMatSelectSearchModule
   ]
 })
-export class ReusableModule {}
+export class ReusableModule { }
+

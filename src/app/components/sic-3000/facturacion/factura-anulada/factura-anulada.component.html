@@ -1,0 +1,92 @@
+<div class="nc-container">
+  <h2 class="titulo">Anular Factura</h2>
+
+  <!-- Panel de datos -->
+  <div class="panel">
+    <!-- Fila 1: Factura, Fecha, Total -->
+    <div class="row row-1">
+      <div class="field">
+        <label class="form-label">Factura</label>
+        <input
+          class="form-control"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          pattern="[0-9]*"
+          [(ngModel)]="encabezado.factura"
+          (input)="soloDigitos($event)"
+          (keyup.enter)="onEnterFactura()"
+        />
+      </div>
+
+      <div class="field">
+        <label class="form-label">Fecha</label>
+        <input class="form-control" [value]="encabezado.fecha || '—'" readonly />
+      </div>
+
+      <div class="field">
+        <label class="form-label">Total</label>
+        <input
+          class="form-control"
+          [value]="formatTotal(encabezado.total)"
+          readonly
+        />
+      </div>
+    </div>
+
+    <!-- Fila 2: Cliente, RUC -->
+    <div class="row row-2">
+      <div class="field">
+        <label class="form-label">Cliente</label>
+        <input
+          class="form-control"
+          [value]="encabezado.cliente || '—'"
+          readonly
+        />
+      </div>
+
+      <div class="field">
+        <label class="form-label">RUC</label>
+        <input
+          class="form-control"
+          [value]="encabezado.ruc || '—'"
+          readonly
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- Observación -->
+  <div class="panel">
+    <p class="subtitulo">Observación</p>
+    <textarea
+      class="form-control textarea uppercase"
+      [(ngModel)]="observacion"
+      (input)="toUpperObservacion($event)"
+      rows="3"
+      placeholder="Motivo u observación de la anulación..."
+    ></textarea>
+
+    <div class="texto-ayuda" *ngIf="observacion && observacion.trim().length < MIN_OBSERVACION">
+      Debe ingresar al menos {{ MIN_OBSERVACION }} caracteres.
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="acciones">
+    <div class="spacer"></div>
+    <button type="button" class="btn" (click)="cerrar()">Cancelar</button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="!canAnular"
+      (click)="confirmar()"
+    >
+      Anular
+    </button>
+  </div>
+
+  <!-- Estado -->
+  <div *ngIf="buscandoFactura" class="text-muted mt-8">Buscando factura…</div>
+  <div *ngIf="errorFactura" class="text-danger mt-8">{{ errorFactura }}</div>
+</div>

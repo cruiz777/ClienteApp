@@ -1,0 +1,124 @@
+<div class="page-container">
+  <div class="contenido-tablas">
+    
+    <!-- ENCABEZADO -->
+    <div class="header-row">
+      <h1 class="title">Estado Financiero</h1>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filters-row">
+      <form [formGroup]="filtrosForm">
+        <div class="filters-group">
+          
+          <!-- Tipo de Reporte -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Tipo de Reporte</mat-label>
+            <mat-select formControlName="tipoReporte">
+              <mat-option *ngFor="let tipo of tiposReporte" [value]="tipo.id">
+                {{ tipo.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Fecha Desde -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Fecha Desde</mat-label>
+            <input matInput [matDatepicker]="pickerDesde" formControlName="fechaDesde">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+            <mat-datepicker #pickerDesde></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Fecha Hasta -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Fecha Hasta</mat-label>
+            <input matInput [matDatepicker]="pickerHasta" formControlName="fechaHasta">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+            <mat-datepicker #pickerHasta></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Zona -->
+          <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Zona</mat-label>
+            <mat-select formControlName="idZona">
+              <mat-option *ngFor="let zona of zonas" [value]="zona.idZona">
+                {{ zona.nombre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Local -->
+        <mat-form-field appearance="outline" class="filter-field">
+            <mat-label>Local</mat-label>
+            <mat-select formControlName="idLocal">
+                <mat-option *ngFor="let local of locales" [value]="local.idLocal">
+                {{ local.nombre }}
+                </mat-option>
+            </mat-select>
+        </mat-form-field>
+
+          <!-- Checkbox Mostrar Códigos -->
+          <div class="checkbox-field">
+            <mat-checkbox formControlName="mostrarCodigos">
+              Mostrar códigos de cuenta
+            </mat-checkbox>
+          </div>
+
+          <!-- Botón Buscar -->
+          <button 
+            mat-raised-button 
+            class="btn-buscar" 
+            (click)="buscarDatos()"
+            [disabled]="cargando || filtrosForm.invalid">
+            <mat-icon>search</mat-icon>
+            {{ cargando ? 'Buscando...' : 'Buscar' }}
+          </button>
+
+        </div>
+      </form>
+    </div>
+
+    <!-- BOTONES DE EXPORTACIÓN -->
+    <div class="export-buttons" *ngIf="mostrarResultados">
+      <button 
+        mat-raised-button 
+        class="btn-export btn-pdf"
+        (click)="exportarPDF()"
+        [disabled]="cargando">
+        <img src="assets/icons/icon-pdf.png" alt="PDF" class="export-icon">
+        Exportar PDF
+      </button>
+
+      <button 
+        mat-raised-button 
+        class="btn-export btn-excel"
+        (click)="exportarExcel()"
+        [disabled]="cargando">
+        <img src="assets/icons/icon-reporte.png" alt="Excel" class="export-icon">
+        Exportar Excel
+      </button>
+    </div>
+
+    <!-- MENSAJE SIN RESULTADOS -->
+    <div class="tab-vacio" *ngIf="!mostrarResultados && !cargando">
+      <mat-icon style="font-size: 64px; width: 64px; height: 64px;">info</mat-icon>
+      <p>Selecciona los filtros y presiona "Buscar" para visualizar el estado financiero</p>
+    </div>
+
+    <!-- VISTA PREVIA DE DATOS (Opcional) -->
+    <div class="preview-section" *ngIf="mostrarResultados && !cargando">
+      <h3 class="preview-title">Resumen de Resultados</h3>
+      <div class="preview-info">
+        <p><strong>Total de cuentas:</strong> {{ datosReporte.length }}</p>
+        <p><strong>Período:</strong> {{ formatearFechaLegible(filtrosForm.get('fechaDesde')?.value) }} - {{ formatearFechaLegible(filtrosForm.get('fechaHasta')?.value) }}</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- OVERLAY DE CARGA -->
+<div class="overlay" *ngIf="cargando">
+  <mat-spinner diameter="60" color="accent"></mat-spinner>
+  <p style="margin-top: 20px;">Cargando datos...</p>
+</div>

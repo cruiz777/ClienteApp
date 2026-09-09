@@ -1,0 +1,136 @@
+<div class="explorador-empleados-page">
+  <mat-card class="explorador-card">
+    <div class="encabezado">
+      <div>
+        <h1>Explorador de empleados</h1>
+        <p>Seleccione los campos y filtros antes de generar el reporte.</p>
+      </div>
+
+      <div class="encabezado-acciones">
+        <button mat-stroked-button type="button" (click)="limpiarReporte()" [disabled]="loading">
+          <mat-icon>refresh</mat-icon>
+          Limpiar
+        </button>
+
+        <button mat-raised-button color="primary" type="button" (click)="generarReporte()" [disabled]="loading">
+          <mat-icon>play_arrow</mat-icon>
+          {{ loading ? 'Consultando...' : 'Generar reporte' }}
+        </button>
+
+        <button mat-stroked-button type="button" (click)="exportarExcel()" [disabled]="loading || rowData.length === 0">
+          <mat-icon>table_view</mat-icon>
+          Exportar Excel
+        </button>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <section class="campos-section">
+      <div class="section-header">
+        <h2>Campos del reporte</h2>
+        <div class="section-actions">
+          <button mat-button type="button" (click)="seleccionarTodosLosCampos()">Seleccionar todos</button>
+          <button mat-button type="button" (click)="limpiarCampos()">Desmarcar todos</button>
+        </div>
+      </div>
+
+      <div class="campos-grid">
+        <mat-checkbox
+          *ngFor="let campo of camposReporte"
+          [(ngModel)]="campo.seleccionado"
+          (change)="onCampoChange()">
+          {{ campo.headerName }}
+        </mat-checkbox>
+      </div>
+    </section>
+
+    <mat-divider></mat-divider>
+
+    <section class="filtros-section" [formGroup]="form">
+      <div class="filtros-principales">
+        <div class="estado-box">
+          
+          <mat-radio-group class="estado-radio" formControlName="estado">
+            <h2>Estado del empleado</h2>
+            <mat-radio-button value="TODOS">Todos</mat-radio-button>
+            <mat-radio-button value="ACTIVOS">Activos</mat-radio-button>
+            <mat-radio-button value="INACTIVOS">Ex empleados</mat-radio-button>
+          </mat-radio-group>
+        </div>
+
+        <div class="fechas-box">
+          <mat-form-field appearance="fill">
+            <mat-label>Fecha inicio</mat-label>
+            <input matInput formControlName="fechaInicio" [matDatepicker]="fechaInicioPicker">
+            <mat-datepicker-toggle matSuffix [for]="fechaInicioPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fechaInicioPicker></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Fecha final</mat-label>
+            <input matInput formControlName="fechaFin" [matDatepicker]="fechaFinPicker">
+            <mat-datepicker-toggle matSuffix [for]="fechaFinPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fechaFinPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="catalogos-grid" *ngIf="zonas.length > 0 || tiposEmpleado.length > 0">
+        <div class="catalogo-box" *ngIf="zonas.length > 0">
+          <h3>Localidades / zonas</h3>
+          <div class="catalogo-lista">
+            <mat-checkbox
+              *ngFor="let zona of zonas"
+              [(ngModel)]="zona.seleccionado"
+              [ngModelOptions]="{ standalone: true }">
+              {{ zona.descripcion }}
+            </mat-checkbox>
+          </div>
+        </div>
+
+        <div class="catalogo-box" *ngIf="tiposEmpleado.length > 0">
+          <h3>Tipos de empleado</h3>
+          <div class="catalogo-lista">
+            <mat-checkbox
+              *ngFor="let tipo of tiposEmpleado"
+              [(ngModel)]="tipo.seleccionado"
+              [ngModelOptions]="{ standalone: true }">
+              {{ tipo.descripcion }}
+            </mat-checkbox>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <mat-divider></mat-divider>
+
+    <section class="resultado-section">
+      <div class="resultado-header">
+        <h2>Resultado</h2>
+        <span class="contador">{{ rowData.length }} registro(s)</span>
+      </div>
+
+      <div class="estado-vacio" *ngIf="!loading && rowData.length === 0">
+        Seleccione los campos y presione “Generar reporte”.
+      </div>
+
+      <div class="cargando" *ngIf="loading">Consultando empleados...</div>
+
+      <ag-grid-angular
+        *ngIf="!loading"
+        class="ag-theme-alpine grid-explorador"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [pagination]="true"
+        [paginationPageSize]="50"
+        [animateRows]="true"
+        [enableBrowserTooltips]="true"
+        [rowHeight]="34"
+        [headerHeight]="38"
+        (gridReady)="onGridReady($event)">
+      </ag-grid-angular>
+    </section>
+  </mat-card>
+</div>

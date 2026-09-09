@@ -1,0 +1,628 @@
+<div
+  class="ir-page"
+  [formGroup]="form">
+
+
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
+
+  <div class="page-header">
+
+    <div class="header-title">
+
+      <div class="header-icon">
+
+        <mat-icon>
+          request_quote
+        </mat-icon>
+
+      </div>
+
+
+      <div>
+
+        <h2>
+          Impuesto a la Renta (RT7)
+        </h2>
+
+        <p>
+          Cálculo anual del Impuesto a la Renta de empleados.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       FILTROS
+  ====================================================== -->
+
+  <div class="filter-card">
+
+    <div class="section-title">
+
+      <mat-icon>
+        tune
+      </mat-icon>
+
+      <span>
+        Parámetros de cálculo
+      </span>
+
+    </div>
+
+
+    <div class="filters">
+
+
+      <!-- =================================================
+           PERIODO
+      ================================================== -->
+
+      <mat-form-field
+        appearance="outline"
+        class="field-periodo">
+
+        <mat-label>
+          Periodo
+        </mat-label>
+
+        <input
+          matInput
+          type="date"
+          formControlName="fechaPeriodo">
+
+      </mat-form-field>
+
+
+      <!-- =================================================
+           EMPLEADO
+      ================================================== -->
+
+      <mat-form-field
+        appearance="outline"
+        class="field-empleado">
+
+        <mat-label>
+          Empleado
+        </mat-label>
+
+
+        <mat-icon
+          matPrefix>
+
+          person_search
+
+        </mat-icon>
+
+
+        <input
+          matInput
+          type="text"
+          formControlName="empleadoBusqueda"
+          [matAutocomplete]="autoEmpleado"
+          autocomplete="off"
+          placeholder="Código, cédula o nombre">
+
+
+        <!-- =============================================
+             LIMPIAR EMPLEADO
+        ============================================== -->
+
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          *ngIf="form.get('idEmpleado')?.value"
+          (click)="limpiarBusquedaEmpleado($event)"
+          matTooltip="Mostrar todos">
+
+          <mat-icon>
+            close
+          </mat-icon>
+
+        </button>
+
+
+        <!-- =============================================
+             AUTOCOMPLETE
+        ============================================== -->
+
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="displayEmpleado"
+          class="autocomplete-empleados">
+
+
+          <!-- ===========================================
+               TODOS
+          ============================================ -->
+
+          <mat-option
+            [value]="'TODOS'"
+            (onSelectionChange)="
+              $event.isUserInput &&
+              seleccionarTodos()
+            ">
+
+            <div class="empleado-opcion">
+
+              <div class="empleado-linea-principal">
+
+                <mat-icon>
+                  groups
+                </mat-icon>
+
+                <span class="empleado-nombre">
+                  TODOS
+                </span>
+
+              </div>
+
+              <div class="empleado-documento">
+                Mostrar todos los empleados
+              </div>
+
+            </div>
+
+          </mat-option>
+
+
+          <!-- ===========================================
+               CARGANDO
+          ============================================ -->
+
+          <mat-option
+            *ngIf="cargandoEmpleados"
+            disabled>
+
+            <div class="opcion-cargando">
+
+              Buscando empleados...
+
+            </div>
+
+          </mat-option>
+
+
+          <!-- ===========================================
+               EMPLEADOS
+          ============================================ -->
+
+          <mat-option
+            *ngFor="
+              let empleado
+              of empleadosFiltrados
+            "
+            [value]="empleado"
+            (onSelectionChange)="
+              $event.isUserInput &&
+              seleccionarEmpleadoBusqueda(
+                empleado
+              )
+            ">
+
+            <div class="empleado-opcion">
+
+
+              <div class="empleado-linea-principal">
+
+                <span class="empleado-codigo">
+
+                  {{
+                    empleado.idEmpleado
+                  }}
+
+                </span>
+
+
+                <span class="empleado-separador">
+
+                  -
+
+                </span>
+
+
+                <span class="empleado-nombre">
+
+                  {{
+                    empleado.nombreCompleto
+                  }}
+
+                </span>
+
+              </div>
+
+
+              <div
+                class="empleado-documento"
+                *ngIf="empleado.documento">
+
+                {{
+                  empleado.documento
+                }}
+
+              </div>
+
+
+            </div>
+
+          </mat-option>
+
+
+          <!-- ===========================================
+               SIN RESULTADOS
+          ============================================ -->
+
+          <mat-option
+            *ngIf="
+              !cargandoEmpleados &&
+              empleadosFiltrados.length === 0
+            "
+            disabled>
+
+            <div class="sin-resultados">
+
+              No existen empleados
+
+            </div>
+
+          </mat-option>
+
+
+        </mat-autocomplete>
+
+      </mat-form-field>
+
+
+      <!-- =================================================
+           ACCIONES
+      ================================================== -->
+
+      <div class="filter-actions">
+
+
+        <!-- CALCULAR -->
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="btn-consultar"
+          [disabled]="
+            cargando ||
+            guardando
+          "
+          (click)="consultar()">
+
+
+          <mat-spinner
+            *ngIf="cargando"
+            diameter="16">
+
+          </mat-spinner>
+
+
+          <mat-icon
+            *ngIf="!cargando">
+
+            calculate
+
+          </mat-icon>
+
+
+          <span>
+
+            {{
+              cargando
+                ? 'Calculando...'
+                : 'Calcular'
+            }}
+
+          </span>
+
+        </button>
+
+
+        <!-- GRABAR -->
+
+        <button
+          mat-flat-button
+          type="button"
+          class="btn-grabar"
+          [disabled]="
+            cargando ||
+            guardando ||
+            rowData.length === 0
+          "
+          (click)="grabar()">
+
+
+          <mat-spinner
+            *ngIf="guardando"
+            diameter="16">
+
+          </mat-spinner>
+
+
+          <mat-icon
+            *ngIf="!guardando">
+
+            save
+
+          </mat-icon>
+
+
+          <span>
+
+            {{
+              guardando
+                ? 'Grabando...'
+                : 'Grabar'
+            }}
+
+          </span>
+
+        </button>
+
+
+        <!-- IMPRIMIR -->
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="btn-imprimir"
+          [disabled]="
+            cargando ||
+            guardando ||
+            rowData.length === 0
+          "
+          (click)="imprimir()">
+
+          <mat-icon>
+            print
+          </mat-icon>
+
+          Imprimir
+
+        </button>
+
+
+        <!-- XML RDEP -->
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="btn-xml"
+          [disabled]="
+            cargando ||
+            guardando ||
+            generandoXml
+          "
+          (click)="generarXml()">
+
+
+          <mat-spinner
+            *ngIf="generandoXml"
+            diameter="16">
+
+          </mat-spinner>
+
+
+          <mat-icon
+            *ngIf="!generandoXml">
+
+            description
+
+          </mat-icon>
+
+
+          <span>
+
+            {{
+              generandoXml
+                ? 'Generando...'
+                : 'XML RDEP'
+            }}
+
+          </span>
+
+        </button>
+
+
+        <!-- LIMPIAR -->
+
+        <button
+          mat-stroked-button
+          type="button"
+          class="btn-limpiar"
+          [disabled]="
+            cargando ||
+            guardando
+          "
+          (click)="limpiar()">
+
+          <mat-icon>
+            restart_alt
+          </mat-icon>
+
+          Limpiar
+
+        </button>
+
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       GRID
+  ====================================================== -->
+
+  <div class="grid-card">
+
+
+    <div class="grid-header">
+
+
+      <div class="grid-title">
+
+        <mat-icon>
+          table_view
+        </mat-icon>
+
+
+        <div>
+
+          <strong>
+            Detalle de Impuesto a la Renta
+          </strong>
+
+          <small>
+            Resultado del cálculo por empleado
+          </small>
+
+        </div>
+
+      </div>
+
+
+      <div class="grid-counter">
+
+        <mat-icon>
+          groups
+        </mat-icon>
+
+
+        <span>
+
+          {{
+            rowData.length
+          }}
+
+          empleado{{
+            rowData.length === 1
+              ? ''
+              : 's'
+          }}
+
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <div class="info-bar">
+
+      <mat-icon>
+        info
+      </mat-icon>
+
+      <span>
+        Puede ordenar, filtrar y redimensionar las columnas.
+      </span>
+
+    </div>
+
+
+    <div class="grid-container">
+
+      <ag-grid-angular
+        class="ag-theme-alpine ir-grid"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [pinnedBottomRowData]="pinnedBottomRowData"
+        [pagination]="true"
+        [paginationPageSize]="50"
+        [animateRows]="true"
+        [rowHeight]="30"
+        [headerHeight]="36"
+        [suppressCellFocus]="true"
+        [overlayNoRowsTemplate]="overlayNoRowsTemplate"
+        (gridReady)="onGridReady($event)">
+
+      </ag-grid-angular>
+
+    </div>
+
+  </div>
+<!-- =====================================================
+     MODAL CONFIRMACION
+====================================================== -->
+
+<div
+  class="confirm-overlay"
+  *ngIf="mostrarConfirmacion">
+
+
+  <div class="confirm-modal">
+
+
+    <!-- ICONO -->
+    <div class="confirm-icon">
+
+      <mat-icon>
+        warning
+      </mat-icon>
+
+    </div>
+
+
+    <!-- TITULO -->
+    <h3>
+
+      {{ tituloConfirmacion }}
+
+    </h3>
+
+
+    <!-- MENSAJE -->
+    <p>
+
+      {{ mensajeConfirmacion }}
+
+    </p>
+
+
+    <!-- BOTONES -->
+    <div class="confirm-actions">
+
+
+      <button
+        mat-flat-button
+        type="button"
+        class="confirm-cancel"
+        (click)="cancelarConfirmacion()">
+
+        Cancelar
+
+      </button>
+
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="confirm-accept"
+        (click)="confirmarAccion()">
+
+        {{ textoAceptarConfirmacion }}
+
+      </button>
+
+
+    </div>
+
+  </div>
+
+</div>
+</div>

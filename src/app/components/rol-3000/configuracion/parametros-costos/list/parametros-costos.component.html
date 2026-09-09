@@ -1,0 +1,79 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Parámetros y Costos</h2>
+    <button mat-raised-button class="btn-azul" (click)="abrirCrear()">Nuevo</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por nombre o descripción"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 80px;">Id</th>
+          <th>Nombre</th>
+          <th style="width: 130px;">Valor Inicial</th>
+          <th style="width: 130px;">Valor Final</th>
+          <th>Descripción</th>
+          <th class="col-opcion">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- SKELETON mientras carga -->
+        <ng-container *ngIf="loading">
+          <tr *ngFor="let _ of skeletonRows" class="skeleton-row">
+            <td><span class="skeleton-cell" style="width:40px"></span></td>
+            <td><span class="skeleton-cell" style="width:150px"></span></td>
+            <td><span class="skeleton-cell" style="width:90px"></span></td>
+            <td><span class="skeleton-cell" style="width:90px"></span></td>
+            <td><span class="skeleton-cell" style="width:200px"></span></td>
+            <td><span class="skeleton-cell" style="width:28px; height:28px; border-radius:6px"></span></td>
+          </tr>
+        </ng-container>
+
+        <!-- DATOS cargados -->
+        <ng-container *ngIf="!loading">
+          <tr *ngFor="let it of paginated; trackBy: trackById">
+            <td>{{ it.idParCosto }}</td>
+            <td>{{ it.nombre ?? '—' }}</td>
+            <td>{{ it.valorInicial ?? '—' }}</td>
+            <td>{{ it.valorFinal ?? '—' }}</td>
+            <td>{{ it.descripcion ?? '—' }}</td>
+            <td class="acciones">
+              <button type="button" class="icon-btn" (click)="abrirEditar(it.idParCosto)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filtered.length === 0">
+            <td colspan="6" class="empty">No hay resultados.</td>
+          </tr>
+        </ng-container>
+
+      </tbody>
+    </table>
+    <mat-paginator
+      *ngIf="!loading && totalItems > 0"
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageIndex]="currentPage"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+</div>

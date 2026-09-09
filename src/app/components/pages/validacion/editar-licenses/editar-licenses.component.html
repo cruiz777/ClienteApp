@@ -1,0 +1,529 @@
+<div class="container">
+
+    <!-- ===================================================== -->
+    <!-- HEADER -->
+    <!-- ===================================================== -->
+
+    <div class="header">
+
+        <div class="header-top">
+
+            <div class="title-section">
+
+                <h1 class="title">
+                    Inactivar Licencias Verified
+                </h1>
+
+                <div class="registro-display">
+
+                    <span class="registro-label">
+                        N°. Registros:
+                    </span>
+
+                    <strong class="registro-value">
+                        {{ numeroRegistros }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="header-actions">
+                <button type="button" class="btn btn-secondary" (click)="abrirAuditoria()">
+
+                    Auditoría
+
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="nuevaBusqueda()">
+
+                    Nueva Búsqueda
+
+                </button>
+
+
+                <button type="button" class="btn btn-danger-action" (click)="inactivarSeleccionadas()" [disabled]="
+                        !hayLicenciasSeleccionadas ||
+                        isSendingToApi
+                    " [style.opacity]="
+                        ((permissions.permisos$ | async)
+                            ?.includes(
+                                'codbar.validacion.validacion-licencias-verified.exportar-y-enviar'
+                            ))
+                            ? '1'
+                            : '0.3'
+                    " [style.pointer-events]="
+                        ((permissions.permisos$ | async)
+                            ?.includes(
+                                'codbar.validacion.validacion-licencias-verified.exportar-y-enviar'
+                            ))
+                            ? 'auto'
+                            : 'none'
+                    " [matTooltip]="
+                        !((permissions.permisos$ | async)
+                            ?.includes(
+                                'codbar.validacion.validacion-licencias-verified.exportar-y-enviar'
+                            ))
+                            ? 'Sin permisos'
+                            : ''
+                    ">
+
+                    {{ textoBotonInactivar }}
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- INFORMACIÓN DE SELECCIÓN -->
+    <!-- ===================================================== -->
+
+    <div class="selection-summary" *ngIf="hasResults">
+
+        <div>
+
+            <strong>
+                {{ cantidadSeleccionadas }}
+            </strong>
+
+            licencia(s) seleccionada(s)
+
+        </div>
+
+
+        <div class="selection-help">
+
+            Seleccione únicamente las licencias que desea
+            enviar a GS1 con estado
+            <strong>INACTIVE</strong>.
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- FILTROS -->
+    <!-- ===================================================== -->
+
+    <div class="form-container" [style.opacity]="
+            ((permissions.permisos$ | async)
+                ?.includes(
+                    'codbar.validacion.validacion-licencias-verified.buscar'
+                ))
+                ? '1'
+                : '0.3'
+        " [style.pointer-events]="
+            ((permissions.permisos$ | async)
+                ?.includes(
+                    'codbar.validacion.validacion-licencias-verified.buscar'
+                ))
+                ? 'auto'
+                : 'none'
+        ">
+
+
+        <!-- ================================================= -->
+        <!-- NOMBRE -->
+        <!-- ================================================= -->
+
+        <div class="search-section-left">
+
+            <div class="form-group-inline">
+
+                <label for="searchInput">
+                    Buscar por nombre:
+                </label>
+
+
+                <div class="search-input-container">
+
+                    <input type="text" id="searchInput" #searchInput class="search-input-full"
+                        placeholder="Buscar por nombre..." [(ngModel)]="terminoBusquedaNombre" (input)="
+                            onBusquedaGeneralChange(
+                                searchInput.value
+                            )
+                        " (keyup.enter)="
+                            puedeRealizarBusqueda
+                                ? buscarGeneral(
+                                    searchInput.value
+                                  )
+                                : null
+                        ">
+
+
+                    <button type="button" class="btn btn-sm btn-primary search-button" (click)="
+                            buscarGeneral(
+                                searchInput.value
+                            )
+                        " [disabled]="
+                            !puedeRealizarBusqueda ||
+                            isLoading
+                        ">
+
+                        <img src="assets/icons/icon-buscar.png" alt="Buscar" class="button-icon">
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- RUC / PREFIJO -->
+        <!-- ================================================= -->
+
+        <div class="form-row-two-columns">
+
+            <div class="form-group-inline">
+
+                <label for="ruc">
+                    RUC:
+                </label>
+
+                <input type="text" id="ruc" class="form-control" placeholder="Ingrese RUC" (keypress)="
+                        CustomValidators
+                            .onlyNumbersKeyPress($event)
+                    " [(ngModel)]="searchParams.ruc" (keyup.enter)="
+                        puedeRealizarBusqueda
+                            ? buscar(true)
+                            : null
+                    ">
+
+            </div>
+
+
+            <div class="form-group-inline">
+
+                <label for="prefijo">
+                    Prefijo:
+                </label>
+
+                <input type="text" id="prefijo" class="form-control" placeholder="Ingrese prefijo" (keypress)="
+                        CustomValidators
+                            .onlyNumbersKeyPress($event)
+                    " [(ngModel)]="searchParams.prefijo" (keyup.enter)="
+                        puedeRealizarBusqueda
+                            ? buscar(true)
+                            : null
+                    ">
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- ESTADOS -->
+        <!-- ================================================= -->
+
+        <div class="form-row-two-columns">
+
+            <div class="form-group-inline">
+
+                <label for="prefijoEstado">
+                    Prefijo Estado:
+                </label>
+
+                <select id="prefijoEstado" class="form-control" [(ngModel)]="
+                        searchParams.prefijoEstado
+                    " (change)="
+                        puedeRealizarBusqueda
+                            ? buscar(true)
+                            : null
+                    ">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="active">
+                        Activo
+                    </option>
+
+                    <option value="inactive">
+                        Inactivo
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="form-group-inline">
+
+                <label for="empresaEstado">
+                    Empresa Estado:
+                </label>
+
+                <select id="empresaEstado" class="form-control" [(ngModel)]="
+                        searchParams.empresaEstado
+                    " (change)="
+                        puedeRealizarBusqueda
+                            ? buscar(true)
+                            : null
+                    ">
+
+                    <option value="">
+                        Todos
+                    </option>
+
+                    <option value="active">
+                        Activo
+                    </option>
+
+                    <option value="inactive">
+                        Inactivo
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- FECHAS -->
+        <!-- ================================================= -->
+
+        <div class="form-row-two-columns">
+
+            <div class="form-group-inline">
+
+                <label for="fechaDesde">
+                    Desde:
+                </label>
+
+                <input type="date" id="fechaDesde" class="form-control" [(ngModel)]="
+                        searchParams.fechaDesde
+                    " (change)="
+                        puedeRealizarBusqueda
+                            ? buscar(true)
+                            : null
+                    ">
+
+            </div>
+
+
+            <div class="form-group-inline">
+
+                <label for="fechaHasta">
+                    Hasta:
+                </label>
+
+                <input type="date" id="fechaHasta" class="form-control" [(ngModel)]="
+                        searchParams.fechaHasta
+                    " (change)="
+                        puedeRealizarBusqueda
+                            ? buscar(true)
+                            : null
+                    ">
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- BOTÓN BUSCAR -->
+        <!-- ================================================= -->
+
+        <div class="form-actions-row">
+
+            <button type="button" class="btn btn-primary" (click)="buscar(true)" [disabled]="
+                    !puedeRealizarBusqueda ||
+                    isLoading
+                ">
+
+                {{ mensajeBotonBuscar }}
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- ERROR -->
+    <!-- ===================================================== -->
+
+    <div class="error-message" *ngIf="errorMessage">
+
+        <div class="alert alert-danger">
+
+            <strong>
+                Error:
+            </strong>
+
+            {{ errorMessage }}
+
+
+            <button type="button" class="btn btn-sm btn-secondary" (click)="errorMessage = ''">
+
+                ×
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- LOADING -->
+    <!-- ===================================================== -->
+
+    <div class="loading-spinner" *ngIf="isLoading">
+
+        <div class="spinner">
+        </div>
+
+        <p>
+            Cargando resultados...
+        </p>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- AG GRID -->
+    <!-- ===================================================== -->
+
+    <div class="grid-wrapper" *ngIf="hasResults">
+
+
+        <!-- ================================================= -->
+        <!-- TOOLBAR GRID -->
+        <!-- ================================================= -->
+
+        <div class="results-toolbar">
+
+            <div class="results-info">
+
+                Mostrando
+
+                <strong>
+                    {{ startItem }}
+                </strong>
+
+                -
+
+                <strong>
+                    {{ endItem }}
+                </strong>
+
+                de
+
+                <strong>
+                    {{ totalItems }}
+                </strong>
+
+                resultados
+
+                <span class="page-info">
+
+                    Página
+                    {{ currentPage }}
+                    de
+                    {{ totalPages }}
+
+                </span>
+
+            </div>
+
+
+            <div class="selected-info">
+
+                <span class="selected-counter">
+
+                    {{ cantidadSeleccionadas }}
+
+                </span>
+
+                seleccionada(s)
+
+
+                <button type="button" class="btn btn-danger-action" (click)="
+                        inactivarSeleccionadas()
+                    " [disabled]="
+                        !hayLicenciasSeleccionadas ||
+                        isSendingToApi
+                    ">
+
+                    {{ textoBotonInactivar }}
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- GRID -->
+        <!-- ================================================= -->
+
+        <ag-grid-angular class="ag-theme-alpine licenses-grid" [rowData]="licencias" [columnDefs]="columnDefs"
+            [defaultColDef]="defaultColDef" [rowSelection]="rowSelection" [suppressRowClickSelection]="true"
+            [getRowId]="getRowId" [isRowSelectable]="isRowSelectable" [animateRows]="true" (gridReady)="
+                onGridReady($event)
+            " (selectionChanged)="
+                onSelectionChanged($event)
+            ">
+
+        </ag-grid-angular>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- SIN RESULTADOS -->
+    <!-- ===================================================== -->
+
+    <div class="no-results" *ngIf="noResults">
+
+        <div class="alert alert-info">
+
+            <h4>
+                No se encontraron resultados
+            </h4>
+
+            <p>
+                No se encontraron licencias que coincidan
+                con los criterios de búsqueda.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- PAGINADOR DEL BACKEND -->
+    <!-- ===================================================== -->
+
+    <div class="pagination-container" *ngIf="hasResults">
+
+        <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="
+                [5, 10, 20, 50, 100]
+            " [pageIndex]="
+                currentPage - 1
+            " (page)="
+                onPageChange($event)
+            " [showFirstLastButtons]="true" [disabled]="isLoading" aria-label="Seleccionar página">
+
+        </mat-paginator>
+
+    </div>
+
+</div>

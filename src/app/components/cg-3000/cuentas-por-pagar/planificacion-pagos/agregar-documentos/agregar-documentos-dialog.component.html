@@ -1,0 +1,157 @@
+<div class="agregar-documentos-container">
+  <!-- HEADER -->
+  <div class="header-section">
+    <h2 class="page-title">
+      <mat-icon>add_shopping_cart</mat-icon>
+      Agregar Facturas a Planificación
+    </h2>
+    <button 
+      type="button" 
+      class="btn-icon" 
+      mat-dialog-close
+      aria-label="Cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- CONTENIDO -->
+  <div class="dialog-content">
+    <!-- FILTROS -->
+    <div class="compact-panel">
+      <div class="filters-header">
+        <mat-icon>filter_list</mat-icon>
+        Filtros de Búsqueda
+      </div>
+
+      <form [formGroup]="filtrosForm">
+        <div class="filters-row">
+          <!-- PROVEEDOR -->
+          <div class="filter-col">
+            <label class="compact-label">
+              <mat-icon>business</mat-icon>
+              Proveedor
+            </label>
+            <input
+              type="text"
+              class="compact-input"
+              placeholder="Buscar proveedor..."
+              [formControl]="proveedorCtrl"
+              [matAutocomplete]="autoProveedor">
+            <mat-autocomplete 
+              #autoProveedor="matAutocomplete"
+              [displayWith]="displayProveedor"
+              (optionSelected)="onProveedorSeleccionado($event)">
+              <mat-option 
+                *ngFor="let proveedor of proveedoresFiltrados$ | async" 
+                [value]="proveedor"
+                class="compact-option">
+                <strong>{{ proveedor.identificacion }}</strong>
+                <span>{{ proveedor.nombre }}</span>
+              </mat-option>
+            </mat-autocomplete>
+          </div>
+
+          <!-- FECHA VENCIMIENTO HASTA -->
+          <div class="filter-col">
+            <label class="compact-label required">
+              <mat-icon>event</mat-icon>
+              Fecha Vencimiento Hasta
+            </label>
+            <input
+              type="date"
+              class="compact-input"
+              formControlName="fechaVencimientoHasta">
+          </div>
+
+          <!-- BOTÓN BUSCAR -->
+          <div class="filter-col">
+            <label class="compact-label" style="opacity: 0;">.</label>
+            <button
+              type="button"
+              class="compact-btn compact-btn-primary btn-full"
+              [disabled]="!filtrosForm.valid || cargando"
+              (click)="buscarDocumentos()">
+              <mat-icon>search</mat-icon>
+              Buscar Documentos
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- GRID -->
+    <div class="compact-panel">
+      <div class="grid-header-compact">
+        <div class="grid-title">
+          <mat-icon>description</mat-icon>
+          Documentos Disponibles
+          <span class="badge">{{ documentosDisponibles.length }}</span>
+        </div>
+      </div>
+
+      <div class="grid-wrapper-compact">
+        <ag-grid-angular
+            #gridDisponibles
+            class="ag-theme-material grid-ultra-compact"
+            [rowData]="documentosDisponibles"
+            [columnDefs]="columnDefs"
+            [defaultColDef]="defaultColDef"
+            [gridOptions]="gridOptions"
+            [rowSelection]="'multiple'"
+            [suppressRowClickSelection]="true"
+            [pagination]="true"
+            [paginationPageSize]="20"
+            [paginationPageSizeSelector]="[10, 20, 50]"
+            (gridReady)="onGridReady($event)"
+            style="width: 100%; height: 400px;">
+        </ag-grid-angular>
+
+        <div class="loading-compact" *ngIf="cargando">
+            <mat-spinner diameter="40"></mat-spinner>
+            <span>Buscando documentos...</span>
+        </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-actions">
+    <div class="footer-info">
+      <mat-icon>info</mat-icon>
+      <span>
+        <strong>{{ totalSeleccionados }}</strong> documento(s) seleccionado(s)
+        <ng-container *ngIf="totalSaldoSeleccionado > 0">
+          | Total: <strong>${{ totalSaldoSeleccionado | number:'1.2-2' }}</strong>
+        </ng-container>
+      </span>
+    </div>
+
+    <div class="footer-buttons">
+      <button
+        type="button"
+        class="compact-btn"
+        mat-dialog-close>
+        <mat-icon>close</mat-icon>
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        class="compact-btn"
+        [disabled]="totalSeleccionados === 0"
+        (click)="limpiarSeleccion()">
+        <mat-icon>clear_all</mat-icon>
+        Limpiar Selección
+      </button>
+
+      <button
+        type="button"
+        class="compact-btn compact-btn-primary btn-lg"
+        [disabled]="totalSeleccionados === 0"
+        (click)="agregarSeleccionados()">
+        <mat-icon>add_circle</mat-icon>
+        Agregar {{ totalSeleccionados }} Documento(s)
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+<div class="wrap">
+  <mat-card class="card">
+
+    <div class="title">Reversa Conciliación</div>
+
+    <form [formGroup]="form" class="form">
+
+      <div class="row row-cuenta">
+        <div class="plan-box" [formGroup]="planForm">
+          <mat-form-field appearance="fill" class="ff">
+            <mat-label>Cuenta</mat-label>
+
+            <input
+              matInput
+              type="text"
+              formControlName="planCuentaBuscar"
+              [matAutocomplete]="autoPlan"
+              placeholder="Buscar por id, cuenta o nombre..." />
+
+            <mat-autocomplete
+              #autoPlan="matAutocomplete"
+              [displayWith]="displayPlanCuenta"
+              (optionSelected)="onPlanCuentaSelected($event.option.value)">
+
+              <mat-option *ngIf="loadingPlan" disabled>Cargando...</mat-option>
+
+              <mat-option *ngFor="let p of planCuentasFiltradas" [value]="p">
+                <b>#{{ p.IdPlanCuentas }}</b>
+                &nbsp;•&nbsp; {{ p.CuentaPresentacion }}
+                &nbsp;—&nbsp; {{ p.NombreCuenta || p.Descripcion }}
+              </mat-option>
+
+              <mat-option *ngIf="!loadingPlan && planCuentasFiltradas.length === 0" disabled>
+                Sin resultados
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="ff desc-box desc-highlight">
+  <mat-label>Descripción</mat-label>
+  <input matInput formControlName="descripcion" readonly />
+</mat-form-field>
+      </div>
+
+      <div class="row row-periodo">
+        <mat-form-field appearance="fill" class="ff small-box">
+          <mat-label>Año</mat-label>
+          <input matInput type="number" formControlName="anio" />
+        </mat-form-field>
+
+        <mat-form-field appearance="fill" class="ff small-box">
+          <mat-label>Mes</mat-label>
+          <input matInput type="number" formControlName="mes" />
+        </mat-form-field>
+      </div>
+
+      <div class="actions">
+        <button
+          mat-raised-button
+          color="warn"
+          class="btn btn-reversa"
+          type="button"
+          (click)="onReversar()"
+          [disabled]="loading">
+          <mat-icon>undo</mat-icon>
+          Reversar
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn"
+          type="button"
+          (click)="onNuevo()"
+          [disabled]="loading">
+          <mat-icon>cleaning_services</mat-icon>
+          Cancelar
+        </button>
+
+        <button
+          mat-stroked-button
+          class="btn"
+          type="button"
+          (click)="onSalir()"
+          [disabled]="loading">
+          <mat-icon>logout</mat-icon>
+          Salir
+        </button>
+      </div>
+
+    </form>
+  </mat-card>
+</div>

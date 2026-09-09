@@ -1,3 +1,13 @@
-.example-card {
-    width:80%
-}
+.contenedor-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%; /* o una altura fija como 300px si prefieres */
+    width: 100%;
+  }
+  
+  .logo-central {
+    max-width: 100%;
+    height: auto;
+  }
+  

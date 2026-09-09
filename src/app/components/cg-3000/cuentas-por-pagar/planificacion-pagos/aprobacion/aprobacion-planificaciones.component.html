@@ -1,0 +1,70 @@
+<div class="aprobacion-container">
+  <!-- ===== HEADER ===== -->
+  <div class="header-section">
+    <h1 class="page-title">
+      <mat-icon>check_circle</mat-icon>
+      Cargar Planificaciones de Pago
+    </h1>
+    <button 
+      class="btn-icon" 
+      (click)="cargarPlanificaciones()" 
+      [disabled]="cargando"
+      matTooltip="Actualizar">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <!-- ===== PANEL ===== -->
+  <div class="panel">
+    <!-- Header del grid -->
+    <div class="grid-header-compact">
+      <div class="grid-title">
+        <mat-icon>list_alt</mat-icon>
+        <span>Planificaciones Pendientes</span>
+        <span class="badge">{{ planificacionesRows.length }}</span>
+      </div>
+    </div>
+
+    <!-- Grid wrapper -->
+    <div class="grid-wrapper-compact">
+      <ag-grid-angular
+        #gridPlanificaciones
+        class="ag-theme-material grid-ultra-compact"
+        [rowData]="planificacionesRows"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [getRowStyle]="getRowStyle"
+        [rowSelection]="'multiple'"
+        [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[10, 20, 50]"
+        (gridReady)="onGridReady($event)">
+      </ag-grid-angular>
+
+      <!-- Loading -->
+      <div class="loading-compact" *ngIf="cargando">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span>Cargando planificaciones...</span>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="planificacionesRows.length === 0 && !cargando">
+        <mat-icon>info_outline</mat-icon>
+        <p>No hay planificaciones pendientes de aprobación</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <!-- <div class="footer-actions" *ngIf="planificacionesRows.length > 0">
+    <button 
+      class="compact-btn compact-btn-primary btn-lg"
+      (click)="aprobarSeleccionadas()"
+      [disabled]="aprobando || cargando">
+      <mat-spinner *ngIf="aprobando" diameter="20"></mat-spinner>
+      <mat-icon *ngIf="!aprobando">check_circle</mat-icon>
+      {{ aprobando ? 'Aprobando...' : 'Aprobar Todo' }}
+    </button>
+  </div> -->
+</div>

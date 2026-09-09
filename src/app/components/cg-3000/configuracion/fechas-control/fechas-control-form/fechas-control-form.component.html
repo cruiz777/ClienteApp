@@ -1,0 +1,138 @@
+
+<div class="form-container" [class.edit-mode]="isEditMode" >
+  <h2>{{ isEditMode ? 'Editar Fechas de Control' : 'Nueva Fecha de Control' }}</h2>
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <div class="form-grid">
+    <div class="form-group">
+        <label for="FecVal">Mes/Año<span class="required">*</span></label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          
+          <input
+              id="FecValMonth"
+              type="month"
+              class="w-7ch "
+              [value]="fecValMonth || ''"
+              (change)="onSelectMonth($event)"
+              [disabled]="isEditMode"
+              [readonly]="isEditMode"
+              [attr.title]="isEditMode ? 'Solo lectura en modo edición' : 'Seleccione mes/año'"
+              
+            />
+            <input id="FecVal" 
+              type="text" 
+              formControlName="FecVal" placeholder="Ej: 01/2025" 
+              maxlength="7" 
+              style="text-transform: uppercase" 
+              [readonly]="isEditMode" 
+              [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null" 
+          />
+        </div>   
+      <div class="error" *ngIf="form.get('FecVal')?.invalid && form.get('FecVal')?.touched">Campo obligatorio.</div> 
+    </div>
+
+    <div class="form-group">
+      <label for="Fecha">Fecha <span class="required">*</span></label>
+      <input id="Fecha" type="text" formControlName="Fecha" placeholder="Ej: 202501 .." maxlength="20" 
+      [readonly]="isEditMode"
+      [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+      />
+      <div class="error" *ngIf="form.get('Fecha')?.invalid && form.get('Fecha')?.touched">Campo obligatorio.</div>
+    </div>
+
+     <div class="form-group">
+      <label for="Dias">No Dias <span class="required">*</span></label>
+      <input id="Dias" type="text" formControlName="Dias" placeholder="Ej: 01/31 .." maxlength="2"
+      pattern="^[0-9]+$" 
+      [readonly]="isEditMode"
+      [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+      />
+      <div class="error" *ngIf="form.get('Dias')?.invalid && form.get('Dias')?.touched">Campo obligatorio.</div>
+    </div>
+
+    <div class="form-group">
+      <label for="TipoCon">Estado<span class="required">*</span></label>
+      <input id="TipoCon" type="text" formControlName="TipoCon" placeholder="Ej: A .." maxlength="1" 
+      [readonly]="isEditMode"
+      [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+      />
+      <div class="error" *ngIf="form.get('TipoCon')?.invalid && form.get('TipoCon')?.touched">Campo obligatorio.</div>
+    </div>
+
+        <!-- Control Tipo Asiento (usando observable) -->
+    <div class="form-group">
+      <label for="IdTipoAsiento">Control Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': isEditMode }" >*</span></label>
+      <select
+        id="IdTipoAsiento"
+        [disabled]="isEditMode"
+        [ngClass]="{ 'edit-mode-select': isEditMode }"
+        formControlName="IdTipoAsiento"
+        [attr.title]="'Seleccione el tipo documento'"
+      >
+        <option [ngValue]="null" disabled>Seleccione...</option>
+        <option *ngFor="let ta of (tiposAsiento$ | async)" [ngValue]="ta.IdTipoAsiento">
+          {{ ta.TipAsiento }} — {{ ta.Descripcion }}
+        </option>
+      </select>
+      <div class="error" *ngIf="form.get('IdTipoAsiento')?.invalid && form.get('IdTipoAsiento')?.touched">
+        Campo obligatorio.
+      </div>
+    </div>
+     
+    <div class="form-group">
+      <label for="VarVal">Activo/Pasivo <span class="required">*</span></label>
+      <select
+        id="VarVal"
+        formControlName="VarVal"
+        [disabled]="isEditMode && false"  
+        [attr.title]="(isEditMode) ? 'Seleccione Pasico o Activo' : null"
+      >
+        <option [ngValue]="null" disabled>Seleccione...</option>
+        <option [ngValue]="'P'">P</option>
+        <option [ngValue]="'A'">A</option>
+      </select>
+      <div class="error" *ngIf="form.get('VarVal')?.invalid && form.get('VarVal')?.touched">Campo obligatorio.</div>
+    </div>
+
+    <div class="form-group">
+      <label for="NumDoc">No. Documento <span class="required">*</span></label>
+      <input id="NumDoc" type="text" formControlName="NumDoc" placeholder="Ej: 2020100001 .." maxlength="20" 
+      inputmode="numeric"
+      pattern="^[0-9]+$"
+      (keypress)="soloNumeros($event)"
+      />
+      <div class="error" *ngIf="form.get('NumDoc')?.invalid && form.get('NumDoc')?.touched">Campo obligatorio.</div>
+    </div>
+
+    <div class="form-group">
+      <label for="Ocupado">Registro Bloqueado <span class="required" class="checkbox-compact">*</span></label>
+      <input id="Ocupado"  
+          type="checkbox"
+          formControlName="Ocupado" 
+          placeholder="Ej: ture/false .." 
+          maxlength="20" 
+      />
+      <div class="error" *ngIf="form.get('Ocupado')?.invalid && form.get('Ocupado')?.touched">Campo obligatorio.</div>
+    </div>
+
+     <div class="form-group">
+      <!--<label for="TipDoc">Tipo Doc. <span class="required" >*</span></label>-->
+      <input id="TipDoc" type="hidden" formControlName="TipDoc" placeholder="Ej: AD-EG-IG-VT-AJ .." maxlength="2" 
+
+      style="text-transform: uppercase"
+      pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñüÜ\\s]+$"
+      [readonly]="isEditMode"
+      [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+      />
+      <div class="error" *ngIf="form.get('TipDoc')?.invalid && form.get('TipDoc')?.touched">Campo obligatorio.</div>
+    </div>
+
+    <!-- Acciones a ancho completo -->
+    <div class="form-actions col-span-2">
+      <button type="submit" class="btn-azul" [disabled]="form.invalid" [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+</form>
+</div>

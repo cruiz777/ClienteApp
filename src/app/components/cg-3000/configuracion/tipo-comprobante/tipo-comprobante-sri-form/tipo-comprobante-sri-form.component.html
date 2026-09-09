@@ -1,0 +1,73 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Tipo de Comprobante Sri' : 'Nuevo Tipo de Comprobante Sri' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <!-- CÓDIGO (Codtipcomp) -->
+    <div class="form-group">
+      <label for="Codtipcomp">Código (codtipcomp) <span class="required">*</span></label>
+      <input
+        id="Codtipcomp"
+        type="text"
+        formControlName="Codtipcomp"
+        placeholder="Ej: 302"
+        maxlength="3"
+        style="text-transform: uppercase"
+        [readonly]="isEditMode"
+        [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+      />
+      <div class="error" *ngIf="form.get('Codtipcomp')?.touched && form.get('Codtipcomp')?.errors">
+        <span *ngIf="form.get('Codtipcomp')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('Codtipcomp')?.hasError('maxlength')">Excede la longitud permitida.</span>
+        <span *ngIf="form.get('Codtipcomp')?.hasError('codtipcompDuplicado')">
+          Código ya existe (duplicado).
+        </span>
+      </div>
+    </div>
+
+    <!-- DESCRIPCIÓN -->
+    <div class="form-group">
+      <label for="Destipcomp">Descripción <span class="required">*</span></label>
+      <input
+        id="Destipcomp"
+        type="text"
+        formControlName="Destipcomp"
+        placeholder="Ej: Factura"
+        maxlength="248"
+      />
+      <div class="error" *ngIf="form.get('Destipcomp')?.touched && form.get('Destipcomp')?.errors">
+        <span *ngIf="form.get('Destipcomp')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('Destipcomp')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- SUSTENTO TRIBUTARIO -->
+    <div class="form-group">
+      <label for="Sustentotrib">Sustento Trib. <span class="required">*</span></label>
+      <input
+        id="Sustentotrib"
+        type="text"
+        formControlName="Sustentotrib"
+        placeholder="Ej: 01,02,03"
+        maxlength="248"
+      />
+      <div class="error" *ngIf="form.get('Sustentotrib')?.touched && form.get('Sustentotrib')?.errors">
+        <span *ngIf="form.get('Sustentotrib')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('Sustentotrib')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn-azul"
+        [disabled]="form.invalid || form.pending"
+        [ngClass]="{ 'btn-rojo': isEditMode, 'btn-azul': !isEditMode }"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,153 @@
+
+  /* =========================
+  CONTENIDO PRINCIPAL
+  ========================= */
+  mat-sidenav-content {
+  padding: 16px;
+  transition: margin-left 0.3s ease, padding 0.3s ease;
+  }
+  .content-collapsed {
+  margin-left: 60px !important;
+  }
+
+/* Separadores opacos para los subítems del menú lateral */
+mat-expansion-panel a[mat-list-item] {
+  border-bottom: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  display: block;
+}
+
+/* Evita borde en el último ítem de cada grupo */
+mat-expansion-panel a[mat-list-item]:last-of-type {
+  border-bottom: none;
+}
+
+mat-accordion ::ng-deep mat-expansion-panel {
+  border-bottom: 1px solid #e0e0e0 !important;
+  box-shadow: none !important;
+  margin-bottom: 0 !important;
+}
+
+mat-accordion ::ng-deep mat-expansion-panel:last-of-type {
+  border-bottom: none !important;
+}
+
+  /* =========================
+  RESPONSIVE - MÓVIL
+  ========================= */
+  @media (max-width: 768px) {
+  mat-sidenav-content {
+  margin-left: 60px !important;
+  }
+  .btn-nueva-empresa {
+  width: 100%;
+  text-align: center;
+  margin-top: 10px;
+  }
+  }/* =========================
+CONTENEDOR GENERAL
+========================= */
+.sidenav-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  padding-bottom: 40px; /*espacio para que el contenido no se tape con el footer */
+  box-sizing: border-box;
+  }
+
+  /* =========================
+  FOOTER FIJO Y ADAPTATIVO
+  ========================= */
+  /* Contenedor para que el contenido no sea tapado */
+  .router-wrapper {
+  padding-bottom: 60px; /* deja espacio para el footer fijo */
+  }
+  /* Footer fijo en pantalla */
+  .app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 220px;
+  height: 40px;
+  width: calc(100% - 220px);
+  background-color: #ffffff;
+  border-top: 1px solid #ccd5e2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 20px;
+  font: 400 12px Inter, sans-serif;
+  color: #555;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+  }
+  .footer-collapsed {
+  left: 60px;
+  width: calc(100% - 60px);
+  }
+  .footer-left {
+  flex: 1;
+  text-align: left;
+  }
+  .footer-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  }
+  .footer-logo {
+  height: 20px;
+  object-fit: contain;
+  }
+  .footer-phone {
+  font-weight: 500;
+  }
+  /* Responsive móvil */
+  @media (max-width: 768px) {
+  .app-footer {
+  left: 0 !important;
+  width: 100% !important;
+  flex-direction: column;
+  height: auto;
+  padding: 10px;
+  }
+  .footer-left {
+  text-align: center;
+  margin-bottom: 5px;
+  }
+  .footer-center {
+  position: static;
+  transform: none;
+  justify-content: center;
+  }
+  }
+  /* =========================
+  BOTÓN SALIR
+  ========================= */
+  .salir-item {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  z-index: 1000;
+  }
+  .salir-item .menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: bold;
+  color: #F27046;
+  }
+  .salir-item .menu-icon {
+  width: 24px;
+  height: 24px;
+  }
+  .bottom-logout {
+    margin-top: auto; /* lo empuja al fondo */
+    padding-bottom: 20px; /* opcional: separarlo un poco del fondo */
+  }

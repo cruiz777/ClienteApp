@@ -1,0 +1,72 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Reporte Ingreso Descuentos por Empleado</h2>
+
+    <div class="top-row">
+      <mat-radio-group formControlName="tipoMovimiento" class="radio-group">
+        <mat-radio-button value="ingreso">Ingreso</mat-radio-button>
+        <mat-radio-button value="egreso">Egresos</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <div class="content-grid">
+      <div class="left-section">
+        <div class="fields-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Código</mat-label>
+            <mat-select formControlName="codigo">
+              <mat-option *ngFor="let item of codigos" [value]="item.id">
+                {{ item.id }} - {{ item.descripcion }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Periodo</mat-label>
+            <mat-select formControlName="periodo">
+              <mat-option *ngFor="let item of periodos" [value]="item">
+                {{ item }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="middle-section">
+        <h3>Información Adicional</h3>
+
+        <div class="checks-column">
+          <mat-checkbox formControlName="ingImputables">
+            Ing. Imputables / No Imputables
+          </mat-checkbox>
+
+          <mat-checkbox formControlName="egresos">
+            Egresos
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <div class="right-section">
+        <div class="box-types">
+          <div class="checks-column">
+            <mat-checkbox formControlName="temporal">Temporal</mat-checkbox>
+            <mat-checkbox formControlName="fijos">Fijos</mat-checkbox>
+            <mat-checkbox formControlName="exempleado">Exempleado</mat-checkbox>
+            <mat-checkbox formControlName="porHoras">Por Horas</mat-checkbox>
+            <mat-checkbox formControlName="honorarios">Honorarios</mat-checkbox>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

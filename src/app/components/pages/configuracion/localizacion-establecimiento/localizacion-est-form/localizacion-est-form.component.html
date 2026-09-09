@@ -1,0 +1,32 @@
+<form class="form-container" [formGroup]="form" (ngSubmit)="guardar()">
+  <h2 class="form-title">{{ esEdicion ? 'Editar Localización' : 'Creación Localización' }}</h2>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Descripción:</label>
+      <div class="form-input">
+        <input
+          type="text"
+          formControlName="descripcion"
+          class="input-placeholder"
+          placeholder="Ingrese descripción"
+        />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Estado:</label>
+      <div class="form-input">
+        <select formControlName="estado" class="input-placeholder">
+          <option [ngValue]="true">ACTIVO</option>
+          <option [ngValue]="false">INACTIVO</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="action-button save-button">Grabar</button>
+    <button type="button" class="action-button cancel-button" (click)="cancelar()">Cancelar</button>
+  </div>
+</form>

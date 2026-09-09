@@ -1,0 +1,227 @@
+<div class="ficha-page">
+
+  <div
+    class="ficha-card"
+    [formGroup]="form">
+
+    <!-- ===============================================
+         CABECERA
+    ================================================ -->
+
+    <div class="titulo-container">
+
+      <div class="titulo-icono">
+        <mat-icon>
+          badge
+        </mat-icon>
+      </div>
+
+      <div>
+
+        <h2>
+          Ficha del Empleado
+        </h2>
+
+        <p>
+          Seleccione un empleado o deje el campo vacío
+          para generar las fichas de todos.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- ===============================================
+         BUSCADOR
+    ================================================ -->
+
+    <div class="busqueda-container">
+
+      <mat-form-field
+        appearance="outline"
+        class="busqueda-field">
+
+        <mat-label>
+          Buscar empleado
+        </mat-label>
+
+
+        <mat-icon
+          matPrefix>
+
+          search
+
+        </mat-icon>
+
+
+        <input
+          matInput
+          type="text"
+          formControlName="empleadoBusqueda"
+          [matAutocomplete]="autoEmpleado"
+          [placeholder]="'Código, cédula o nombre'">
+
+
+        <!-- LIMPIAR -->
+
+        <button
+          *ngIf="
+            form.get('empleadoBusqueda')?.value
+          "
+          mat-icon-button
+          matSuffix
+          type="button"
+          title="Limpiar"
+          (click)="limpiarBusquedaEmpleado($event)">
+
+          <mat-icon>
+            close
+          </mat-icon>
+
+        </button>
+
+
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="displayEmpleado"
+          (optionSelected)="seleccionarEmpleadoBusqueda($event)">
+
+          <mat-option
+            *ngIf="cargandoEmpleados"
+            disabled>
+
+            Buscando empleados...
+
+          </mat-option>
+
+
+          <mat-option
+            *ngFor="
+              let empleado
+              of empleadosFiltrados
+            "
+            [value]="empleado">
+
+            <div class="empleado-option">
+
+              <div class="empleado-nombre">
+
+                {{ empleado.idEmpleado }}
+                -
+                {{ empleado.nombreCompleto }}
+
+              </div>
+
+
+              <div class="empleado-documento">
+
+                {{ empleado.documento }}
+
+              </div>
+
+            </div>
+
+          </mat-option>
+
+
+          <mat-option
+            *ngIf="
+              !cargandoEmpleados &&
+              empleadosFiltrados.length === 0
+            "
+            disabled>
+
+            No se encontraron empleados
+
+          </mat-option>
+
+        </mat-autocomplete>
+
+      </mat-form-field>
+
+    </div>
+
+
+    <!-- ===============================================
+         INFORMACIÓN DEL MODO
+    ================================================ -->
+
+    <div class="modo-reporte">
+
+      <ng-container
+        *ngIf="
+          form.get('idEmpleado')?.value;
+          else todos
+        ">
+
+        <mat-icon>
+          person
+        </mat-icon>
+
+        Se generará la ficha del empleado seleccionado.
+
+      </ng-container>
+
+
+      <ng-template #todos>
+
+        <mat-icon>
+          groups
+        </mat-icon>
+
+        Campo vacío: se generarán las fichas de todos los empleados.
+
+      </ng-template>
+
+    </div>
+
+
+    <!-- ===============================================
+         ACCIONES
+    ================================================ -->
+
+    <div class="acciones">
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="generando"
+        (click)="generar()">
+
+        <mat-icon>
+          picture_as_pdf
+        </mat-icon>
+
+        {{ generando ? 'Generando...' : 'Generar' }}
+
+      </button>
+
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="generando"
+        (click)="cancelar()">
+
+        Limpiar
+
+      </button>
+
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="generando"
+        (click)="salir()">
+
+        Salir
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

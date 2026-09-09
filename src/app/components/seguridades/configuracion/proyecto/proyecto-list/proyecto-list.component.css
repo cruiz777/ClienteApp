@@ -1,0 +1,110 @@
+.zona-container {
+  padding: 40px;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.zona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.zona-header h2 {
+  font-size: 22px;
+  color: #002c6c;
+  font-weight: 700;
+}
+
+.btn-nueva-zona {
+  background-color: #eef4f7;
+  color: #002c6c;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-nueva-zona:hover {
+  background-color: #d5e8f1;
+}
+
+.zona-busqueda {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.zona-busqueda label {
+  margin-right: 10px;
+  font-size: 14px;
+  color: #002c6c;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper input {
+  padding: 6px 30px 6px 10px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  outline: none;
+  font-size: 14px;
+  width: 250px;
+}
+
+.input-wrapper img {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+}
+
+/* Tabla de proyectos */
+.zona-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ccd5e2;
+  font-size: 14px;
+}
+
+.zona-tabla thead tr {
+  background-color: #eef4f7;
+  color: #002c6c;
+}
+
+.zona-tabla th,
+.zona-tabla td {
+  border: 1px solid #ccd5e2;
+  padding: 10px 15px;
+  text-align: center;
+}
+
+.zona-tabla tbody tr:hover {
+  background-color: #f8fafd;
+}
+
+.icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.icon-btn img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.icon-btn:hover img {
+  opacity: 1;
+}

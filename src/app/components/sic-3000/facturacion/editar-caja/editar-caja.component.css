@@ -1,0 +1,98 @@
+/* ===== Header / Body / Actions con padding amplio ===== */
+.dialog-header{
+  padding: 16px 24px 8px 24px;
+}
+.dialog-header h3{
+  margin:0;
+  font-size:18px; font-weight:700; color:#1f2937;
+}
+
+.dialog-content{
+  padding: 8px 24px 16px 24px;
+}
+
+.dialog-actions{
+  display:flex; justify-content:flex-end; gap:12px;
+  padding: 12px 24px 16px 24px;
+}
+
+/* ===== Grid y campos ===== */
+.form-grid{ display:flex; flex-direction:column; gap:16px; }
+
+.row{
+  display:grid;
+  gap:16px; /* más aire entre columnas/filas */
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.field{ display:flex; flex-direction:column; gap:6px; }
+.field.xs   { grid-column: span 3; min-width:160px; }
+.field.sm   { grid-column: span 4; }
+.field.md   { grid-column: span 5; }
+.field.full { grid-column: 1 / -1; }
+.align-bottom{ justify-content:flex-end; }
+
+label{ font-weight:600; color:#1f2937; font-size:13px; }
+
+/* ===== Inputs con altura y foco agradable ===== */
+input[type="text"], input[type="number"]{
+  width:100%;
+  height: 36px;                   /* más alto */
+  padding: 8px 12px;
+  border:1px solid #d1d5db;
+  border-radius:10px;             /* radio mayor */
+  font-size:14px; background:#fff;
+  outline:none;
+  transition: box-shadow .15s, border-color .15s;
+}
+input[type="text"]:focus,
+input[type="number"]:focus{
+  border-color:#94c0ff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+input[readonly]{ background:#f3f4f6; color:#6b7280; }
+
+/* ===== Toggle (Generar XML) ===== */
+.label-inline{ margin-bottom:6px; }
+.switch{ position:relative; width:46px; height:26px; display:inline-block; }
+.switch input{ opacity:0; width:0; height:0; }
+.slider{
+  position:absolute; inset:0; border-radius:9999px;
+  background:#e5e7eb; cursor:pointer; transition:.2s;
+}
+.slider:before{
+  content:""; position:absolute; left:3px; top:3px; width:20px; height:20px;
+  background:#fff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,.15);
+  transition:.2s;
+}
+.switch input:checked + .slider{ background:#22c55e; } /* éxito */
+.switch input:checked + .slider:before{ transform:translateX(20px); }
+
+/* ===== Botones ===== */
+.btn-primary{
+  background:#0b57d0; color:#fff; border:1px solid #0b57d0;
+  padding:10px 18px; border-radius:10px; cursor:pointer; font-weight:600;
+}
+.btn-primary:hover{ filter:brightness(1.06); }
+.btn-secondary{
+  background:#eef4f7; color:#002c6c; border:1px solid #ccd5e2;
+  padding:10px 18px; border-radius:10px; cursor:pointer; font-weight:600;
+}
+.btn-secondary:hover{ background:#e2ebf4; }
+
+/* ===== Responsive ===== */
+@media (max-width: 780px){
+  .row{ grid-template-columns: 1fr; }
+  .field, .field.xs, .field.sm, .field.md, .field.full{ grid-column: 1 / -1; }
+}
+
+/* ===== Opcional: aumentar padding del contenedor Material ===== */
+/* si quieres aún más aire externo, descomenta esto */
+/*
+:host ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface{
+  border-radius: 14px !important;
+}
+:host ::ng-deep .mat-mdc-dialog-container .mdc-dialog__content{
+  padding: 0 !important;  // usamos nuestros paddings
+}
+*/

@@ -1,0 +1,137 @@
+<div class="container" [formGroup]="form">
+
+  <!-- TÍTULO -->
+  <div class="title">
+    <h2>Utilidades</h2>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters-grid">
+
+    <div class="field-group">
+      <label>Empresa:</label>
+      <mat-form-field appearance="outline">
+        <mat-select formControlName="idEmpresa">
+          <mat-option *ngFor="let emp of empresas" [value]="emp.idEmpresa">
+            {{ emp.numPatronal }} - {{ emp.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="field-group">
+      <label>Período:</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               type="number"
+               formControlName="periodo"
+               placeholder="2026"/>
+      </mat-form-field>
+    </div>
+    
+    <div class="field-group">
+      <label>Tipo de Empleado:</label>
+      <mat-form-field appearance="outline">
+        <mat-select formControlName="idTipEmp">
+          <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.id">
+            {{ tipo.descripcion }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="field-group">
+      <label>Empleados (10%):</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               type="number"
+               formControlName="monto10"
+               placeholder="0.00"/>
+        <span matPrefix>$&nbsp;</span>
+      </mat-form-field>
+    </div>
+
+    <div class="field-group">
+      <label>Cargas (5%):</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               type="number"
+               formControlName="monto5"
+               placeholder="0.00"/>
+        <span matPrefix>$&nbsp;</span>
+      </mat-form-field>
+    </div>
+
+  </div>
+
+  <!-- AG-GRID -->
+  <div class="grid-wrapper">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 100%;"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- BOTONES + RESUMEN -->
+  <div class="bottom-section">
+
+    <div class="actions">
+      <button mat-stroked-button type="button"
+        (click)="calcular()"
+        [disabled]="loading || grabando">
+        <span *ngIf="!loading">Calcular</span>
+        <span *ngIf="loading">Calculando...</span>
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="grabar()"
+        [disabled]="loading || grabando || !rowData.length">
+        <span *ngIf="!grabando">Grabar</span>
+        <span *ngIf="grabando">Grabando...</span>
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="cargar()"
+        [disabled]="loading || grabando">
+        Cargar
+      </button>
+
+      <button mat-stroked-button [matMenuTriggerFor]="menuExportar"
+              [disabled]="!datosDesdeDB || !rowData.length">
+        Exportar ▾
+      </button>
+      <mat-menu #menuExportar="matMenu">
+        <button mat-menu-item (click)="exportar('pdf')">📄 PDF</button>
+        <button mat-menu-item (click)="exportar('excel')">📊 Excel</button>
+      </mat-menu>
+
+      <button mat-stroked-button type="button"
+        (click)="cancelar()"
+        [disabled]="loading || grabando">
+        Cancelar
+      </button>
+    </div>
+
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Total Empleados (10%)</span>
+        <strong>{{ formatMoneda(totalValorEmpleado) }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Total Cargas (5%)</span>
+        <strong>{{ formatMoneda(totalValorCarga) }}</strong>
+      </div>
+      <div class="summary-row total-row">
+        <span>Total General</span>
+        <strong>{{ formatMoneda(totalGeneral) }}</strong>
+      </div>
+    </div>
+
+  </div>
+
+</div>

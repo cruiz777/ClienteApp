@@ -1,146 +1,170 @@
-/* GENERAL */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+/* FONDO DEL BODY CON IMAGEN + DEGRADADO SEMI-OPACO */
 body {
-  background-image: url('src/assets/fondo_login.png'); /* Ruta a tu imagen */
-  background-size: cover; /* Que cubra toda la pantalla */
-  background-position: center; /* Centrada */
-  background-repeat: no-repeat;
-  height: 100vh;
   margin: 0;
+  height: 100vh;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.35)), url('src/assets/images/fondo_login.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: 'Poppins', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
 }
-/* CONTENEDOR LOGIN */
+
+/* TARJETA PRINCIPAL DEL LOGIN */
 .login-container {
-  width: 400px;
-  height: 460px;
-  margin: 50px auto; /* centra vertical y horizontalmente */
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 50px 40px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  max-width: 420px;
+  width: 90%;
+}
+
+/* LOGO Y TITULO DE BIENVENIDA */
+.header-container {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 }
 
-
-/* LOGO */
-.logo {
-  text-align: center;
-  margin-bottom: 10px;
+.logo-image {
+  width: 150px;
+  margin-bottom: 12px;
 }
 
-.logo img {
-  height: 80px;
-}
-
-.logo h2 {
-  color: #e44d26;
-  font-size: 18px;
-  margin-top: -10px;
-}
-
-/* TÍTULO */
-h3 {
+.welcome-text {
   font-size: 24px;
   font-weight: 600;
-  margin: 20px 0 30px 0;
-  text-align: left;
+  color: #001f4f;
 }
 
-/* FORMULARIO */
+/* CAMPOS DEL FORMULARIO */
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
-.form-group label {
-  font-size: 14px;
-  color: #000;
-  display: block;
-  margin-bottom: 4px;
+.field-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #001f4f;
+  margin-bottom: 5px;
 }
 
-.input-group {
-  display: flex;
-  align-items: center;
-  background: #fff;
+.input-field {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 6px 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.3s;
 }
 
-.input-group img {
-  width: 20px;
-  height: 20px;
+.input-field:focus {
+  border-color: #001f4f;
+}
+
+/* CAMPO DE CONTRASEÑA CON ICONO */
+.password-group {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-2%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.toggle-password img {
+  width: 22px;
+  height: 22px;
+}
+
+/* ENLACE PARA OLVIDO DE CONTRASEÑA */
+.forgot-password {
+  text-align: right;
+  margin-bottom: 20px;
+}
+
+.forgot-password a {
+  font-size: 14px;
+  color: #001f4f;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.forgot-password a:hover {
+  color: #cd3c0d;
+  text-decoration: underline;
+}
+
+/* BOTÓN DE INICIAR SESIÓN */
+.login-button-container {
+  display: flex;
+  justify-content: center;
+}
+
+.login-button {
+  background-color: #001f4f;
+  color: #fff;
+  padding: 16px;
+  width: 100%;
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.login-button:hover {
+  background-color: #cd3c0d;
+}
+
+/* PIE DE PÁGINA CON LOGO GAP */
+.footer-container {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  color: #888;
+  gap: 10px;
+}
+
+.footer-logo {
+  width: 75px;
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
   margin-right: 8px;
 }
 
-.input-group input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 14px;
-  height: 24px;
-  background: transparent;
-}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
 
-
-/* OLVIDÓ CONTRASEÑA */
-.forgot {
-  text-align: right;
-  font-size: 11px;
-  color: #808080;
-  margin-top: -10px;
-  margin-bottom: 40px;
-  cursor: pointer;
-}
-
-/* BOTONES */
-.btn-group {
-  display: flex;
-  justify-content:center;
-  margin-top: 0px;
-}
-
-.btn {
-  width: 135px;
-  height: 35px;
-  border: 1px solid #83b899;
-  border-radius: 5px;
-  font-size: 16px;
-  font-weight: 400;
-  cursor: pointer;
-}
-
-.btn.siguiente {
-  color: #808080;
-  background-color: #ffffff;
-}
-
-
-
-/* PIE DE PÁGINA */
-.footer {
-  margin-top: 25px;
-  text-align: center;
-  font-size: 11px;
-  color: #808080;
-}
-
-.footer img {
-  height: 25px;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-btn siguiente {
-  position: absolute;
-  top: 0px;
-  right: 20px;
+  100% {
+    transform: rotate(360deg);
+  }
 }

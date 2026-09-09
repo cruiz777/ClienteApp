@@ -1,0 +1,427 @@
+<mat-tab-group class="tabs-with-circles tabs-narrow-left" [selectedIndex]="currentStep - 1"
+  (selectedIndexChange)="onSelectedIndexChange($event)" #tabs>
+
+  <!-- Pestaña 1: Datos del Cliente -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <span class="step-badge" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">1</span>
+      <span>Datos del Cliente</span>
+    </ng-template>
+
+    <section class="fi-section" [formGroup]="formCliente">
+      <h1 class="fi-title" style="padding-top: 0;">Información del Cliente</h1>
+
+      <div class="fi-grid">
+        <div class="fi-field fi-cliente">
+          <label>*Cliente:</label>
+
+          <div class="fi-input-wrap">
+            <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
+              (blur)="clienteOrigenControl.markAsTouched()" placeholder="Buscar Cliente"
+              [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
+
+            <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+                <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+              </mat-option>
+            </mat-autocomplete>
+          </div>
+
+          <div class="field-error" *ngIf="clienteOrigenControl.invalid && clienteOrigenControl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+
+        <div class="fi-field fi-tel">
+          <label>*Teléfono:</label>
+          <input class="fi-input" type="text" placeholder="número" formControlName="telefono" minlength="9"
+            maxlength="9">
+          <mat-error *ngIf="formCliente.get('telefono')?.hasError('required')">
+            Teléfono es obligatorio
+          </mat-error>
+          <mat-error *ngIf="formCliente.get('telefono')?.hasError('telefonoInvalido')">
+            Ingrese 9 dígitos
+          </mat-error>
+        </div>
+
+        <div class="fi-field fi-id">
+          <label>*Identificación (RUC/Cédula):</label>
+          <input class="fi-input" type="text" placeholder="Identificación" formControlName="identificacion" readonly>
+
+          <mat-error *ngIf="formCliente.get('identificacion')?.hasError('required')">
+            La identificación es obligatoria
+          </mat-error>
+        </div>
+
+
+        <div class="fi-field fi-email">
+          <label>*E-mail:</label>
+          <input class="fi-input" type="email" placeholder="pac@gmail.com" formControlName="email">
+
+          <mat-error *ngIf="formCliente.get('email')?.hasError('required')">
+            El E-mail es obligatorio
+          </mat-error>
+          <mat-error *ngIf="formCliente.get('email')?.hasError('email')">
+            El formato del E-mail no es válido
+          </mat-error>
+        </div>
+
+
+        <div class="fi-field fi-dir">
+          <label>*Dirección:</label>
+          <input class="fi-input" type="text" placeholder="Calles principales y secundarias"
+            formControlName="direccion">
+
+          <mat-error *ngIf="formCliente.get('direccion')?.hasError('required')">
+            La dirección es obligatoria
+          </mat-error>
+        </div>
+
+
+        <div class="fi-field fi-emailop">
+          <label>E-mail Facturación:</label>
+
+          <input class="fi-input" type="text" formControlName="emailOpcional"
+            placeholder="correo1@dominio.com;correo2@dominio.com" maxlength="300" autocomplete="off"
+            (keydown.space)="$event.preventDefault()" (input)="onEmailOpcionalInput($event)" />
+
+          <div *ngIf="formCliente.get('emailOpcional')?.touched && formCliente.get('emailOpcional')?.invalid"
+            style="margin-top:4px">
+
+            <!-- lista de correos mal formateados -->
+            <ng-container *ngIf="formCliente.get('emailOpcional')?.errors?.['multipleEmails'] as multi">
+              <small style="color:red">
+                Correos inválidos: {{ (multi.invalid || []).join(', ') }}
+              </small>
+            </ng-container>
+
+            <!-- exceso de correos -->
+            <small *ngIf="formCliente.get('emailOpcional')?.errors?.['tooManyEmails'] as tme" style="color:red">
+              Máximo {{ tme.max }} correos. Ingresaste {{ tme.count }}.
+            </small>
+          </div>
+        </div>
+
+
+        <div class="fi-field fi-cat">
+          <label>Categoría:</label>
+          <input class="fi-input" type="text" placeholder="Categoría" formControlName="categoria" readonly>
+        </div>
+
+        <div class="fi-field fi-pref">
+          <mat-form-field class="select-pequeno">
+            <mat-label>*Prefijo</mat-label>
+            <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
+              <mat-option value="">Seleccione…</mat-option>
+              <mat-option *ngFor="let p of prefijos; trackBy: trackByPrefijoId" [value]="p.id_prefijos">
+                {{ p.codpre }} <span *ngIf="p.fechaVista">--- {{ p.fechaVista }}</span>
+              </mat-option>
+
+            </mat-select>
+
+            <mat-error *ngIf="formCliente.get('gcp')?.hasError('required')">
+              El prefijo es obligatorio
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+      </div>
+
+      <div class="fi-actions">
+        <button class="fi-btn" type="button" (click)="ripple($event); abrirModalAnular()">
+          Anular Factura
+        </button>
+        <button class="fi-btn" type="button" (click)="ripple($event); onCancelarClick($event)">
+          Cancelar
+        </button>
+
+        <button class="fi-btn fi-primary" type="button" (click)="ripple($event); irPaso2()" [disabled]="!puedeIrPaso2">
+          Siguiente <span class="fi-arrow">›</span>
+        </button>
+      </div>
+
+    </section>
+  </mat-tab>
+
+  <!-- Pestaña 2: Factura (DESHABILITADA hasta cumplir paso 1) -->
+  <mat-tab [disabled]="!puedeIrPaso2">
+    <ng-template mat-tab-label>
+      <span class="step-badge" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">2</span>
+      <span>Factura</span>
+    </ng-template>
+
+    <div class="factura-wrap" [formGroup]="formFactura">
+      <header class="form-header" style="padding-bottom: 0;padding-top: 0;">
+        <h1 class="form-title" style="padding-bottom: 0;padding-top: 0;">Facturación</h1>
+        <span>{{ nombreCliente | uppercase }}</span>
+      </header>
+
+      <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
+        <div class="fi-row-prod-desc">
+          <!-- Producto -->
+          <mat-form-field class="fi-prefix-field grow-6" appearance="fill">
+            <span matPrefix class="fi-prefix">Producto:&nbsp;</span>
+            <input matInput placeholder="Buscar producto" [matAutocomplete]="autoProducto" formControlName="producto"
+              #productoInputRef #autoProductoTrigger="matAutocompleteTrigger" />
+            <mat-autocomplete #autoProducto="matAutocomplete"
+              (optionSelected)="onProductoSelected($event.option.value)">
+              <mat-option *ngFor="let p of filteredProductos$ | async" [value]="p.codpro">
+                {{ p.codpro }} — {{ p.despro }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Descuento -->
+          <mat-form-field class="fi-prefix-field grow-3" appearance="fill">
+            <span matPrefix class="fi-prefix">Descuento:&nbsp;</span>
+            <input matInput placeholder="Buscar descuento" [matAutocomplete]="autoDescuento" formControlName="descuento"
+              #descuentoInputRef #autoDescuentoTrigger="matAutocompleteTrigger" />
+            <button *ngIf="!!formFactura.get('descuento')?.value" mat-icon-button matSuffix type="button"
+              aria-label="Limpiar descuento" (click)="clearDescuento()">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete #autoDescuento="matAutocomplete" [displayWith]="displayDescuento"
+              (optionSelected)="onDescuentoSelected($event.option.value)">
+              <mat-option *ngFor="let d of filteredDescuentos$ | async" [value]="d">
+                {{ d.descripcion }} ({{ d.valorFormateado || (d.valor + '%') }})
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Año -->
+          <mat-form-field class="fi-prefix-field grow-2" appearance="fill">
+            <span matPrefix class="fi-prefix">Año:&nbsp;</span>
+            <input matInput type="number" inputmode="numeric" placeholder="Año" formControlName="anio" minlength="1"
+              maxlength="4" (keypress)="soloNumeros($event)" (paste)="soloPegadoNumerico($event)" readonly>
+          </mat-form-field>
+
+          <!-- Botón meses -->
+
+        </div>
+      </section>
+
+      <section class="table-section" aria-labelledby="table-title">
+        <!-- OJO: sin atributos duplicados -->
+        <ag-grid-angular class="ag-theme-alpine w-100" style="width: 100%; height: 160px;" [rowData]="rowData"
+          [enableBrowserTooltips]="true" [tooltipShowDelay]="300" [tooltipHideDelay]="100" [columnDefs]="columnDefs"
+          [defaultColDef]="defaultColDef" [stopEditingWhenCellsLoseFocus]="true" [rowHeight]="36"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChanged($event)"
+          (cellDoubleClicked)="onCellDoubleClicked($event)" (cellEditingStarted)="onCellEditingStarted($event)"
+          (cellClicked)="onCellClicked($event)" (cellKeyDown)="onCellKeyDown($event)">
+        </ag-grid-angular>
+      </section>
+    </div>
+
+    <div class="fi-actions" style="padding-bottom: 10px;">
+      <button class="fi-btn fi-primary" type="button" (click)="currentStep = 1">
+        <span class="fi-arrow">‹</span> Regresar
+      </button>
+      <button class="fi-btn" type="button" (click)="onCancelarClick($event)">Cancelar</button>
+      <!-- Quita el [disabled] para que el click siempre llegue a irPaso3() -->
+      <button class="fi-btn fi-primary" type="button" (click)="irPaso3()">
+        Siguiente <span class="fi-arrow">›</span>
+      </button>
+
+    </div>
+  </mat-tab>
+
+  <!-- Pestaña 3: Formas de Pago (DESHABILITADA hasta cumplir paso 2) -->
+  <mat-tab [disabled]="!puedeIrPaso3">
+    <ng-template mat-tab-label>
+      <span class="step-badge" [class.active]="currentStep === 3">3</span>
+      <span>Formas de Pago</span>
+    </ng-template>
+
+    <section class="tab-content" [formGroup]="formPagos">
+      <section class="form-header" style="padding-bottom: 0;padding-top: 0;">
+        <h1 class="form-title" style="padding-bottom: 0;padding-top: 0;">Forma de Pago</h1>
+        <span>{{ nombreCliente | uppercase }}</span>
+      </section>
+
+      <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
+        <mat-form-field class="fi-field fi-prefix-field" style="color: white; width: 100%;">
+          <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
+          <input matInput #pagoInputRef #autoPagoTrigger="matAutocompleteTrigger" placeholder="Buscar forma de pago"
+            formControlName="metodoPago" [matAutocomplete]="autoPago" />
+        </mat-form-field>
+
+        <mat-autocomplete #autoPago="matAutocomplete" [displayWith]="displayFormaPago"
+          (optionSelected)="onFormaPagoSelected($event)">
+          <mat-option *ngFor="let fp of filteredFormasPago$ | async" [value]="fp">
+            {{ fp.descripcionPago }}
+          </mat-option>
+          <mat-option *ngIf="(filteredFormasPago$ | async)?.length === 0 && !isLoadingFormas" disabled>
+            Sin resultados
+          </mat-option>
+        </mat-autocomplete>
+
+      </section>
+
+      <section class="pagos-grid-section" aria-labelledby="pagos-title">
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 120px;" [rowData]="rowDataPagos"
+          [columnDefs]="columnDefsPagos" [defaultColDef]="defaultColDefPagos" [stopEditingWhenCellsLoseFocus]="true"
+          [rowHeight]="36" (gridReady)="onPagosGridReady($event)" (cellValueChanged)="onPagosCellValueChanged($event)"
+          (rowDataUpdated)="onPagosRowsChanged()">
+        </ag-grid-angular>
+      </section>
+
+      <aside class="balance-summary">
+        <div class="balance-container">
+          <div class="balance-label-container"><span class="balance-label" style="color: black;font-weight: bold;">Saldo
+              Pendiente</span></div>
+          <div class="balance-amount-container">
+            <span class="balance-amount" style="color: #F26334;font-weight: bold;">
+              $ {{ formTotales.get('saldoPendiente')?.value | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      <div class="fi-actions" style="padding-bottom: 10px;">
+        <button class="fi-btn fi-primary" type="button" (click)="currentStep = 2">
+          <span class="fi-arrow">‹</span> Regresar
+        </button>
+        <button class="fi-btn" type="button" (click)="onCancelarClick($event)">Cancelar</button>
+        <button class="fi-btn fi-primary" type="button" (click)="onGenerarClick()" [disabled]="generando"
+          [matTooltip]="!puedeGenerarFactura ? motivoBloqueoFactura() : ''" matTooltipPosition="above"
+          matTooltipShowDelay="300">
+          Generar Factura
+        </button>
+
+
+      </div>
+    </section>
+  </mat-tab>
+</mat-tab-group>
+
+<!-- GRID EXTERIOR: contenido principal (izq) + sidebar Totales (der) -->
+<div class="values-layout">
+  <div class="main-cards-grid">
+    <!-- IZQ: Caja -->
+    <section class="box-section" aria-labelledby="caja-title" [formGroup]="formCaja" style="background-color: #ECECEC;">
+      <div class="invoice-header">
+        <div class="box-section">
+          <h1 class="main-title">Factura</h1>
+          <div class="invoice-fields-row">
+            <div class="field-group">
+              <label class="field-label">P. Emisión:</label>
+              <div class="input-wrapper">
+                <input type="text" class="text-input" formControlName="puntoEmision" readonly
+                  style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:60px;">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Caja:</label>
+              <div class="input-wrapper">
+                <input type="text" class="text-input" formControlName="caja" readonly
+                  style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:60px;">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Secuencial:</label>
+              <div class="input-wrapper">
+                <input type="text" class="text-input" formControlName="secuencial" readonly
+                  style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:140px;">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="box-section">
+          <h1 class="main-title">Fecha</h1>
+          <div class="input-wrapper">
+            <input type="text" class="text-input" formControlName="fechaFacturacion" readonly
+              style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:140px;">
+          </div>
+        </div>
+        <div *ngIf="!cajaAsignada" class="alert-warn" style="
+  margin:8px 0; padding:8px 12px; border-radius:8px;
+  background:#fff3cd; color:#664d03; border:1px solid #ffecb5;">
+          Usuario no tiene asignado <strong>Caja</strong>. No podrás generar facturas hasta asignarla.
+        </div>
+
+      </div>
+      <div class="box-section">
+        <div class="refs-row">
+          <div class="field-group">
+            <label class="field-label">Orden Compra:</label>
+            <div class="input-wrapper">
+              <input type="text" class="text-input campo-normal" formControlName="ordenCompra" >
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Guía Remisión:</label>
+            <div class="input-wrapper">
+              <input type="text" class="text-input campo-normal" formControlName="guiaRemision" >
+            </div>
+          </div>
+
+          <div class="field-group field-observacion">
+            <label class="field-label" for="observacion">Observación:</label>
+
+            <div class="input-wrapper">
+              <textarea id="observacion" class="text-area" rows="3" formControlName="observacion"
+                placeholder="Ingrese una observación" (keydown.enter)="$event.preventDefault()"
+                (input)="quitarSaltosLinea($event)"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DER: Detalle de Valores -->
+    <section class="values-section totales-card values-section--grid" aria-labelledby="values-title"
+      style="background-color: #ECECEC;">
+      <header class="values-header">
+        <h2 id="values-title" class="values-title">Detalles de Valores</h2>
+      </header>
+
+      <div class="value-row">
+        <div class="value-label-wrapper"><span class="value-label">Sub Total:</span></div>
+        <div class="value-amount-wrapper">
+          <span class="fi-amount">{{ formTotales.get('subtotal')?.value | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="value-row">
+        <div class="value-label-wrapper"><span class="value-label">Descuento:</span></div>
+        <div class="value-amount-wrapper">
+          <span class="fi-amount">{{ formTotales.get('descuento')?.value | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="value-row">
+        <div class="value-label-wrapper"><span class="value-label">Valor Sin IVA:</span></div>
+        <div class="value-amount-wrapper">
+          <span class="left">{{ baseTarifa0 | number:'1.2-2' }}</span>
+
+        </div>
+      </div>
+
+      <div class="value-row">
+        <div class="value-label-wrapper"><span class="value-label">Valor con IVA:</span></div>
+        <div class="value-amount-wrapper">
+          <span class="left">{{ baseGravada | number:'1.2-2' }}</span>
+
+        </div>
+      </div>
+
+      <div class="value-row value-row--last">
+        <div class="value-label-wrapper"><span class="value-label">Valor IVA:</span></div>
+        <div class="value-amount-wrapper">
+          <span class="left">{{ formTotales.get('iva')?.value | number:'1.2-2' }}</span>
+
+        </div>
+      </div>
+
+      <div class="total-content">
+        <div class="total-label-wrapper"><span class="total-label">TOTAL&nbsp;A&nbsp;PAGAR:</span></div>
+        <div class="total-amount-wrapper">
+          <span class="fi-total-amount">{{ formTotales.get('total')?.value | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

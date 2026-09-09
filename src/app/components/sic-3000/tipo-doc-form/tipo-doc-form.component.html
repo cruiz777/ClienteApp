@@ -1,0 +1,40 @@
+<div class="form-container">
+  <h3 class="form-title">
+    {{ modo === 'crear' ? 'Nuevo TipoDocumentoSri' : 'Editar TipoDocumentoSri' }}
+  </h3>
+
+  <div *ngIf="error" class="state error">{{ error }}</div>
+
+  <form [formGroup]="form">
+    <div class="form-grid">
+      <div class="form-field" *ngIf="modo === 'editar'">
+        <label>Id</label>
+        <input type="text" formControlName="idTipoDocumento"  />
+      </div>
+
+      <div class="form-field">
+        <label>Descripción *</label>
+        <input type="text" formControlName="descripcion" />
+        <div class="field-error"
+             *ngIf="form.get('descripcion')?.touched && form.get('descripcion')?.invalid">
+          La descripción es obligatoria.
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>Documento SRI</label>
+        <input type="text" formControlName="documentoSri" />
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn" (click)="cerrar()" [disabled]="loading">
+        Cancelar
+      </button>
+
+      <button type="button" class="btn btn-primary" (click)="guardar()" [disabled]="loading">
+        {{ loading ? 'Guardando...' : (modo === 'crear' ? 'Guardar' : 'Actualizar') }}
+      </button>
+    </div>
+  </form>
+</div>

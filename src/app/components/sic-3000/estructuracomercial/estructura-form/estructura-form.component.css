@@ -1,0 +1,46 @@
+/* Contenedor del modal (opcional si usas un div externo personalizado) */
+:host {
+  display: block;
+  padding: 16px;
+  max-width: 100%;
+}
+
+/* Estilo para el campo de texto */
+mat-form-field {
+  margin-bottom: 16px;
+}
+
+/* Input más legible */
+input[matInput] {
+  font-size: 15px;
+}
+
+/* Título del modal */
+h2[mat-dialog-title] {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+/* Contenido del modal */
+mat-dialog-content {
+  padding: 0 8px;
+}
+
+/* Botones del modal */
+mat-dialog-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Botón Cancelar */
+button[mat-stroked-button] {
+  color: #374151;
+  border-color: #cbd5e1;
+}
+
+/* Botón Grabar */
+button[mat-flat-button] {
+  font-weight: 600;
+}

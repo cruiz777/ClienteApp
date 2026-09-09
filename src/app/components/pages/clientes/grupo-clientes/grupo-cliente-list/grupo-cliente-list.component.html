@@ -1,0 +1,97 @@
+<div class="grupo-cliente-screen">
+    <header class="header">
+      <div class="header-container">
+        <h1 class="section-title">Mantenimiento Grupo Cliente</h1>
+      </div>
+    </header>
+
+    <section class="content-container">
+      <div class="actions-container">
+        <div class="search-container">
+          <img
+            src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/ab2d235e1a254e5c350c0a713cb8b7a11eb36381?placeholderIfAbsent=true"
+            alt="Search icon"
+            class="search-icon"
+          />
+          <label class="search-label">Buscar:</label>
+          <input type="text" [(ngModel)]="filtro" class="search-input" placeholder="Buscar grupo..." (input)="aplicarFiltro()" />
+        </div>
+
+        <div class="buttons-container">
+          <button class="new-button" (click)="nuevo()"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.nuevo'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.nuevo')) ? 'Sin permisos' : ''"
+          >Nuevo</button>
+          <button mat-button [matMenuTriggerFor]="menuExportar" class="export-button"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.exportar'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.exportar')) ? 'Sin permisos' : ''"
+          >
+            <span class="export-text">Exportar</span>
+          </button>
+
+          <mat-menu #menuExportar="matMenu">
+            <button mat-menu-item (click)="exportar('excel')">
+              <mat-icon>table_view</mat-icon> Excel
+            </button>
+            <button mat-menu-item (click)="exportar('pdf')">
+              <mat-icon>picture_as_pdf</mat-icon> PDF
+            </button>
+          </mat-menu>
+
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Código</th>
+              <th>Grupo</th>
+              <th>Afiliación</th>
+              <th>Asignación</th>
+              <th>Mantenimiento</th>
+              <th>Valor Anual</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Opción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let grupo of paginatedData; let i = index">
+              <td>{{ (paginator.pageIndex * paginator.pageSize) + i + 1 }}</td>
+              <td>{{ grupo.codigo }}</td>
+              <td>{{ grupo.nombre }}</td>
+              <td>{{ grupo.inscripcion }}</td>
+              <td>{{ grupo.asignacion }}</td>
+              <td>{{ grupo.mantenimiento }}</td>
+              <td>{{ grupo.valorAnual }}</td>
+              <td>{{ grupo.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
+              <td>{{ grupo.fecha | date: 'dd/MM/yyyy' }}</td>
+              <td *ngIf="(permissions.permisos$ | async) as permisos">
+                <div class="edit-icon-container" 
+                    [class.disabled]="!permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar')"
+                    [style.opacity]="permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? '1' : '0.3'"
+                    [style.cursor]="permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? 'pointer' : 'not-allowed'"
+                    [title]="!permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? 'Sin permisos' : ''"
+                    (click)="permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? editar(grupo.id_grupo_empresa) : null">
+                  <img src="assets/icons/icon-modificar-3.png" class="edit-icon" alt="Editar" />
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="gruposFiltrados.length === 0">
+              <td colspan="10">No hay grupos de cliente disponibles.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <mat-paginator
+            [length]="gruposFiltrados.length"
+            [pageSize]="5"
+            [pageSizeOptions]="[5, 10, 20]"
+            showFirstLastButtons>
+        </mat-paginator>
+
+      </div>
+    </section>
+  </div>

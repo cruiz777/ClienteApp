@@ -1,0 +1,47 @@
+.dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #002c6c;
+}
+
+.dialog-content {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.form-field {
+  flex: 1;
+  min-width: 250px;
+}
+
+.dialog-actions {
+  padding: 16px 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-save {
+  background-color: #002c6c;
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #001d47;
+}
+
+.btn-cancel {
+  color: #444;
+}

@@ -1,0 +1,10 @@
+.contenedor-dialogo {
+  text-align: center;
+  padding: 24px;
+}
+
+.icono-reloj {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+}

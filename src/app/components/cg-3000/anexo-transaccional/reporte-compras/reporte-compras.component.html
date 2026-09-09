@@ -1,0 +1,147 @@
+<div class="page-container">
+  <div class="contenido-tablas">
+    <!-- ===== TÍTULO ===== -->
+    <div class="header-row">
+    <h2 class="title">Reporte de Compras</h2>
+    <div class="empresa-info" *ngIf="nombreEmpresa">
+        {{ nombreEmpresa }}
+    </div>
+    </div>
+
+    <!-- ===== FILTROS ===== -->
+    <form [formGroup]="filtrosForm" class="filters-row">
+      <div class="filters-group">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha desde</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerDesde"
+            formControlName="fechaDesde"
+            placeholder="dd/MM/yyyy"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="pickerDesde"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #pickerDesde></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha hasta</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerHasta"
+            formControlName="fechaHasta"
+            placeholder="dd/MM/yyyy"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="pickerHasta"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #pickerHasta></mat-datepicker>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          class="btn-buscar"
+          (click)="consultar()"
+          [disabled]="loading"
+        >
+          <mat-icon *ngIf="!loading">search</mat-icon>
+          <mat-spinner *ngIf="loading" diameter="24"></mat-spinner>
+          <span *ngIf="!loading">Consultar</span>
+        </button>
+
+        <button
+          mat-raised-button
+          type="button"
+          class="btn-exportar"
+          (click)="exportarExcel()"
+          [disabled]="loading || !comprasData.length"
+          matTooltip="Descarga un Excel con 2 hojas: Reporte de Compras y Reporte de Retenciones en la Fuente"
+          matTooltipPosition="above"
+        >
+          <mat-icon>download</mat-icon>
+          Exportar Excel
+          <span class="badge-hojas">Rpt: Compras y Ret.</span>
+        </button>       
+      </div>
+    </form>
+
+    <!-- ===== INFORMACIÓN DEL REPORTE ===== -->
+    <div class="info-reporte" *ngIf="comprasData.length > 0">
+      <div class="info-item">
+        <mat-icon>calendar_today</mat-icon>
+        <span>Período: {{ fechaInicio }} al {{ fechaFin }}</span>
+      </div>
+      <div class="info-item">
+        <mat-icon>receipt_long</mat-icon>
+        <span>{{ comprasData.length }} registros encontrados</span>
+      </div>
+    </div>
+
+    <!-- ===== GRID DE COMPRAS ===== -->
+    <div class="grid-wrapper" *ngIf="comprasData.length > 0">
+      <ag-grid-angular
+        style="width: 100%; height: 700px"
+        class="ag-theme-quartz custom-grid"
+        [rowData]="comprasData"
+        [columnDefs]="comprasColumnDefs"
+        [defaultColDef]="defaultColDef"
+        [pagination]="false"
+        [pinnedBottomRowData]="comprasFilaTotales"
+        [animateRows]="true"
+        [suppressHorizontalScroll]="false"
+        [enableCellTextSelection]="true"
+        [ensureDomOrder]="true"
+        (gridReady)="onComprasGridReady($event)"
+      >
+      </ag-grid-angular>
+
+      <!-- Información adicional debajo del grid -->
+      <div class="grid-footer">
+        <div class="footer-info">
+          <mat-icon>info</mat-icon>
+          <span>Total de registros: {{ comprasData.length }}</span>
+        </div>
+        <div class="footer-legend">
+          <span class="legend-item">
+            <span class="legend-color" style="background-color: #002c6c;"></span>
+            Datos Factura
+          </span>
+          <span class="legend-item">
+            <span class="legend-color" style="background-color: #1B3A5C;"></span>
+            Retenciones IVA
+          </span>
+          <span class="legend-item">
+            <span class="legend-color" style="background-color: #2E5F8A;"></span>
+            Retenciones Fuente
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MENSAJE SIN DATOS ===== -->
+    <div class="sin-datos" *ngIf="!loading && comprasData.length === 0 && filtrosForm.dirty">
+      <mat-icon>inventory_2</mat-icon>
+      <h3>No se encontraron registros</h3>
+      <p>No existen compras registradas para el período seleccionado.</p>
+      <p class="hint">Intente con un rango de fechas diferente.</p>
+    </div>
+
+    <!-- ===== MENSAJE INICIAL ===== -->
+    <div class="mensaje-inicial" *ngIf="!loading && comprasData.length === 0 && !filtrosForm.dirty">
+      <mat-icon>search</mat-icon>
+      <h3>Generar Reporte de Compras</h3>
+      <p>Seleccione el rango de fechas y haga clic en <strong>Consultar</strong> para visualizar el reporte.</p>
+    </div>
+
+    <!-- ===== OVERLAY DE CARGA ===== -->
+    <div class="overlay" *ngIf="loading">
+      <mat-spinner diameter="60"></mat-spinner>
+      <p>Generando reporte...</p>
+    </div>
+  </div>
+</div>

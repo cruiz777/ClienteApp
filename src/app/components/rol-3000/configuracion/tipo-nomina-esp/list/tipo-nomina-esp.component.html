@@ -1,0 +1,57 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Tipos de Nómina Especial</h2>
+    <button mat-raised-button class="btn-azul" (click)="abrirCrear()">Nuevo</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input id="search" type="text" [(ngModel)]="searchTerm" (input)="buscar()" placeholder="Buscar por descripción" />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 80px;">Id</th>
+          <th>Descripción</th>
+          <th style="width: 80px;">Estado</th>
+          <th class="col-opcion">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngIf="loading">
+          <tr *ngFor="let _ of skeletonRows" class="skeleton-row">
+            <td><span class="skeleton-cell" style="width:40px"></span></td>
+            <td><span class="skeleton-cell" style="width:220px"></span></td>
+            <td><span class="skeleton-cell" style="width:55px; border-radius:12px"></span></td>
+            <td><span class="skeleton-cell" style="width:28px; height:28px; border-radius:6px"></span></td>
+          </tr>
+        </ng-container>
+
+        <ng-container *ngIf="!loading">
+          <tr *ngFor="let it of filtered; trackBy: trackById">
+            <td>{{ it.idTipoNomEsp }}</td>
+            <td>{{ it.descripcion ?? '—' }}</td>
+            <td>
+              <span [class]="it.estado ? 'badge-activo' : 'badge-inactivo'">
+                {{ it.estado ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="acciones">
+              <button type="button" class="icon-btn" (click)="abrirEditar(it.idTipoNomEsp)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filtered.length === 0">
+            <td colspan="4" class="empty">No hay resultados.</td>
+          </tr>
+        </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

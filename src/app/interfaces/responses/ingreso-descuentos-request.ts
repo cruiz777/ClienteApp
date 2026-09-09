@@ -1,0 +1,32 @@
+export interface IngresoDescuentosResponse {
+  idIngDesc: number;
+  codigo?: string | null;
+  tipoPago?: string | null;
+  descripcion?: string | null;
+  ctaContable?: string | null;
+  ctaContable2?: string | null;
+  ctaContable3?: string | null;
+  ctaContable4?: string | null;
+  ctaContable5?: string | null;
+  estado?: boolean | null;
+  porcenCant?: string | null;
+  observacion?: string | null;
+  incluir?: boolean | null;
+  calculado?: boolean | null;
+  aportaciones?: boolean | null;
+  orden?: number | null;
+  dH?: string | null;
+  desac?: boolean | null;
+  parSue?: boolean | null;
+  estVacaciones?: boolean | null;
+  estFondosReserva?: boolean | null;
+  estDecimoTercer?: boolean | null;
+  estImpuestoRenta?: boolean | null;
+  estOtrosIng?: boolean | null;
+  aplicaAportesPatPer?: boolean | null;
+  estRubrosLiquida?: boolean | null;
+  estOtrosIngImp?: boolean | null;
+  estIngImp?: boolean | null;
+  estIngImpFr?: boolean | null;
+  sumaDias?: boolean | null;
+}

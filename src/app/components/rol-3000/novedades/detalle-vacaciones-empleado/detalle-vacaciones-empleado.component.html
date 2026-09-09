@@ -1,0 +1,26 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Detalle de Vacaciones de Empleado</h2>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="solicitante-field">
+        <mat-label>Solicitante</mat-label>
+        <mat-select formControlName="solicitante">
+          <mat-option *ngFor="let item of empleados" [value]="item.id + ' - ' + item.nombre">
+            {{ item.id }} - {{ item.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="generar()">
+        Generar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

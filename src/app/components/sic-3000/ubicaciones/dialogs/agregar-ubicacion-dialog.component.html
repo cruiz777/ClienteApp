@@ -1,0 +1,187 @@
+<div class="dialog-container">
+  <!-- Header -->
+  <div class="dialog-header">
+    <div class="header-icon">
+      <mat-icon class="icon-ubicacion">place</mat-icon>
+    </div>
+    <div class="header-content">
+      <h2 class="dialog-title">Agregar Ubicación en Bodega</h2>
+      <p class="dialog-subtitle" *ngIf="data.nombreProducto">
+        Producto: <strong>{{ data.nombreProducto }}</strong>
+      </p>
+    </div>
+    <button 
+      type="button" 
+      class="btn-close-dialog" 
+      (click)="cancelar()"
+      [disabled]="guardando">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <mat-dialog-content class="dialog-content">
+    <form [formGroup]="form" class="ubicacion-form">
+      
+      <!-- Información -->
+      <div class="info-banner">
+        <mat-icon class="info-icon">info</mat-icon>
+        <div class="info-text">
+          <strong>Nota:</strong> La bodega es obligatoria. Los demás campos son opcionales y 
+          dependen de la estructura física de su almacén.
+        </div>
+      </div>
+
+      <!-- Bodega (Obligatorio) -->
+      <div class="form-group">
+        <label class="form-label required">
+          <mat-icon class="label-icon">store</mat-icon>
+          Bodega / Local
+        </label>
+        <div class="select-wrapper">
+          <select 
+            class="form-select" 
+            formControlName="id_local"
+            [class.is-invalid]="isInvalid('id_local')">
+            <option [ngValue]="null" disabled>Seleccione una bodega...</option>
+            <option 
+              *ngFor="let local of data.locales" 
+              [ngValue]="local.id">
+              {{ local.nombre }}
+            </option>
+          </select>
+          <mat-icon class="select-arrow">arrow_drop_down</mat-icon>
+        </div>
+        <small class="error-message" *ngIf="isInvalid('id_local')">
+          {{ getErrorMessage('id_local') }}
+        </small>
+      </div>
+
+      <!-- Vista previa de bodega seleccionada -->
+      <div class="bodega-preview" *ngIf="bodegaSeleccionadaNombre">
+        <mat-icon class="preview-icon">check_circle</mat-icon>
+        <span>Bodega seleccionada: <strong>{{ bodegaSeleccionadaNombre }}</strong></span>
+      </div>
+
+      <!-- Divisor -->
+      <div class="form-divider">
+        <span class="divider-text">Ubicación específica (opcional)</span>
+      </div>
+
+      <!-- Grid de ubicaciones específicas -->
+        <div class="ubicacion-grid">
+            
+            <!-- Área -->
+            <div class="form-group">
+                <label class="form-label">
+                <mat-icon class="label-icon">grid_view</mat-icon>
+                Área
+                </label>
+                <div class="select-wrapper">
+                <select 
+                    class="form-select" 
+                    formControlName="idarea"
+                    [disabled]="cargandoAreas">
+                    <option [ngValue]="null">Seleccione un área...</option>
+                    <option 
+                    *ngFor="let area of areas" 
+                    [ngValue]="area.idarea">
+                    {{ area.codigo }} - {{ area.descripcion }}
+                    </option>
+                </select>
+                <mat-icon class="select-arrow">arrow_drop_down</mat-icon>
+                </div>
+                <small class="field-help">Área dentro de la bodega</small>
+            </div>
+
+            <!-- Columna -->
+            <div class="form-group">
+                <label class="form-label">
+                <mat-icon class="label-icon">view_column</mat-icon>
+                Columna
+                </label>
+                <div class="select-wrapper">
+                <select 
+                    class="form-select" 
+                    formControlName="idcolumna"
+                    [disabled]="cargandoColumnas">
+                    <option [ngValue]="null">Seleccione una columna...</option>
+                    <option 
+                    *ngFor="let columna of columnas" 
+                    [ngValue]="columna.idcolumna">
+                    {{ columna.codigo }} - {{ columna.descripcion }}
+                    </option>
+                </select>
+                <mat-icon class="select-arrow">arrow_drop_down</mat-icon>
+                </div>
+                <small class="field-help">Columna o pasillo</small>
+            </div>
+
+            <!-- Nivel -->
+            <div class="form-group">
+                <label class="form-label">
+                <mat-icon class="label-icon">layers</mat-icon>
+                Nivel
+                </label>
+                <div class="select-wrapper">
+                <select 
+                    class="form-select" 
+                    formControlName="idnivel"
+                    [disabled]="cargandoNiveles">
+                    <option [ngValue]="null">Seleccione un nivel...</option>
+                    <option 
+                    *ngFor="let nivel of niveles" 
+                    [ngValue]="nivel.idnivel">
+                    {{ nivel.codigo }} - {{ nivel.descripcion }}
+                    </option>
+                </select>
+                <mat-icon class="select-arrow">arrow_drop_down</mat-icon>
+                </div>
+                <small class="field-help">Nivel o estante (altura)</small>
+            </div>
+            </div>
+
+            <!-- Indicador de ubicación completa -->
+            <div class="ubicacion-status" *ngIf="tieneUbicacionCompleta">
+            <mat-icon class="status-icon">location_on</mat-icon>
+            <div class="status-details">
+                <strong>Ubicación configurada:</strong>
+                <div class="ubicacion-resumen">
+                <span *ngIf="form.value.idarea">
+                    Área: <strong>{{ getAreaCodigo(form.value.idarea) }}</strong>
+                </span>
+                <span *ngIf="form.value.idcolumna">
+                    Columna: <strong>{{ getColumnaCodigo(form.value.idcolumna) }}</strong>
+                </span>
+                <span *ngIf="form.value.idnivel">
+                    Nivel: <strong>{{ getNivelCodigo(form.value.idnivel) }}</strong>
+                </span>
+                </div>
+            </div>
+        </div>
+
+    </form>
+  </mat-dialog-content>
+
+  <!-- Actions -->
+  <mat-dialog-actions class="dialog-actions">
+    <button 
+      type="button" 
+      class="btn-secondary" 
+      (click)="cancelar()"
+      [disabled]="guardando">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+    
+    <button 
+      type="button" 
+      class="btn-primary" 
+      (click)="guardar()"
+      [disabled]="form.invalid || guardando">
+      <mat-icon *ngIf="!guardando">save</mat-icon>
+      <mat-icon *ngIf="guardando" class="spinner">refresh</mat-icon>
+      {{ guardando ? 'Guardando...' : 'Guardar Ubicación' }}
+    </button>
+  </mat-dialog-actions>
+</div>

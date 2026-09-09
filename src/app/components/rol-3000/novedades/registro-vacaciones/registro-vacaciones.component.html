@@ -1,0 +1,156 @@
+<div class="vacaciones-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Registro de Vacaciones</h2>
+
+    <div class="form-grid-4">
+      <mat-form-field appearance="outline">
+        <mat-label>Documento No.</mat-label>
+        <input matInput formControlName="documentoNo" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input matInput type="date" formControlName="fecha" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Empleado</mat-label>
+        <mat-select formControlName="empleado">
+          <mat-option *ngFor="let item of empleados" [value]="item.id + ' - ' + item.nombre">
+            {{ item.id }} - {{ item.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Ingreso</mat-label>
+        <input matInput type="date" formControlName="fechaIngreso" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Código Trabajador</mat-label>
+        <input matInput formControlName="codigoTrabajador" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Departamento</mat-label>
+        <input matInput formControlName="departamento" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cédula</mat-label>
+        <input matInput formControlName="cedula" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Cargo</mat-label>
+        <mat-select formControlName="cargoEmpleado">
+          <mat-option *ngFor="let item of cargos" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="form-grid-3 mt-16">
+      <mat-form-field appearance="outline">
+        <mat-label>Días Acumulados</mat-label>
+        <input matInput formControlName="diasAcumulados" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Días Tomando</mat-label>
+        <input matInput formControlName="diasTomando" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Saldo Días</mat-label>
+        <input matInput formControlName="saldoDias" />
+      </mat-form-field>
+    </div>
+
+    <div class="form-grid-4 mt-16">
+      <mat-form-field appearance="outline">
+        <mat-label>Días Solicitados</mat-label>
+        <input matInput formControlName="diasSolicitados" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Desde</mat-label>
+        <input matInput type="date" formControlName="fechaDesde" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Hasta</mat-label>
+        <input matInput type="date" formControlName="fechaHasta" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Retorno</mat-label>
+        <input matInput type="date" formControlName="fechaRetorno" />
+      </mat-form-field>
+    </div>
+
+    <div class="form-grid-2 mt-16">
+      <mat-form-field appearance="outline">
+        <mat-label>Reemplazo</mat-label>
+        <input matInput formControlName="reemplazo" />
+      </mat-form-field>
+
+      <div></div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Usuario que autoriza</mat-label>
+        <mat-select formControlName="usuarioAutoriza">
+          <mat-option *ngFor="let item of autorizadores" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo</mat-label>
+        <mat-select formControlName="cargoAutoriza">
+          <mat-option *ngFor="let item of cargos" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Usuario que aprueba</mat-label>
+        <mat-select formControlName="usuarioAprueba">
+          <mat-option *ngFor="let item of aprobadores" [value]="item.id + ' - ' + item.nombre">
+            {{ item.id }} - {{ item.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo</mat-label>
+        <mat-select formControlName="cargoAprueba">
+          <mat-option *ngFor="let item of cargos" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="mt-16">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Observación</mat-label>
+        <textarea matInput rows="4" formControlName="observacion"></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

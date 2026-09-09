@@ -1,0 +1,196 @@
+.estructura-container {
+  padding: 18px;
+  background: #f7f8fb;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.header {
+  margin-bottom: 14px;
+}
+
+.header h2 {
+  margin: 0 0 14px 0;
+  color: #243b7a;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.opciones {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.opciones-label {
+  font-size: 13px;
+  color: #6c748a;
+}
+
+.radio-group {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.contenido {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.panel-izquierdo {
+  background: #ffffff;
+  border: 1px solid #d9dfeb;
+  min-height: 520px;
+}
+
+.panel-derecho {
+  background: #ffffff;
+  border: 1px solid #d9dfeb;
+  height: 520px;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.panel-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #edf2f8;
+  color: #35528a;
+  border-bottom: 1px solid #d9dfeb;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tree-wrapper {
+  padding: 10px 8px 14px 8px;
+  max-height: 700px;
+  overflow: auto;
+}
+
+.tree-root,
+.tree-children {
+  list-style: none;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.tree-node {
+  margin: 3px 0;
+}
+
+.node-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.root-label {
+  color: #c25436;
+  font-weight: 700;
+}
+
+.clickable {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.clickable:hover {
+  background: #f3f6fb;
+}
+
+.clickable.active {
+  background: #dbe7ff;
+  color: #1f4ea3;
+  font-weight: 600;
+}
+
+.folder-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #d86b4b;
+}
+
+.tabla-wrapper {
+  position: relative;
+  height: 100%;
+  min-height: 520px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tabla-ag-empleados {
+  width: 100%;
+  height: 520px;
+}
+
+.sin-datos {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
+  padding: 24px;
+  text-align: center;
+  color: #7c879d;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ajustes visuales AG Grid */
+:host ::ng-deep .ag-theme-alpine {
+  --ag-font-size: 12px;
+  --ag-header-height: 34px;
+  --ag-row-height: 32px;
+  --ag-border-color: #d9dfeb;
+  --ag-header-background-color: #eef3fa;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-row-hover-color: #f3f6fb;
+  --ag-selected-row-background-color: #dbe7ff;
+}
+
+:host ::ng-deep .ag-header-cell-label {
+  font-weight: 700;
+  color: #344564;
+}
+
+:host ::ng-deep .ag-cell {
+  color: #2e3440;
+}
+
+@media (max-width: 1100px) {
+  .contenido {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-izquierdo {
+    min-height: 260px;
+  }
+
+  .panel-derecho {
+    height: 520px;
+    min-height: 520px;
+  }
+}
+.tabla-wrapper {
+  position: relative;
+  height: 520px;
+  min-height: 520px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tabla-ag-empleados {
+  width: 100%;
+  height: 520px;
+}

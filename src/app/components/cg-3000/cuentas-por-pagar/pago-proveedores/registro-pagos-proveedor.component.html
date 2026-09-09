@@ -1,0 +1,410 @@
+<div class="cuenta-liquidar">
+
+  <!-- ===== INDICADOR DE PASOS SIMPLE ===== -->
+  <div class="steps">
+    <div class="step" [class.active]="stepper.selectedIndex === 0">
+      <div class="step-badge">1</div>
+      <div class="step-text">Selección de Facturas</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step" [class.active]="stepper.selectedIndex === 1">
+      <div class="step-badge">2</div>
+      <div class="step-text">Formas de Pago</div>
+    </div>
+  </div>
+
+  <!-- ===== STEPPER OCULTO (SOLO LÓGICA) ===== -->
+  <mat-stepper #stepper linear [style.display]="'none'">
+    <mat-step [stepControl]="paso1Form"></mat-step>
+    <mat-step [stepControl]="paso2Form"></mat-step>
+  </mat-stepper>
+
+  <!-- ========================================== -->
+  <!-- PASO 1: SELECCIÓN DE PROVEEDOR Y FACTURAS -->
+  <!-- ========================================== -->
+  <form *ngIf="stepper.selectedIndex === 0" [formGroup]="paso1Form" novalidate>
+
+    <!-- PANEL: DATOS GENERALES -->
+    <div class="panel" style="background-color: #ECECEC;">
+      <div class="panel-title">Registro de Pagos</div>
+
+      <!-- Fila 1: Proveedor -->
+      <div class="field mb-3">
+        <label>Buscar Proveedor</label>
+        <mat-form-field appearance="outline" class="w-100">
+          <input
+            type="text"
+            matInput
+            [formControl]="proveedorCtrl"
+            [matAutocomplete]="autoProveedor"
+            placeholder="Escribe RUC, cédula o nombre..."
+            required>
+          <mat-icon matSuffix>search</mat-icon>
+          <mat-autocomplete
+            #autoProveedor="matAutocomplete"
+            [displayWith]="displayProveedor.bind(this)"
+            (optionSelected)="onProveedorSeleccionado($event)">
+            <mat-option
+              *ngFor="let proveedor of proveedoresFiltrados$ | async"
+              [value]="proveedor">
+              <div class="d-flex flex-column">
+                <span class="fw-bold">{{ proveedor.nombre }}</span>
+                <small class="text-muted">
+                  {{ proveedor.identificacion }}
+                  <span *ngIf="proveedor.razonSocial"> - {{ proveedor.razonSocial }}</span>
+                </small>
+              </div>
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila 2: Monto, Beneficiario, Observaciones -->
+      <div class="row">
+        <div class="col-md-4">
+          <div class="field">
+            <label>Monto a Pagar <small class="text-muted">(opcional)</small></label>
+            <small *ngIf="montoPagar > 0" style="color: #6b7890; font-size: 11px; margin-top: 4px; display: block;">
+              Disponible para distribuir: 
+              <span [style.color]="montoRestante > 0 ? '#2e7d32' : '#d32f2f'" style="font-weight: 700;">
+                ${{ montoRestante.toFixed(2) }}
+              </span>
+            </small>
+            <mat-form-field appearance="outline" class="w-100">
+              <input
+                matInput
+                type="number"
+                formControlName="montoPagar"
+                [(ngModel)]="montoPagar"
+                min="0"
+                step="0.01"
+                placeholder="0.00">
+              <span matPrefix>$&nbsp;</span>
+              <mat-hint>Deje en 0 para aplicar anticipos o seleccionar facturas manualmente</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="field">
+            <label>Beneficiario</label>
+            <mat-form-field appearance="outline" class="w-100">
+              <input
+                matInput
+                formControlName="beneficiario"
+                placeholder="Nombre del beneficiario"
+                required>
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="paso1Form.get('beneficiario')?.hasError('required')">
+                El beneficiario es obligatorio
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="field">
+            <label>Observaciones</label>
+            <mat-form-field appearance="outline" class="w-100">
+              <textarea
+                matInput
+                formControlName="observaciones"
+                rows="1"
+                placeholder="Opcional"></textarea>
+            </mat-form-field>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOADING SPINNER -->
+    <div *ngIf="cargandoFacturas" class="text-center py-4">
+      <mat-spinner diameter="40" class="mx-auto"></mat-spinner>
+      <p class="mt-2 text-muted">Cargando facturas pendientes...</p>
+    </div>
+
+    <!-- PANEL: FACTURAS PENDIENTES -->
+    <div *ngIf="!cargandoFacturas && proveedorSeleccionado" class="panel">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="panel-subtitle">
+          Facturas Pendientes
+          <span class="badge bg-secondary ms-2">{{ facturasRows.length }}</span>
+        </div>
+
+        <div class="actions-left" style="gap: 8px; align-items: center;">
+          <button
+            type="button"
+            class="fi-btn fi-primary"
+            (click)="distribuirPago()"
+            [disabled]="montoPagar <= 0"
+            style="display: flex; align-items: center; gap: 6px;">
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px;">payments</mat-icon>
+            <span>Distribuir Pago</span>
+          </button>
+
+          <!-- <button      
+            type="button"
+            class="fi-btn fi-accent"
+            (click)="aplicarCruceAutomatico()"
+            [disabled]="cargandoFacturas"
+            matTooltip="Aplica automáticamente TODOS los anticipos disponibles y los distribuye entre las facturas"
+            style="display: flex; align-items: center; gap: 6px;">
+            <span>Cruce Automático</span>
+          </button> -->
+
+          <button 
+            type="button"
+            class="fi-btn"
+            (click)="limpiarPagos()"
+            [disabled]="cargandoFacturas"
+            style="display: flex; align-items: center; gap: 4px;">
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px;">clear</mat-icon>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- GRID FACTURAS -->
+      <div class="grid-wrap">
+        <ag-grid-angular
+          #gridFacturas
+          class="ag-theme-material compact-grid"
+          style="width: 100%; height: 300px;"
+          [rowData]="facturasRows"
+          [columnDefs]="columnDefsFacturas"
+          [defaultColDef]="defaultColDef"
+          [rowSelection]="'multiple'"
+          [animateRows]="true"
+          [suppressRowClickSelection]="true"
+          (gridReady)="onGridFacturasReady($event)"
+          (rowSelected)="onFacturaSeleccionada($event)">
+        </ag-grid-angular>
+      </div>
+
+      <!-- Indicador de anticipos aplicados -->
+      <div *ngIf="tieneCruceReal" 
+          class="alert alert-success d-flex align-items-center mt-2 mb-2"
+          style="background-color: #d1f2eb; border-left: 4px solid #28a745;">
+        <mat-icon class="me-2" style="color: #28a745;">check_circle</mat-icon>
+        <div>
+          <strong>Cruce aplicado:</strong>
+          ${{ montoCruzadoEnFacturas.toFixed(2) }} distribuido entre 
+          {{ totalFacturasCruzadas }} factura(s)
+
+          <!-- ✅ Solo aparece si sobra anticipo -->
+          <span *ngIf="anticipoDisponible > 0"
+                style="margin-left: 8px; color: #e65100; font-weight: 600;">
+            — Anticipo restante sin cruzar: ${{ anticipoDisponible.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- RESUMEN PASO 1 -->    
+      <div class="totales-section">
+        <h3>Resumen</h3>
+        
+        <div class="total-row">
+          <span>Total DEBE:</span>
+          <strong>{{ totalDebe | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <div class="total-row">
+          <span>Total HABER:</span>
+          <strong>{{ totalHaber | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <div class="total-row highlight">
+          <span>SALDO A PAGAR:</span>
+          <strong class="text-primary">{{ totalSaldo | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <div class="total-row" *ngIf="anticipoDisponible > 0">
+          <span>Anticipo Disponible:</span>
+          <strong class="text-success">{{ anticipoDisponible | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <hr>
+        
+        <div class="total-row">
+          <span>Total Formas de Pago:</span>
+          <strong>{{ totalFormasPago | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <div class="total-row" [class.error]="Math.abs(diferencia) > 0.01">
+          <span>Diferencia:</span>
+          <strong [class.text-danger]="Math.abs(diferencia) > 0.01">
+            {{ diferencia | currency:'USD':'symbol':'1.2-2' }}
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENSAJE SI NO HAY PROVEEDOR -->
+    <div *ngIf="!proveedorSeleccionado && !cargandoFacturas"
+         class="panel text-center py-5 text-muted">
+      <mat-icon style="font-size: 48px; width: 48px; height: 48px;">search</mat-icon>
+      <p class="mt-2">Busque y seleccione un proveedor para ver sus facturas pendientes</p>
+    </div>
+
+    <!-- NAVEGACIÓN -->
+    <div class="panel panel-bottom">
+      <div class="actions-right">
+        <button
+          type="button"
+          class="fi-btn"
+          (click)="nuevoRegistro()">
+          Nuevo Pago
+        </button>
+        <button
+          type="button"
+          class="fi-btn fi-primary"
+          (click)="avanzarPaso2()"
+          [disabled]="totalFacturasConPago === 0 || !paso1Form.valid">
+          Siguiente <span class="fi-arrow">›</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- ========================================== -->
+  <!-- PASO 2: FORMAS DE PAGO -->
+  <!-- ========================================== -->
+  <form *ngIf="stepper.selectedIndex === 1" [formGroup]="paso2Form" novalidate>
+
+    <!-- PANEL: FORMAS DE PAGO -->
+    <div class="panel" style="background-color: #ECECEC;">
+      <div class="panel-subtitle">Formas de Pago</div>
+
+      <!-- Autocomplete de Formas de Pago -->
+      <div class="field mb-3">
+        <label>Seleccionar Forma de Pago</label>
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Seleccionar Forma de Pago</mat-label>
+          <mat-select (selectionChange)="onFormaPagoSeleccionadaDropdown($event.value)">
+            <mat-option 
+              *ngFor="let forma of filtrarFormasPago(formasPagoDisponibles$ | async)" 
+              [value]="forma">
+              <div class="d-flex justify-content-between align-items-center w-100">
+                <span>{{ forma.descripcion }}</span>
+                <span 
+                  *ngIf="forma.activo === false" 
+                  class="badge bg-secondary ms-2" 
+                  style="font-size: 10px;">
+                  Inactiva
+                </span>
+              </div>
+            </mat-option>
+          </mat-select>
+          <mat-icon matSuffix>payment</mat-icon>
+        </mat-form-field>
+
+        <!-- ✅ DEBUG: Mostrar cuántas hay cargadas -->
+        <small class="text-muted">
+          Formas disponibles: {{ (formasPagoDisponibles$ | async)?.length || 0 }}
+        </small>
+      </div>
+
+      <div class="panel-subtitle">
+        Formas de Pago Agregadas
+        <span class="badge bg-secondary ms-2">{{ formasPagoRows.length }}</span>
+      </div>
+    </div>
+
+    <!-- GRID FORMAS DE PAGO -->
+    <div class="panel">
+      <div class="grid-wrap">
+        <ag-grid-angular
+          #gridFormasPago
+          class="ag-theme-material compact-grid"
+          style="width: 100%; height: 220px;"
+          [rowData]="formasPagoRows"
+          [columnDefs]="columnDefsFormasPago"
+          [defaultColDef]="defaultColDef"
+          [animateRows]="true"
+          [getRowId]="getRowIdFormasPago"
+          (gridReady)="onGridFormasPagoReady($event)"
+          (cellValueChanged)="onCellValueChangedFormasPago($event)">
+        </ag-grid-angular>
+      </div>
+
+      <!-- MENSAJE SI NO HAY FORMAS -->
+      <div *ngIf="formasPagoRows.length === 0"
+           class="text-center py-4 mt-3">
+        <mat-icon class="text-muted" style="font-size: 48px; height: 48px; width: 48px;">
+          payment
+        </mat-icon>
+        <p class="mt-2 text-muted">
+          Haga clic en "Agregar Forma de Pago" para registrar los métodos de pago
+        </p>
+      </div>
+
+      <!-- TOOLBAR SALDO -->
+      <div class="resumen-totales">
+        <div class="resumen-item">
+          <span class="resumen-label">TOTAL A PAGAR:</span>
+          <span class="resumen-valor">${{ totalSaldo.toFixed(2) }}</span>
+        </div>
+        <div class="resumen-separador">-</div>
+        <div class="resumen-item">
+          <span class="resumen-label">FORMAS DE PAGO:</span>
+          <span class="resumen-valor texto-azul">${{ totalFormasPago.toFixed(2) }}</span>
+        </div>
+        <div class="resumen-separador">=</div>
+        <div class="resumen-item">
+          <span class="resumen-label">DIFERENCIA:</span>
+          <span class="resumen-valor"
+                [class.texto-verde]="Math.abs(diferencia) < 0.01"
+                [class.texto-rojo]="Math.abs(diferencia) >= 0.01">
+            ${{ diferencia.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Agregar mensaje de validación visual -->
+      <div class="estado-validacion" *ngIf="Math.abs(diferencia) >= 0.01">
+        <mat-icon>warning</mat-icon>
+        <span>
+          {{ diferencia > 0 ? 'Falta distribuir $' + diferencia.toFixed(2) : 'Exceso de $' + Math.abs(diferencia).toFixed(2) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ALERTA DE VALIDACIÓN -->
+    <div *ngIf="!pagoValido" class="panel" style="background-color: #fff3cd; border-color: #ffc107;">
+      <div class="text-warning">
+        <strong>⚠ Atención:</strong>
+        La suma de las formas de pago debe coincidir exactamente con el total de facturas a pagar.
+      </div>
+    </div>
+
+    <div *ngIf="pagoValido" class="panel" style="background-color: #d1e7dd; border-color: #198754;">
+      <div class="text-success">
+        <strong>✓ Validación correcta:</strong>
+        Los montos coinciden. Puede proceder a guardar el pago.
+      </div>
+    </div>
+
+    <!-- NAVEGACIÓN -->
+    <div class="panel panel-bottom">
+      <div class="toolbar">
+        <div class="btns">
+          <button
+            type="button"
+            class="fi-btn"
+            (click)="volverPaso1()">
+            <span class="fi-arrow">‹</span> Atrás
+          </button>
+        </div>
+
+        <button
+          type="button"
+          class="fi-btn fi-primary"
+          (click)="guardarPago()"
+          [disabled]="!pagoValido">
+          Guardar Pago
+        </button>
+      </div>
+    </div>
+  </form>
+
+</div>

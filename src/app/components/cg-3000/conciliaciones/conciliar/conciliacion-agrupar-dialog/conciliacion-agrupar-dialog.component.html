@@ -1,0 +1,97 @@
+<h2 mat-dialog-title class="dlg-title">
+  Agrupar por N° Comprobante: <span>{{ numcomp }}</span>
+</h2>
+
+<mat-dialog-content class="dlg-content">
+  <div class="toolbar">
+    <button mat-stroked-button color="primary" (click)="marcarTodo()">
+      <mat-icon>done_all</mat-icon>
+      Marcar
+    </button>
+
+    <button mat-stroked-button color="warn" (click)="desmarcarTodo()">
+      <mat-icon>remove_done</mat-icon>
+      Desmarcar
+    </button>
+  </div>
+
+  <div class="table-wrap">
+    <table mat-table [dataSource]="items" class="mat-elevation-z1 full-table">
+
+      <ng-container matColumnDef="fechatran">
+        <th mat-header-cell *matHeaderCellDef>Fecha Trans</th>
+        <td mat-cell *matCellDef="let row">{{ formatFecha(row.fechatran) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="movbancario">
+        <th mat-header-cell *matHeaderCellDef>Tipo Mov</th>
+        <td mat-cell *matCellDef="let row">{{ row.movbancario }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nocomprobante">
+        <th mat-header-cell *matHeaderCellDef>No. Comp</th>
+        <td mat-cell *matCellDef="let row">{{ row.nocomprobante }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cheque">
+        <th mat-header-cell *matHeaderCellDef>Cheque</th>
+        <td mat-cell *matCellDef="let row" class="num">{{ row.cheque }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="debito">
+        <th mat-header-cell *matHeaderCellDef>Débito</th>
+        <td mat-cell *matCellDef="let row" class="num">{{ formatNum(row.debito) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="credito">
+        <th mat-header-cell *matHeaderCellDef>Crédito</th>
+        <td mat-cell *matCellDef="let row" class="num">{{ formatNum(row.credito) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="check">
+        <th mat-header-cell *matHeaderCellDef>.</th>
+        <td mat-cell *matCellDef="let row" class="center">
+          <mat-checkbox
+            [checked]="row.concil === 'C'"
+            (change)="toggleItem(row, $event.checked)">
+          </mat-checkbox>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="numdoc">
+        <th mat-header-cell *matHeaderCellDef>Num Doc</th>
+        <td mat-cell *matCellDef="let row">{{ row.numdoc }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="beneficiario">
+        <th mat-header-cell *matHeaderCellDef>Beneficiario</th>
+        <td mat-cell *matCellDef="let row">{{ row.beneficiario }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tipdoc">
+        <th mat-header-cell *matHeaderCellDef>Tip Doc</th>
+        <td mat-cell *matCellDef="let row">{{ row.tipdoc }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
+
+  <div class="totales-box">
+    <div class="tot-item">
+      <span>Total Marcado Débito</span>
+      <strong>{{ formatNum(totalDebitoMarcado) }}</strong>
+    </div>
+
+    <div class="tot-item">
+      <span>Total Marcado Crédito</span>
+      <strong>{{ formatNum(totalCreditoMarcado) }}</strong>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="salir()">Salir</button>
+  <button mat-raised-button color="primary" (click)="aplicar()">Aplicar</button>
+</mat-dialog-actions>

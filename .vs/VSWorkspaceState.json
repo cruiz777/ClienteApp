@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\app",
+    "\\src\\app\\components",
+    "\\src\\app\\components\\seguridades",
+    "\\src\\app\\components\\seguridades\\zona"
+  ],
+  "SelectedNode": "\\src\\app\\components\\seguridades\\zona\\zona-routing.module.ts",
+  "PreviewInSolutionExplorer": false
+}

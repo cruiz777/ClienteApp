@@ -1,0 +1,106 @@
+<div class="banco-page">
+
+  <div class="list-card">
+
+    <div class="list-header">
+      <h3>Listado de Bancos</h3>
+
+      <span *ngIf="!cargando">
+        {{ bancos.length }} registro(s)
+      </span>
+
+      <span *ngIf="cargando">
+        Cargando...
+      </span>
+    </div>
+
+    <div
+      class="mensaje-error"
+      *ngIf="mensajeError">
+
+      {{ mensajeError }}
+    </div>
+
+    <div
+      class="table-container"
+      *ngIf="!cargando">
+
+      <table
+        mat-table
+        [dataSource]="bancos"
+        class="custom-table">
+
+        <ng-container matColumnDef="codban">
+          <th mat-header-cell *matHeaderCellDef>
+            Código
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.codban }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="desban">
+          <th mat-header-cell *matHeaderCellDef>
+            Banco / Formato
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.desban }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="codcue">
+          <th mat-header-cell *matHeaderCellDef>
+            Cuenta origen
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.codcue }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="ctacontabilidad">
+          <th mat-header-cell *matHeaderCellDef>
+            Cuenta contable
+          </th>
+
+          <td mat-cell *matCellDef="let row">
+            {{ row.ctacontabilidad }}
+          </td>
+        </ng-container>
+
+        
+
+        <tr
+          mat-header-row
+          *matHeaderRowDef="displayedColumns">
+        </tr>
+
+        <tr
+          mat-row
+          *matRowDef="
+            let row;
+            columns: displayedColumns
+          ">
+        </tr>
+
+        <tr
+          class="mat-row"
+          *matNoDataRow>
+
+          <td
+            class="mat-cell no-data"
+            [attr.colspan]="displayedColumns.length">
+
+            No existen bancos registrados.
+          </td>
+        </tr>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</div>

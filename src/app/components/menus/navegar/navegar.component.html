@@ -1,53 +1,426 @@
-<mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #drawer class="sidenav" fixedInViewport
-               [attr.role]="(isHandset$ | async) ? 'dialog' : 'navegar'"
-               [mode]="(isHandset$ | async) ? 'over' : 'side'"
-               [opened]="(isHandset$ | async) === false">
+<!-- MENÚ CON PERMISOS DINÁMICOS - VERSIÓN CORREGIDA Y ROBUSTA -->
+<mat-sidenav-container class="sidenav-container" [ngClass]="{
+  'collapsed': !isExpanded && !isHandset,
+  'mobile': isHandset
+}">
 
-    <mat-toolbar>
-      <img src="assets/GS1-logo.png" alt="Logo"  height="65">
-    </mat-toolbar>
+  <!-- SIDEBAR -->
+  <mat-sidenav #drawer
+              class="sidenav"
+              [mode]="isHandset ? 'over' : 'side'"
+              [opened]="!isHandset || isExpanded"
+              [class.collapsed]="!isExpanded && !isHandset"
+              [fixedInViewport]="true"
+              (backdropClick)="isExpanded = false">
 
+    <!-- Logos -->
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <a [routerLink]="['/codbar/inicio']">
+        <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
+      </a>
+    </div>
+
+    <!-- Menú Principal -->
     <mat-nav-list>
-      <mat-list-item routerLink="/pages/clientes">
-        <img src="assets/CODBAR-GS1-2.png" class="custom-icon" alt="Seguridad" width="150px" style="margin-left: auto;">
-      </mat-list-item>
-      <mat-list-item routerLink="/menus/codbar">
-        <img src="assets/CG-3000-2.png" class="custom-icon" alt="Seguridad" width="105px" style="margin-left: auto;">
-      </mat-list-item>
-      <mat-list-item routerLink="/menus/codbar">
-        <img src="assets/ROL-3000-2.png" class="custom-icon" alt="Seguridad" width="105px" style="margin-left: auto;">
-      </mat-list-item>
-      <mat-list-item routerLink="/pages/">
-        <img src="assets/seguridad-2.png" class="custom-icon" alt="Seguridad" width="150px" style="margin-left: auto;">
-      </mat-list-item>
-      
-     
-      
 
-      
-      
+      <!-- Toggle Sidebar -->
+      <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
+        <mat-icon>menu</mat-icon>
+        <span *ngIf="isExpanded" class="menu-text">Menú</span>
+      </mat-list-item>
+
+      <!-- Acordeón Principal -->
+      <mat-accordion [multi]="false">
+
+        <!-- 👥 FICHA DE CLIENTE - SIEMPRE VISIBLE, ACCESO CONTROLADO -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-ficha-cliente.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Ficha Cliente</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Funcionalidades principales - SIEMPRE VISIBLES -->
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.fichaCliente?.nuevoCliente) ? '/codbar/ficha-de-cliente/nuevo-cliente' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.nuevoCliente)"
+             (click)="manejarClick('/codbar/ficha-de-cliente/nuevo-cliente', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.nuevoCliente)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.fichaCliente?.listadoClientes) ? '/codbar/ficha-de-cliente/listado-clientes' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.listadoClientes)"
+             (click)="manejarClick('/codbar/ficha-de-cliente/listado-clientes', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Listado de Clientes</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.listadoClientes)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.fichaCliente?.consultaVerified) ? '/codbar/ficha-de-cliente/consulta-verified' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.consultaVerified)"
+             (click)="manejarClick('/codbar/ficha-de-cliente/consulta-verified', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.consultaVerified)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <!-- SUB-ACORDEÓN: Configuración de Ficha Cliente - SIEMPRE VISIBLE -->
+          <mat-accordion class="sub-accordion">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header class="sub-header">
+                <mat-panel-title>
+                  <span *ngIf="isExpanded" class="menu-text">Configuración de cliente</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <a mat-list-item
+                 [routerLink]="((menuPermisos$ | async)?.fichaCliente?.tipoCliente) ? '/codbar/ficha-de-cliente/tipo-cliente' : null"
+                 class="sub-menu-item"
+                 [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.tipoCliente)"
+                 (click)="manejarClick('/codbar/ficha-de-cliente/tipo-cliente', $event)">
+                <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
+                <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.tipoCliente)" class="lock-icon">lock</mat-icon>
+              </a>
+
+              <a mat-list-item
+                 [routerLink]="((menuPermisos$ | async)?.fichaCliente?.grupoCliente) ? '/codbar/ficha-de-cliente/grupo-cliente' : null"
+                 class="sub-menu-item"
+                 [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)"
+                 (click)="manejarClick('/codbar/ficha-de-cliente/grupo-cliente', $event)">
+                <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
+                <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
+              </a>
+
+              <!-- <a mat-list-item
+                 [routerLink]="((menuPermisos$ | async)?.fichaCliente?.grupoCliente) ? '/codbar/ficha-de-cliente/grupo-cliente' : null"
+                 class="sub-menu-item"
+                 [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)"
+                 (click)="manejarClick('/codbar/ficha-de-cliente/grupo-cliente', $event)">
+                <span *ngIf="isExpanded" class="menu-text">Tipo Cuenta</span>
+                <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
+              </a> -->
+
+            </mat-expansion-panel>
+          </mat-accordion>
+
+        </mat-expansion-panel>
+
+        <!-- 🔄 TRANSFERENCIA - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-transf-prefijo.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Transferencia</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.transferencia?.trasPrefijo) ? '/codbar/transferencia/tras-prefijo' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.transferencia?.trasPrefijo)"
+             (click)="manejarClick('/codbar/transferencia/tras-prefijo', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.trasPrefijo)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.transferencia?.trasGtin) ? '/codbar/transferencia/tras-gtin' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.transferencia?.trasGtin)"
+             (click)="manejarClick('/codbar/transferencia/tras-gtin', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.trasGtin)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.transferencia?.eliminarPrefijo) ? '/codbar/transferencia/eliminar-prefijo' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.transferencia?.eliminarPrefijo)"
+             (click)="manejarClick('/codbar/transferencia/eliminar-prefijo', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.eliminarPrefijo)" class="lock-icon">lock</mat-icon>
+          </a>
+        </mat-expansion-panel>
+
+        <!-- ✅ VALIDACIÓN - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-validacion-2.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Validación</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionSri) ? '/codbar/validacion/validacionsri' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionSri)"
+             (click)="manejarClick('/codbar/validacion/validacionsri', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Validar RUC en SRI</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionSri)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <mat-accordion class="sub-accordion">
+
+  <mat-expansion-panel>
+
+    <!-- ===================================================== -->
+    <!-- CABECERA VERIFIED -->
+    <!-- ===================================================== -->
+
+    <mat-expansion-panel-header class="sub-header">
+
+      <mat-panel-title>
+
+        <span
+          *ngIf="isExpanded"
+          class="menu-text">
+
+          Verified
+
+        </span>
+
+      </mat-panel-title>
+
+    </mat-expansion-panel-header>
+
+
+    <!-- ===================================================== -->
+    <!-- VALIDAR LICENCIA VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a
+      mat-list-item
+
+      [routerLink]="
+        ((menuPermisos$ | async)?.validacion?.validacionLicenses)
+          ? '/codbar/validacion/validacion-licenses'
+          : null
+      "
+
+      [class.disabled]="
+        !((menuPermisos$ | async)?.validacion?.validacionLicenses)
+      "
+
+      (click)="
+        manejarClick(
+          '/codbar/validacion/validacion-licenses',
+          $event
+        )
+      ">
+
+      <span
+        *ngIf="isExpanded"
+        class="menu-text">
+
+        Validar Licencia
+
+      </span>
+
+      <mat-icon
+        *ngIf="
+          !((menuPermisos$ | async)?.validacion?.validacionLicenses)
+        "
+        class="lock-icon">
+
+        lock
+
+      </mat-icon>
+
+    </a>
+
+
+    <!-- ===================================================== -->
+    <!-- INACTIVAR LICENCIA VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a mat-list-item
+      [routerLink]="((menuPermisos$ | async)?.validacion?.inactivarLicencias) ? '/codbar/validacion/editar-licenses' : null"
+      [class.disabled]="!((menuPermisos$ | async)?.validacion?.inactivarLicencias)"
+      (click)="manejarClick('/codbar/validacion/editar-licenses', $event)">
+      <span *ngIf="isExpanded" class="menu-text">Inactivar Licencia</span>
+      <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.inactivarLicencias)" class="lock-icon">lock</mat-icon>
+    </a>
+
+
+    <!-- ===================================================== -->
+    <!-- VALIDAR PRODUCTOS VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a
+      mat-list-item
+
+      [routerLink]="
+        ((menuPermisos$ | async)?.validacion?.validacionProductos)
+          ? '/codbar/validacion/validacion-productos'
+          : null
+      "
+
+      [class.disabled]="
+        !((menuPermisos$ | async)?.validacion?.validacionProductos)
+      "
+
+      (click)="
+        manejarClick(
+          '/codbar/validacion/validacion-productos',
+          $event
+        )
+      ">
+
+      <span
+        *ngIf="isExpanded"
+        class="menu-text">
+
+        Validar Productos
+
+      </span>
+
+      <mat-icon
+        *ngIf="
+          !((menuPermisos$ | async)?.validacion?.validacionProductos)
+        "
+        class="lock-icon">
+
+        lock
+
+      </mat-icon>
+
+    </a>
+
+
+    <!-- ===================================================== -->
+    <!-- ELIMINAR PRODUCTOS VERIFIED -->
+    <!-- ===================================================== -->
+
+    <a mat-list-item
+      [routerLink]="((menuPermisos$ | async)?.validacion?.eliminarProductos) ? '/codbar/validacion/eliminar-productos' : null"
+      [class.disabled]="!((menuPermisos$ | async)?.validacion?.eliminarProductos)"
+      (click)="manejarClick('/codbar/validacion/eliminar-productos', $event)">
+      <span *ngIf="isExpanded" class="menu-text">Eliminar Productos</span>
+      <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.eliminarProductos)" class="lock-icon">lock</mat-icon>
+    </a>
+
+  </mat-expansion-panel>
+
+</mat-accordion>
+
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.validacion?.borrarEnBloque) ? '/codbar/validacion/eliminar-bloque' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.validacion?.borrarEnBloque)"
+            (click)="manejarClick('/codbar/validacion/eliminar-bloque', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Borrar en Bloque</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.borrarEnBloque)" class="lock-icon">lock</mat-icon>
+          </a>
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.reportes?.datamatrix) ? '/codbar/reportes/datamatrix' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.reportes?.datamatrix)"
+            (click)="manejarClick('/codbar/reportes/datamatrix', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Data Matrix</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.datamatrix)" class="lock-icon">lock</mat-icon>
+          </a>
+        </mat-expansion-panel>
+
+        <!-- 📊 REPORTES - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-reporte.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.reportes?.gerencia) ? '/codbar/reportes/gerencia' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.reportes?.gerencia)"
+             (click)="manejarClick('/codbar/reportes/gerencia', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Códigos</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerencia)" class="lock-icon">lock</mat-icon>
+          </a>
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.reportes?.gerenciaEmpresas) ? '/codbar/reportes/gerenciate' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.reportes?.gerenciaEmpresas)"
+            (click)="manejarClick('/codbar/reportes/gerenciate', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Empresas</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerenciaEmpresas)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.reportes?.reporteFacturacion) ? '/codbar/reportes/gerenciafactuacion' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.reportes?.reporteFacturacion)"
+            (click)="manejarClick('/codbar/reportes/gerenciafactuacion', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Reporte Facturación</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.reporteFacturacion)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.reportes?.exploradorCliente) ? '/codbar/reportes/explorador-cliente' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.reportes?.exploradorCliente)"
+             (click)="manejarClick('/codbar/reportes/explorador-cliente', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.exploradorCliente)" class="lock-icon">lock</mat-icon>
+          </a>
+        </mat-expansion-panel>
+
+        <!-- ⚙️ CONFIGURACIÓN GENERAL - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento) ? '/codbar/configuracion/localizacion-establecimiento' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento)"
+             (click)="manejarClick('/codbar/configuracion/localizacion-establecimiento', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.configuracion?.grupoProducto) ? '/codbar/configuracion/grupo-producto' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.grupoProducto)"
+             (click)="manejarClick('/codbar/configuracion/grupo-producto', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Grupo Producto</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.grupoProducto)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.configuracion?.tipoPrefijo) ? '/codbar/configuracion/tipo-prefijo' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.tipoPrefijo)"
+             (click)="manejarClick('/codbar/configuracion/tipo-prefijo', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.tipoPrefijo)" class="lock-icon">lock</mat-icon>
+          </a>
+        </mat-expansion-panel>
+
+      </mat-accordion>
+
+      <!-- Salir (siempre visible) -->
+      <mat-list-item routerLink="/inicio" class="salir-item">
+        <div class="menu-item">
+          <img src="assets/icons/icon-salir.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
+        </div>
+      </mat-list-item>
+
     </mat-nav-list>
-    
-
 
   </mat-sidenav>
-  <mat-sidenav-content>
-    <mat-toolbar class="toolbar-gris">
-      <button type="button"
-              aria-label="Toggle sidenav"
-              mat-icon-button
-              (click)="drawer.toggle()"
-              *ngIf="isHandset$ | async">
-        <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
-      </button>
-      <span class="example-spacer"></span>
-      <button mat-icon-button class="example-icon favorite-icon" aria-label="Example icon-button with heart icon"
-               routerLink="/login">
-        <mat-icon>logout</mat-icon>
-      </button>
-    </mat-toolbar>
-    <!-- Add Content Here -->
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
+    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+      </div>
+      <div class="footer-right">
+        <app-user-avatar position="footer" [showUserName]="false"></app-user-avatar>
+        <span class="user-name-footer">{{ usuarioActual?.nombre_usuario }}</span>      
+      </div>
+    </footer>
   </mat-sidenav-content>
+
 </mat-sidenav-container>

@@ -1,0 +1,382 @@
+<div class="bloque-container">
+
+  <!-- ===================================================== -->
+  <!-- HEADER -->
+  <!-- ===================================================== -->
+
+  <div class="bloque-header">
+
+    <div class="header-title">
+
+      <h2>
+        Eliminar Productos en Bloque
+      </h2>
+
+      <span>
+        Pegue códigos desde Excel, valide los productos y seleccione únicamente los que desea eliminar.
+      </span>
+
+    </div>
+
+
+    <div class="header-actions">
+
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="limpiar()"
+        [disabled]="buscando || eliminando">
+
+        Limpiar
+
+      </button>
+
+
+      <button
+        type="button"
+        class="btn btn-close-custom"
+        (click)="cerrar()"
+        [disabled]="eliminando">
+
+        Cerrar
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- PASO 1 -->
+  <!-- ===================================================== -->
+
+  <div class="step-card">
+
+    <div class="step-title">
+
+      <div class="step-number">
+        1
+      </div>
+
+
+      <div>
+
+        <strong>
+          Pegar códigos desde Excel
+        </strong>
+
+        <small>
+          Copie una columna de códigos de barras en Excel y péguela en el cuadro.
+        </small>
+
+      </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- TEXTAREA -->
+    <!-- =================================================== -->
+
+    <textarea
+      class="excel-input"
+      [(ngModel)]="codigosExcel"
+      (paste)="onPasteExcel($event)"
+      [disabled]="buscando || eliminando"
+      spellcheck="false"
+      placeholder="Ejemplo:
+7861000146609
+7861000146616
+7861000146623
+7861000146630">
+    </textarea>
+
+
+    <div class="paste-help">
+
+      <span>
+
+        Puede pegar directamente con
+
+        <strong>
+          Ctrl + V
+        </strong>
+
+        desde una columna de Excel.
+
+        Los códigos repetidos serán ignorados.
+
+      </span>
+
+
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="buscarCodigos()"
+        [disabled]="
+          buscando ||
+          eliminando ||
+          !codigosExcel.trim()
+        ">
+
+        {{
+          buscando
+            ? 'Buscando...'
+            : 'Buscar productos'
+        }}
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- RESUMEN -->
+  <!-- ===================================================== -->
+
+  <div
+    class="summary-row"
+    *ngIf="hasSearched">
+
+    <div class="summary-card total">
+
+      <span class="summary-label">
+        Códigos
+      </span>
+
+      <strong>
+        {{ totalCodigos }}
+      </strong>
+
+    </div>
+
+
+    <div class="summary-card encontrados">
+
+      <span class="summary-label">
+        Encontrados
+      </span>
+
+      <strong>
+        {{ totalEncontrados }}
+      </strong>
+
+    </div>
+
+
+    <div class="summary-card no-encontrados">
+
+      <span class="summary-label">
+        No encontrados
+      </span>
+
+      <strong>
+        {{ totalNoEncontrados }}
+      </strong>
+
+    </div>
+
+
+    <div class="summary-card seleccionados">
+
+      <span class="summary-label">
+        Seleccionados
+      </span>
+
+      <strong>
+        {{ productosSeleccionados.length }}
+      </strong>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- PASO 2 -->
+  <!-- ===================================================== -->
+
+  <div
+    class="step-card grid-card"
+    *ngIf="hasSearched">
+
+    <div class="grid-header">
+
+      <div class="step-title">
+
+        <div class="step-number">
+          2
+        </div>
+
+
+        <div>
+
+          <strong>
+            Revisar productos
+          </strong>
+
+          <small>
+            Verifique código, descripción y relaciones antes de seleccionar.
+          </small>
+
+        </div>
+
+      </div>
+
+
+      <div class="grid-actions">
+
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="seleccionarEncontrados()"
+          [disabled]="
+            buscando ||
+            eliminando ||
+            totalEncontrados === 0
+          ">
+
+          Seleccionar encontrados
+
+        </button>
+
+
+        <button
+          type="button"
+          class="btn btn-outline"
+          (click)="limpiarSeleccion()"
+          [disabled]="
+            productosSeleccionados.length === 0 ||
+            buscando ||
+            eliminando
+          ">
+
+          Quitar selección
+
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- MENSAJE SELECCIÓN -->
+    <!-- =================================================== -->
+
+    <div class="selection-help">
+
+      <span class="selection-help-icon">
+        ✓
+      </span>
+
+      <span>
+
+        Solo se pueden seleccionar productos encontrados en
+
+        <strong>
+          SIC.PRODUCTO
+        </strong>.
+
+        Los códigos no encontrados no pueden eliminarse.
+
+      </span>
+
+    </div>
+
+
+    <!-- =================================================== -->
+    <!-- AG GRID -->
+    <!-- =================================================== -->
+
+    <ag-grid-angular
+
+      class="ag-theme-alpine productos-bloque-grid"
+
+      [rowData]="rowData"
+
+      [columnDefs]="columnDefs"
+
+      [defaultColDef]="defaultColDef"
+
+      [rowSelection]="'multiple'"
+
+      [suppressRowClickSelection]="true"
+
+      [isRowSelectable]="isRowSelectable"
+
+      [animateRows]="true"
+
+      [pagination]="true"
+
+      [paginationPageSize]="25"
+
+      [suppressCellFocus]="true"
+
+      (gridReady)="onGridReady($event)"
+
+      (gridSizeChanged)="onGridSizeChanged()"
+
+      (selectionChanged)="onSelectionChanged($event)">
+
+    </ag-grid-angular>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- PASO 3 -->
+  <!-- ===================================================== -->
+
+  <div
+    class="delete-section"
+    *ngIf="hasSearched">
+
+    <div class="delete-info">
+
+      <strong>
+        Eliminación
+      </strong>
+
+
+      <span>
+
+        El proceso borrará primero
+
+        <strong>
+          SIC.CODIGOS14
+        </strong>,
+
+        luego
+
+        <strong>
+          SIC.PRODUCTO_DATOS_ADICIONALES
+        </strong>
+
+        y finalmente
+
+        <strong>
+          SIC.PRODUCTO
+        </strong>.
+
+      </span>
+
+    </div>
+
+
+    <button
+      type="button"
+      class="btn btn-danger-delete"
+      (click)="eliminarSeleccionados()"
+      [disabled]="!puedeEliminar">
+
+      {{ textoEliminar }}
+
+    </button>
+
+  </div>
+
+</div>

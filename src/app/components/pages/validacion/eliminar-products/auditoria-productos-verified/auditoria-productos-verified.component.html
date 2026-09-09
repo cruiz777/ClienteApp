@@ -1,0 +1,141 @@
+<div class="auditoria-dialog">
+
+  <div class="auditoria-header">
+
+    <div>
+      <h2>
+        Auditoría de Productos Verified
+      </h2>
+
+      <div class="subtitulo">
+        Historial de productos eliminados en Verified
+      </div>
+    </div>
+
+
+    <div class="header-actions">
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        (click)="cargarAuditoria()"
+        [disabled]="isLoading">
+
+        <mat-icon>
+          refresh
+        </mat-icon>
+
+        Actualizar
+      </button>
+
+
+      <button
+        mat-raised-button
+        color="warn"
+        type="button"
+        (click)="cerrar()">
+
+        <mat-icon>
+          close
+        </mat-icon>
+
+        Cerrar
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <div class="auditoria-summary">
+
+    <span>
+      Registros:
+      <strong>
+        {{ rowData.length }}
+      </strong>
+    </span>
+
+    <span class="summary-text">
+      Puede filtrar por cliente, GTIN, prefijo, marca o fecha.
+    </span>
+
+  </div>
+
+
+  <div
+    class="loading-container"
+    *ngIf="isLoading">
+
+    <div class="spinner">
+    </div>
+
+    <span>
+      Consultando auditoría...
+    </span>
+
+  </div>
+
+
+  <div
+    class="error-container"
+    *ngIf="
+      !isLoading &&
+      errorMessage
+    ">
+
+    {{ errorMessage }}
+
+  </div>
+
+
+  <div
+    class="empty-container"
+    *ngIf="
+      !isLoading &&
+      !errorMessage &&
+      rowData.length === 0
+    ">
+
+    No existen registros de auditoría.
+
+  </div>
+
+
+  <div
+    class="grid-container"
+    *ngIf="
+      !isLoading &&
+      !errorMessage &&
+      rowData.length > 0
+    ">
+
+    <ag-grid-angular
+
+      class="
+        ag-theme-alpine
+        auditoria-grid
+      "
+
+      [rowData]="rowData"
+
+      [columnDefs]="columnDefs"
+
+      [defaultColDef]="defaultColDef"
+
+      [pagination]="true"
+
+      [paginationPageSize]="20"
+
+      [animateRows]="true"
+
+      [suppressCellFocus]="true"
+
+      (gridReady)="onGridReady($event)">
+
+    </ag-grid-angular>
+
+  </div>
+
+</div>

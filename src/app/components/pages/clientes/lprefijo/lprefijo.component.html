@@ -1,0 +1,93 @@
+<div class="dialog-container">
+
+  <!-- Botón cerrar arriba a la derecha -->
+  <div class="header-bar">
+    <button mat-icon-button mat-dialog-close aria-label="Cerrar diálogo">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Nombre de la empresa -->
+  <div class="empresa-nombre">
+    <ng-container *ngIf="dataSourcePrefijo.data && dataSourcePrefijo.data.length > 0; else noData">
+      {{ dataSourcePrefijo.data[0].nomcli }}
+    </ng-container>
+    <ng-template #noData>
+      Empresa no disponible
+    </ng-template>
+  </div>
+
+  <!-- Tabla -->
+  <div class="tabla-scroll tabla-con-borde full-width">
+    <table mat-table [dataSource]="dataSourcePrefijo" class="mat-elevation-z8 full-width"
+           *ngIf="dataSourcePrefijo.data.length > 0">
+
+      <!-- Código cliente (oculto) -->
+      <ng-container matColumnDef="clientesCodigo">
+        <th mat-header-cell *matHeaderCellDef style="display: none;">Código</th>
+        <td mat-cell *matCellDef="let el" style="display: none;">{{ el.clientesCodigo }}</td>
+      </ng-container>
+
+      <!-- Prefijo -->
+      <ng-container matColumnDef="codpre">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo</th>
+        <td mat-cell *matCellDef="let el" class="celda-pequena" [ngClass]="{ 'rojo-si-orden': el.orden == 1 }">
+          {{ el.codpre }}
+        </td>
+      </ng-container>
+
+      <!-- GLN -->
+      <ng-container matColumnDef="gln">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">GLN</th>
+        <td mat-cell *matCellDef="let el" class="celda-pequena" [ngClass]="{ 'rojo-si-orden': el.orden == 1 }">
+          {{ el.gln }}
+        </td>
+      </ng-container>
+
+      <!-- Fecha -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Fecha</th>
+        <td mat-cell *matCellDef="let el" class="celda-pequena" [ngClass]="{ 'rojo-si-orden': el.orden == 1 }">
+          {{ el.fecha | date: 'dd/MM/yyyy' }}
+        </td>
+      </ng-container>
+
+      <!-- Estado -->
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Estado</th>
+        <td mat-cell *matCellDef="let el" class="celda-pequena" [ngClass]="{ 'rojo-si-orden': el.orden == 1 }">
+          {{ el.estado ? 'Inactivo' : 'Activo' }}
+        </td>
+      </ng-container>
+
+      <!-- Fecha de cierre -->
+      <ng-container matColumnDef="fechaCierre">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">F. Cierre</th>
+        <td mat-cell *matCellDef="let el" class="celda-pequena" [ngClass]="{ 'rojo-si-orden': el.orden == 1 }">
+          <ng-container *ngIf="el.fechaCierre && el.fechaCierre !== '0001-01-01T00:00:00'">
+            {{ el.fechaCierre | date: 'dd/MM/yyyy' }}
+          </ng-container>
+        </td>
+      </ng-container>
+
+      <!-- Tipo localización -->
+      <ng-container matColumnDef="tipoLocalizacion">
+        <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Tipo</th>
+        <td mat-cell *matCellDef="let el" class="celda-pequena" [ngClass]="{ 'rojo-si-orden': el.orden == 1 }">
+          {{ el.tipoLocalizacion }}
+        </td>
+      </ng-container>
+
+      <!-- Orden (oculto) -->
+      <ng-container matColumnDef="orden">
+        <th mat-header-cell *matHeaderCellDef style="display: none;">Orden</th>
+        <td mat-cell *matCellDef="let el" style="display: none;">{{ el.orden }}</td>
+      </ng-container>
+
+      <!-- Filas -->
+      <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
+
+    </table>
+  </div>
+</div>

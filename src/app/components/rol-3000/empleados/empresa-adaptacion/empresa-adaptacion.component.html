@@ -1,0 +1,574 @@
+<div class="empresa-page">
+
+  <div class="empresa-container">
+
+    <!-- =====================================================
+         CABECERA
+    ====================================================== -->
+
+    <div class="page-header">
+
+      <div class="header-icon">
+
+        <mat-icon>
+          business
+        </mat-icon>
+
+      </div>
+
+
+      <div>
+
+        <h2>
+          Empresa Complementaria
+        </h2>
+
+        <p>
+          Administración de empresas complementarias.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FORMULARIO
+    ====================================================== -->
+
+    <div
+      class="form-card"
+      [formGroup]="form">
+
+      <div class="form-title">
+
+        <div>
+
+          <h3>
+
+            {{
+              empresaSeleccionadaId
+                ? 'Editar empresa'
+                : 'Nueva empresa'
+            }}
+
+          </h3>
+
+          <span
+            *ngIf="empresaSeleccionadaId">
+
+            Código:
+            {{ empresaSeleccionadaId }}
+
+          </span>
+
+        </div>
+
+
+        <button
+          mat-stroked-button
+          type="button"
+          (click)="nuevo()"
+          [disabled]="guardando">
+
+          <mat-icon>
+            add
+          </mat-icon>
+
+          Nuevo
+
+        </button>
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <!-- EMPRESA -->
+
+        <mat-form-field
+          appearance="outline"
+          class="empresa-field">
+
+          <mat-label>
+            Empresa
+          </mat-label>
+
+
+          <mat-icon
+            matPrefix>
+
+            business
+
+          </mat-icon>
+
+
+          <input
+            matInput
+            maxlength="200"
+            formControlName="empresa"
+            placeholder="Nombre de la empresa">
+
+
+          <mat-error
+            *ngIf="
+              esCampoInvalido('empresa')
+            ">
+
+            El nombre de la empresa es obligatorio.
+
+          </mat-error>
+
+        </mat-form-field>
+
+
+        <!-- RUC -->
+
+        <mat-form-field
+          appearance="outline">
+
+          <mat-label>
+            RUC
+          </mat-label>
+
+
+          <mat-icon
+            matPrefix>
+
+            badge
+
+          </mat-icon>
+
+
+          <input
+            matInput
+            maxlength="13"
+            formControlName="ruc"
+            placeholder="RUC de la empresa">
+
+
+          <mat-hint align="end">
+
+            {{
+              form.get('ruc')?.value?.length || 0
+            }}/13
+
+          </mat-hint>
+
+
+          <mat-error
+            *ngIf="
+              esCampoInvalido('ruc')
+            ">
+
+            El RUC es obligatorio.
+
+          </mat-error>
+
+        </mat-form-field>
+
+
+        <!-- ESTADO -->
+
+        <div class="estado-container">
+
+          <div class="estado-label">
+
+            <span>
+              Estado
+            </span>
+
+            <small>
+              Define si la empresa está disponible.
+            </small>
+
+          </div>
+
+
+          <mat-slide-toggle
+            formControlName="estado"
+            color="primary">
+
+            {{
+              form.get('estado')?.value
+                ? 'Activo'
+                : 'Inactivo'
+            }}
+
+          </mat-slide-toggle>
+
+        </div>
+
+      </div>
+
+
+      <!-- ===================================================
+           BOTONES
+      ==================================================== -->
+
+      <div class="actions">
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="guardando"
+          (click)="cancelar()">
+
+          <mat-icon>
+            close
+          </mat-icon>
+
+          Cancelar
+
+        </button>
+
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="guardando"
+          (click)="grabar()">
+
+          <mat-icon>
+
+            {{
+              guardando
+                ? 'hourglass_top'
+                : 'save'
+            }}
+
+          </mat-icon>
+
+
+          {{
+            guardando
+              ? 'Guardando...'
+              : empresaSeleccionadaId
+                ? 'Actualizar'
+                : 'Guardar'
+          }}
+
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         LISTADO
+    ====================================================== -->
+
+    <div class="list-card">
+
+      <div class="list-header">
+
+        <div>
+
+          <h3>
+            Empresas Complementarias
+          </h3>
+
+          <p>
+            Seleccione una empresa para modificarla.
+          </p>
+
+        </div>
+
+
+        <div class="registro-count">
+
+          <mat-icon>
+            business
+          </mat-icon>
+
+          {{ empresas.length }}
+
+          {{
+            empresas.length === 1
+              ? 'registro'
+              : 'registros'
+          }}
+
+        </div>
+
+      </div>
+
+
+      <!-- CARGANDO -->
+
+      <div
+        class="loading-container"
+        *ngIf="cargando">
+
+        <mat-spinner
+          diameter="35">
+
+        </mat-spinner>
+
+        <span>
+          Cargando empresas...
+        </span>
+
+      </div>
+
+
+      <!-- TABLA -->
+
+      <div
+        class="table-container"
+        *ngIf="!cargando">
+
+        <table
+          mat-table
+          [dataSource]="empresas"
+          class="custom-table">
+
+          <!-- ===============================================
+               ID
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="idEmpresaComplementaria">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              Código
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              {{ row.idEmpresaComplementaria }}
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               EMPRESA
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="empresa">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              Empresa
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              <div class="empresa-cell">
+
+                <div class="empresa-avatar">
+
+                  <mat-icon>
+                    business
+                  </mat-icon>
+
+                </div>
+
+
+                <span>
+                  {{ row.empresa }}
+                </span>
+
+              </div>
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               RUC
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="ruc">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              RUC
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              {{ row.ruc }}
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               ESTADO
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="estado">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef>
+
+              Estado
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row">
+
+              <span
+                class="status"
+                [class.status-active]="row.estado"
+                [class.status-inactive]="!row.estado">
+
+                <span class="status-dot"></span>
+
+                {{
+                  row.estado
+                    ? 'Activo'
+                    : 'Inactivo'
+                }}
+
+              </span>
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- ===============================================
+               ACCIONES
+          ================================================ -->
+
+          <ng-container
+            matColumnDef="acciones">
+
+            <th
+              mat-header-cell
+              *matHeaderCellDef
+              class="acciones-header">
+
+              Acciones
+
+            </th>
+
+
+            <td
+              mat-cell
+              *matCellDef="let row"
+              class="acciones-cell">
+
+              <button
+                mat-icon-button
+                type="button"
+                title="Editar"
+                (click)="editar(row, $event)">
+
+                <mat-icon>
+                  edit
+                </mat-icon>
+
+              </button>
+
+
+              <button
+                mat-icon-button
+                type="button"
+                color="warn"
+                title="Eliminar"
+                [disabled]="eliminando"
+                (click)="borrar(row, $event)">
+
+                <mat-icon>
+                  delete
+                </mat-icon>
+
+              </button>
+
+            </td>
+
+          </ng-container>
+
+
+          <!-- HEADER -->
+
+          <tr
+            mat-header-row
+            *matHeaderRowDef="displayedColumns">
+
+          </tr>
+
+
+          <!-- ROW -->
+
+          <tr
+            mat-row
+            *matRowDef="
+              let row;
+              columns: displayedColumns
+            "
+            (click)="seleccionarEmpresa(row)"
+            [class.row-selected]="
+              empresaSeleccionadaId ===
+              row.idEmpresaComplementaria
+            ">
+
+          </tr>
+
+        </table>
+
+
+        <!-- SIN DATOS -->
+
+        <div
+          class="empty-state"
+          *ngIf="
+            empresas.length === 0
+          ">
+
+          <mat-icon>
+            business_off
+          </mat-icon>
+
+          <strong>
+            No existen empresas complementarias
+          </strong>
+
+          <span>
+            Presione Nuevo para crear la primera empresa.
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

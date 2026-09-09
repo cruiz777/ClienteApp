@@ -1,0 +1,146 @@
+<div class="tipo-contrato-page">
+
+  <div
+    class="form-card"
+    [formGroup]="form">
+
+    <h2>
+      Tipo de Contrato
+    </h2>
+
+
+    <!-- ============================================
+         BARRA SUPERIOR
+    ============================================= -->
+
+    <div class="toolbar">
+
+      <!-- BUSCADOR -->
+
+      <mat-form-field
+        appearance="outline"
+        class="search-field">
+
+        <mat-label>
+          Buscar por Nombre
+        </mat-label>
+
+        <input
+          matInput
+          formControlName="buscarNombre"
+          placeholder="Apellidos o nombres"
+          (keyup.enter)="buscar()">
+
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="buscar()">
+
+          <mat-icon>
+            search
+          </mat-icon>
+
+        </button>
+
+      </mat-form-field>
+
+
+      <!-- LIMPIAR -->
+
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="limpiar()">
+
+        <mat-icon>
+          clear
+        </mat-icon>
+
+        Limpiar
+
+      </button>
+
+
+      <!-- EXCEL -->
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="
+          cargando ||
+          filas.length === 0
+        "
+        (click)="exportarExcel()">
+
+        <mat-icon>
+          file_download
+        </mat-icon>
+
+        Exportar Excel
+
+      </button>
+
+    </div>
+
+
+    <!-- ============================================
+         INFORMACIÓN
+    ============================================= -->
+
+    <div class="grid-info">
+
+      <span *ngIf="!cargando">
+
+        Registros:
+        <strong>
+          {{ filas.length }}
+        </strong>
+
+      </span>
+
+      <span *ngIf="cargando">
+
+        Consultando empleados...
+
+      </span>
+
+    </div>
+
+
+    <!-- ============================================
+         AG GRID
+    ============================================= -->
+
+    <div class="grid-container">
+
+      <ag-grid-angular
+
+        class="ag-theme-alpine tipo-contrato-grid"
+
+        [rowData]="filas"
+
+        [columnDefs]="columnDefs"
+
+        [defaultColDef]="defaultColDef"
+
+        [pagination]="true"
+
+        [paginationPageSize]="25"
+
+        [animateRows]="true"
+
+        [rowHeight]="38"
+
+        [headerHeight]="42"
+
+        (gridReady)="onGridReady($event)">
+
+      </ag-grid-angular>
+
+    </div>
+
+  </div>
+
+</div>  

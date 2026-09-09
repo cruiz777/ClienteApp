@@ -1,0 +1,69 @@
+/* Layout base del diálogo */
+.grid{
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "prefijo prefijo"
+    "tabla   tabla"       /* 👈 el grid ocupa todo el ancho */
+    "desde2  hasta2"
+    "meses   meses"
+    "mes     anio";
+}
+
+/* Áreas */
+.area-prefijo{ grid-area: prefijo; }
+.area-grid   { grid-area: tabla; }   /* 👈 nueva área para el grid */
+.area-desde2 { grid-area: desde2; }
+.area-hasta2 { grid-area: hasta2; }
+.area-meses  { grid-area: meses; }
+.area-mes    { grid-area: mes; }
+.area-anio   { grid-area: anio; }
+
+/* Tamaño del grid dentro del diálogo */
+.grid-box{
+  width: 100%;
+  height: 60vh;          /* 👉 más alto */
+  min-height: 360px;
+}
+
+/* Ampliar el ancho del diálogo (usa panelClass al abrir) */
+.meses-dialog .mdc-dialog__surface{
+  width: 90vw;           /* 👉 mucho más ancho */
+  max-width: 1200px;
+}
+
+/* Responsive */
+@media (max-width: 720px){
+  .grid{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "prefijo"
+      "tabla"
+      "desde2"
+      "hasta2"
+      "meses"
+      "mes"
+      "anio";
+  }
+}
+/* styles.scss (global) */
+.ag-theme-alpine .ag-tooltip {
+  background: #fee2e2 !important; /* fondo rojo claro */
+  color: #7f1d1d !important;       /* texto rojo oscuro (mejor contraste) */
+  border: 1px solid #ef4444 !important;
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(0,0,0,.2);
+
+  /* si ya agregaste estos antes para que no se “monte” sobre la celda: */
+  transform: translate(12px, -12px) !important;
+  pointer-events: none;
+  max-width: 520px;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+/* si trabajas con css encapsulado del componente, usa: */
+:host ::ng-deep .ag-theme-alpine .ag-tooltip {
+  /* mismos estilos que arriba */
+}

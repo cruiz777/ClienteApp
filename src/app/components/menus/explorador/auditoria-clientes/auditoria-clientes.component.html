@@ -1,0 +1,183 @@
+<div class="auditoria-dialog">
+
+  <!-- ===================================================== -->
+  <!-- HEADER -->
+  <!-- ===================================================== -->
+
+  <div class="auditoria-header">
+
+    <div class="titulo-container">
+
+      <h2>
+        Auditoría de Clientes
+      </h2>
+
+      <div class="subtitulo">
+
+        Historial de modificaciones de
+        Prefijo, Guía y Otros
+
+      </div>
+
+    </div>
+
+
+    <div class="header-actions">
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        (click)="cargarAuditoria()"
+        [disabled]="isLoading">
+
+        <mat-icon>
+          refresh
+        </mat-icon>
+
+        Actualizar
+
+      </button>
+
+
+      <button
+        mat-raised-button
+        color="warn"
+        type="button"
+        (click)="cerrar()">
+
+        <mat-icon>
+          close
+        </mat-icon>
+
+        Cerrar
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- RESUMEN -->
+  <!-- ===================================================== -->
+
+  <div class="auditoria-summary">
+
+    <div class="summary-item">
+
+      <span class="summary-label">
+        Registros
+      </span>
+
+      <span class="summary-value">
+        {{ totalRegistros }}
+      </span>
+
+    </div>
+
+
+    <div class="summary-info">
+
+      Puede utilizar los filtros de cada columna
+      para buscar por cliente, campo, usuario o fecha.
+
+    </div>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- LOADING -->
+  <!-- ===================================================== -->
+
+  <div
+    class="loading-container"
+    *ngIf="isLoading">
+
+    <div class="spinner">
+    </div>
+
+    <span>
+      Consultando auditoría...
+    </span>
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- ERROR -->
+  <!-- ===================================================== -->
+
+  <div
+    class="error-container"
+    *ngIf="
+      !isLoading &&
+      errorMessage
+    ">
+
+    {{ errorMessage }}
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- SIN REGISTROS -->
+  <!-- ===================================================== -->
+
+  <div
+    class="empty-container"
+    *ngIf="
+      !isLoading &&
+      !errorMessage &&
+      rowData.length === 0
+    ">
+
+    No existen registros de auditoría.
+
+  </div>
+
+
+  <!-- ===================================================== -->
+  <!-- AG GRID -->
+  <!-- ===================================================== -->
+
+  <div
+    class="grid-container"
+    *ngIf="
+      !isLoading &&
+      !errorMessage &&
+      rowData.length > 0
+    ">
+
+    <ag-grid-angular
+
+      class="
+        ag-theme-alpine
+        auditoria-grid
+      "
+
+      [rowData]="rowData"
+
+      [columnDefs]="columnDefs"
+
+      [defaultColDef]="defaultColDef"
+
+      [pagination]="true"
+
+      [paginationPageSize]="20"
+
+      [animateRows]="true"
+
+      [suppressCellFocus]="true"
+
+      (gridReady)="
+        onGridReady($event)
+      ">
+
+    </ag-grid-angular>
+
+  </div>
+
+</div>

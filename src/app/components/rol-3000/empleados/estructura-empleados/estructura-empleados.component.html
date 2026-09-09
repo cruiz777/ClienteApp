@@ -1,0 +1,97 @@
+<div class="estructura-container" [formGroup]="form">
+  <div class="header">
+    <h2>Estructura de Empleados</h2>
+
+    <div class="opciones">
+      <span class="opciones-label">Opciones:</span>
+
+      <mat-radio-group formControlName="vista" class="radio-group">
+        <mat-radio-button value="tipo">Por Tipo de Empleados</mat-radio-button>
+        <mat-radio-button value="departamento">Por Departamentos</mat-radio-button>
+        <mat-radio-button value="zona">Por Zonas</mat-radio-button>
+        <mat-radio-button value="cargo">Por Cargos</mat-radio-button>
+      </mat-radio-group>
+    </div>
+  </div>
+
+  <div class="contenido">
+    <!-- PANEL IZQUIERDO -->
+    <div class="panel-izquierdo">
+      <div class="panel-titulo">
+        <mat-icon>account_tree</mat-icon>
+        <span>
+          {{
+            vistaActual === 'tipo' ? 'Lista de Empleados' :
+            vistaActual === 'departamento' ? 'Empleados por Departamentos' :
+            vistaActual === 'zona' ? 'Empleados por Zona' :
+            'Empleados por Cargo'
+          }}
+        </span>
+      </div>
+
+      <div class="tree-wrapper">
+        <ul class="tree-root">
+          <ng-container *ngFor="let root of arbolActual">
+            <li class="tree-node">
+              <div class="node-label root-label">
+                <mat-icon class="folder-icon">folder_open</mat-icon>
+                <span>{{ root.label }}</span>
+              </div>
+
+              <ul *ngIf="root.children?.length" class="tree-children">
+                <ng-container *ngFor="let child of root.children">
+                  <li class="tree-node">
+                    <div
+                      class="node-label clickable"
+                      [class.active]="nodoSeleccionadoId === child.id"
+                      (click)="seleccionarNodo(child)"
+                    >
+                      <mat-icon class="folder-icon">
+                        {{ child.children?.length ? 'folder' : 'folder_open' }}
+                      </mat-icon>
+                      <span>{{ child.label }}</span>
+                    </div>
+
+                    <ul *ngIf="child.children?.length" class="tree-children">
+                      <ng-container *ngFor="let sub of child.children">
+                        <li class="tree-node">
+                          <div
+                            class="node-label clickable"
+                            [class.active]="nodoSeleccionadoId === sub.id"
+                            (click)="seleccionarNodo(sub)"
+                          >
+                            <mat-icon class="folder-icon">folder_open</mat-icon>
+                            <span>{{ sub.label }}</span>
+                          </div>
+                        </li>
+                      </ng-container>
+                    </ul>
+                  </li>
+                </ng-container>
+              </ul>
+            </li>
+          </ng-container>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO -->
+    <div class="panel-derecho">
+      
+
+      <div class="tabla-wrapper">
+   <div class="ag-theme-alpine tabla-ag-empleados">
+<ag-grid-angular
+  class="ag-theme-alpine tabla-ag-empleados"
+  [rowData]="empleadosFiltrados"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef">
+</ag-grid-angular>
+</div>
+<div class="sin-datos" *ngIf="!empleadosFiltrados || empleadosFiltrados.length === 0">
+  Seleccione un nodo del panel izquierdo para visualizar los empleados.
+</div>
+      </div>
+    </div>
+  </div>
+</div>
