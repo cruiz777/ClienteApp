@@ -67,6 +67,8 @@ import { RpEmpresaComplementariaComponent } from './configuracion/empresa-comple
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 import { ExploradorEmpleadosComponent } from './empleados/explorador-empleado/explorador-empleado.component';
 import { ExploradorNominaComponent } from './nomina/explorador-nomina/explorador-nomina.component';
+import { VacacionesExploradorComponent } from './novedades/registro-vacaciones/explorador/vacaciones-explorador.component';
+
 const routes: Routes = [
    {
       path: '',
@@ -470,6 +472,10 @@ const routes: Routes = [
           component: ExploradorEmpleadosComponent,
           canActivate: [PermissionGuard],
           data: { permission: 'rol-3000.acumulados.explorador-de-empleados' }
+        },
+        {
+          path: 'explorador-vacaciones',
+          component: VacacionesExploradorComponent
         },
 
         { path: '**', redirectTo: 'inicio-rol' },

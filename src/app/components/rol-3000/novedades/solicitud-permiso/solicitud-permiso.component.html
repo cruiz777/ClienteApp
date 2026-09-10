@@ -9,11 +9,21 @@
       <div class="form-grid-1">
         <mat-form-field appearance="outline">
           <mat-label>Empleado</mat-label>
-          <mat-select formControlName="empleado">
-            <mat-option *ngFor="let item of empleados" [value]="item">
-              {{ item }}
+          <input
+            matInput
+            [formControl]="buscarEmpleadoCtrl"
+            [matAutocomplete]="autoEmpleado"
+            placeholder="Busca por nombre o documento"
+          />
+          <mat-autocomplete
+            #autoEmpleado="matAutocomplete"
+            [displayWith]="mostrarEmpleado"
+            (optionSelected)="onSeleccionarEmpleado($event, 'empleado')"
+          >
+            <mat-option *ngFor="let item of empleadosFiltrados" [value]="item">
+              {{ item.documento }} - {{ item.nombreCompleto }}
             </mat-option>
-          </mat-select>
+          </mat-autocomplete>
         </mat-form-field>
       </div>
     </div>
@@ -26,15 +36,10 @@
         <mat-form-field appearance="outline">
           <mat-label>Motivo</mat-label>
           <mat-select formControlName="motivo">
-            <mat-option *ngFor="let item of motivos" [value]="item">
-              {{ item }}
+            <mat-option *ngFor="let item of motivos" [value]="item.idMotivoPermiso">
+              {{ item.descripcion }}
             </mat-option>
           </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>No. Permiso</mat-label>
-          <input matInput formControlName="numeroPermiso" />
         </mat-form-field>
 
         <div class="date-time-group">
@@ -63,20 +68,40 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Aprueba</mat-label>
-          <mat-select formControlName="aprueba">
-            <mat-option *ngFor="let item of aprobadores" [value]="item">
-              {{ item }}
+          <input
+            matInput
+            [formControl]="buscarApruebaCtrl"
+            [matAutocomplete]="autoAprueba"
+            placeholder="Busca por nombre o documento"
+          />
+          <mat-autocomplete
+            #autoAprueba="matAutocomplete"
+            [displayWith]="mostrarEmpleado"
+            (optionSelected)="onSeleccionarEmpleado($event, 'aprueba')"
+          >
+            <mat-option *ngFor="let item of aprobadoresFiltrados" [value]="item">
+              {{ item.documento }} - {{ item.nombreCompleto }}
             </mat-option>
-          </mat-select>
+          </mat-autocomplete>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Autoriza</mat-label>
-          <mat-select formControlName="autoriza">
-            <mat-option *ngFor="let item of autorizadores" [value]="item">
-              {{ item }}
+          <input
+            matInput
+            [formControl]="buscarAutorizaCtrl"
+            [matAutocomplete]="autoAutoriza"
+            placeholder="Busca por nombre o documento"
+          />
+          <mat-autocomplete
+            #autoAutoriza="matAutocomplete"
+            [displayWith]="mostrarEmpleado"
+            (optionSelected)="onSeleccionarEmpleado($event, 'autoriza')"
+          >
+            <mat-option *ngFor="let item of autorizadoresFiltrados" [value]="item">
+              {{ item.documento }} - {{ item.nombreCompleto }}
             </mat-option>
-          </mat-select>
+          </mat-autocomplete>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="full-width">
@@ -94,22 +119,23 @@
         <div class="validation-left">
           <mat-form-field appearance="outline">
             <mat-label>Tiempo</mat-label>
-            <input matInput formControlName="tiempo" />
+            <input matInput formControlName="tiempo" placeholder="ej: 4:30" />
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Horas / Días</mat-label>
             <mat-select formControlName="horasDias">
-              <mat-option value="Horas">Horas</mat-option>
-              <mat-option value="Días">Días</mat-option>
+              <mat-option *ngFor="let item of tiposTiempo" [value]="item.idTipoTiempo">
+                {{ item.tiempo }}
+              </mat-option>
             </mat-select>
           </mat-form-field>
 
           <mat-form-field appearance="outline">
             <mat-label>Tipo de Permiso</mat-label>
             <mat-select formControlName="tipoPermiso">
-              <mat-option *ngFor="let item of tiposPermiso" [value]="item">
-                {{ item }}
+              <mat-option *ngFor="let item of tiposPermiso" [value]="item.idTipoPermiso">
+                {{ item.descripcion }}
               </mat-option>
             </mat-select>
           </mat-form-field>
@@ -125,11 +151,11 @@
     </div>
 
     <div class="actions">
-      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+      <button mat-flat-button color="primary" type="button" [disabled]="enviando" (click)="aceptar()">
         Aceptar
       </button>
 
-      <button mat-stroked-button type="button" (click)="cancelar()">
+      <button mat-stroked-button type="button" [disabled]="enviando" (click)="cancelar()">
         Cancelar
       </button>
     </div>

@@ -1,0 +1,15 @@
+.vacaciones-explorador-page {
+  padding: 16px;
+}
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.grid-container {
+  width: 100%;
+}
