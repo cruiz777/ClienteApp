@@ -35,8 +35,8 @@ import {
 
 import {
   CalcularImpuestoRentaRequest,
-  GrabarImpuestoRentaRequest,
   GenerarRdepRequest,
+  GrabarImpuestoRentaRequest,
   ImpuestoRentaResponse,
   ImpuestoRentaService
 } from 'src/app/services/rol/impuesto-renta.service';
@@ -50,45 +50,21 @@ import {
 export class ImpuestosRentaComponent
   implements OnInit {
 
-  // ==========================================================
-  // USUARIO
-  // ==========================================================
-
   usuarioActual =
-    this.usuarioService
-      .getUsuarioActual();
-
-
-  // ==========================================================
-  // FORMULARIO
-  // ==========================================================
+    this.usuarioService.getUsuarioActual();
 
   form!: FormGroup;
 
-
-  // ==========================================================
-  // ESTADOS
-  // ==========================================================
-
   cargando = false;
-
   guardando = false;
-
   generandoXml = false;
-
   cargandoEmpleados = false;
-
-
-  // ==========================================================
-  // BUSQUEDA EMPLEADOS
-  // ==========================================================
 
   empleadosBusqueda:
     EmpleadoBusquedaResponse[] = [];
 
   empleadosFiltrados:
     EmpleadoBusquedaResponse[] = [];
-
 
   // ==========================================================
   // MODAL CONFIRMACION
@@ -102,11 +78,16 @@ export class ImpuestosRentaComponent
 
   textoAceptarConfirmacion = '';
 
+  textoCancelarConfirmacion = 'Cancelar';
+
   accionConfirmacion:
     'GRABAR' |
     'XML' |
+    'EXISTENTE' |
     null = null;
 
+  private datosGuardadosPendientes:
+    ImpuestoRentaResponse[] = [];
 
   // ==========================================================
   // GRID
@@ -121,254 +102,127 @@ export class ImpuestosRentaComponent
   private gridApi?:
     GridApi;
 
-
   overlayNoRowsTemplate =
     '<span style="padding:10px;">No existen datos para mostrar.</span>';
 
-
-  // ==========================================================
-  // CONFIGURACION GENERAL GRID
-  // ==========================================================
-
   defaultColDef:
     ColDef = {
-
-      sortable:
-        true,
-
-      filter:
-        true,
-
-      resizable:
-        true
+      sortable: true,
+      filter: true,
+      resizable: true
     };
-
-
-  // ==========================================================
-  // COLUMNAS
-  // ==========================================================
 
   columnDefs:
     ColDef[] = [
 
       {
-        headerName:
-          'Local',
-
-        field:
-          'local',
-
-        width:
-          165,
-
-        minWidth:
-          140,
-
-        pinned:
-          'left'
+        headerName: 'Local',
+        field: 'local',
+        width: 165,
+        minWidth: 140,
+        pinned: 'left'
       },
 
       {
-        headerName:
-          'N.º Afiliación',
-
-        field:
-          'numeroAfiliacion',
-
-        width:
-          125,
-
-        minWidth:
-          110
+        headerName: 'N.º Afiliación',
+        field: 'numeroAfiliacion',
+        width: 125
       },
 
       {
-        headerName:
-          'Cédula',
-
-        field:
-          'cedula',
-
-        width:
-          120,
-
-        minWidth:
-          110
+        headerName: 'Cédula',
+        field: 'cedula',
+        width: 120
       },
 
       {
-        headerName:
-          'Cod. Sectorial',
-
-        field:
-          'codigoSectorial',
-
-        width:
-          130,
-
-        minWidth:
-          115
+        headerName: 'Cod. Sectorial',
+        field: 'codigoSectorial',
+        width: 130
       },
 
       {
-        headerName:
-          'Nombre',
-
-        field:
-          'empleado',
-
-        width:
-          270,
-
-        minWidth:
-          220
+        headerName: 'Nombre',
+        field: 'empleado',
+        width: 270
       },
 
       {
-        headerName:
-          'N.º Días',
-
-        field:
-          'diasTrabajados',
-
-        width:
-          90,
-
-        minWidth:
-          80,
-
-        cellClass:
-          'text-center'
+        headerName: 'N.º Días',
+        field: 'diasTrabajados',
+        width: 90,
+        cellClass: 'text-center'
       },
 
       {
-        headerName:
-          'Base Imponible',
-
-        field:
-          'baseImponible',
-
-        width:
-          135,
-
+        headerName: 'Base Imponible',
+        field: 'baseImponible',
+        width: 135,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           'cell-money cell-base'
       },
 
       {
-        headerName:
-          'Imp. Renta Anual',
-
-        field:
-          'impuestoRentaAnual',
-
-        width:
-          145,
-
+        headerName: 'Imp. Renta Anual',
+        field: 'impuestoRentaAnual',
+        width: 145,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           'cell-money'
       },
 
       {
-        headerName:
-          'Rebaja',
-
-        field:
-          'rebaja',
-
-        width:
-          110,
-
+        headerName: 'Rebaja',
+        field: 'rebaja',
+        width: 110,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           'cell-money cell-rebaja'
       },
 
       {
-        headerName:
-          'Impuesto Causado',
-
-        field:
-          'impuestoCausado',
-
-        width:
-          145,
-
+        headerName: 'Impuesto Causado',
+        field: 'impuestoCausado',
+        width: 145,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           'cell-money cell-causado'
       },
 
       {
-        headerName:
-          'Impuesto Pagado',
-
-        field:
-          'impuestoPagado',
-
-        width:
-          145,
-
+        headerName: 'Impuesto Pagado',
+        field: 'impuestoPagado',
+        width: 145,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           'cell-money cell-pagado'
       },
 
       {
-        headerName:
-          'Diferencia',
-
-        field:
-          'diferencia',
-
-        width:
-          120,
-
+        headerName: 'Diferencia',
+        field: 'diferencia',
+        width: 120,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           params => {
 
             const valor =
-              Number(
-                params.value
-                ??
-                0
-              );
+              Number(params.value ?? 0);
 
             if (valor > 0) {
-
               return (
                 'cell-money ' +
                 'cell-diferencia-positiva'
@@ -376,7 +230,6 @@ export class ImpuestosRentaComponent
             }
 
             if (valor < 0) {
-
               return (
                 'cell-money ' +
                 'cell-diferencia-negativa'
@@ -388,78 +241,42 @@ export class ImpuestosRentaComponent
       },
 
       {
-        headerName:
-          'Fecha Ing.',
-
-        field:
-          'fechaIngreso',
-
-        width:
-          115,
-
+        headerName: 'Fecha Ing.',
+        field: 'fechaIngreso',
+        width: 115,
         valueFormatter:
           params =>
-            this.formatearFecha(
-              params.value
-            )
+            this.formatearFecha(params.value)
       },
 
       {
-        headerName:
-          'Fecha Sal.',
-
-        field:
-          'fechaSalida',
-
-        width:
-          115,
-
+        headerName: 'Fecha Sal.',
+        field: 'fechaSalida',
+        width: 115,
         valueFormatter:
           params =>
-            this.formatearFecha(
-              params.value
-            )
+            this.formatearFecha(params.value)
       },
 
       {
-        headerName:
-          'Cargas',
-
-        field:
-          'cargas',
-
-        width:
-          85,
-
-        cellClass:
-          'text-center'
+        headerName: 'Cargas',
+        field: 'cargas',
+        width: 85,
+        cellClass: 'text-center'
       },
 
       {
-        headerName:
-          'G. Personal',
-
-        field:
-          'gastosPersonales',
-
-        width:
-          125,
-
+        headerName: 'G. Personal',
+        field: 'gastosPersonales',
+        width: 125,
         valueFormatter:
           params =>
-            this.formatearNumero(
-              params.value
-            ),
-
+            this.formatearNumero(params.value),
         cellClass:
           'cell-money'
       }
     ];
 
-
-  // ==========================================================
-  // CONSTRUCTOR
-  // ==========================================================
 
   constructor(
     private readonly fb:
@@ -476,43 +293,46 @@ export class ImpuestosRentaComponent
   ) {}
 
 
-  // ==========================================================
-  // INIT
-  // ==========================================================
-
-  ngOnInit():
-    void {
+  ngOnInit(): void {
 
     this.crearFormulario();
 
+    this.configurarModificarPeriodo();
+
     this.configurarBusquedaEmpleado();
 
-    this.cargarEmpleadosBusqueda(
-      ''
-    );
+    this.cargarEmpleadosBusqueda('');
   }
 
 
   // ==========================================================
-  // CREAR FORMULARIO
+  // FORMULARIO
   // ==========================================================
 
-  private crearFormulario():
-    void {
+  private crearFormulario(): void {
+
+    const anio =
+      new Date().getFullYear();
 
     this.form =
       this.fb.group({
 
-        fechaPeriodo: [
-          this.obtenerFinMesActual(),
+        fechaDesde: [
+          `${anio}-01-01`,
           Validators.required
         ],
 
-        idEmpresa: [
-          this.usuarioActual?.id_empresa
-          ??
-          1,
+        fechaHasta: [
+          `${anio}-12-31`,
+          Validators.required
+        ],
 
+        modificarPeriodo: [
+          false
+        ],
+
+        idEmpresa: [
+          this.usuarioActual?.id_empresa ?? 1,
           [
             Validators.required,
             Validators.min(1)
@@ -523,12 +343,6 @@ export class ImpuestosRentaComponent
           null
         ],
 
-        // ==============================================
-        // EMPLEADO
-        //
-        // null = TODOS
-        // ==============================================
-
         idEmpleado: [
           null
         ],
@@ -537,94 +351,146 @@ export class ImpuestosRentaComponent
           'TODOS'
         ]
       });
+
+    this.form
+      .get('fechaDesde')
+      ?.disable({
+        emitEvent: false
+      });
+
+    this.form
+      .get('fechaHasta')
+      ?.disable({
+        emitEvent: false
+      });
+  }
+
+
+  private configurarModificarPeriodo(): void {
+
+    this.form
+      .get('modificarPeriodo')
+      ?.valueChanges
+      .subscribe(
+        modificar => {
+
+          const desde =
+            this.form.get('fechaDesde');
+
+          const hasta =
+            this.form.get('fechaHasta');
+
+          if (modificar) {
+
+            desde?.enable({
+              emitEvent: false
+            });
+
+            hasta?.enable({
+              emitEvent: false
+            });
+
+            return;
+          }
+
+          const fechaHastaActual =
+            hasta?.value;
+
+          let anio =
+            new Date().getFullYear();
+
+          if (
+            fechaHastaActual &&
+            fechaHastaActual.length >= 4
+          ) {
+
+            const valorAnio =
+              Number(
+                fechaHastaActual.substring(
+                  0,
+                  4
+                )
+              );
+
+            if (
+              Number.isFinite(valorAnio)
+            ) {
+              anio = valorAnio;
+            }
+          }
+
+          desde?.setValue(
+            `${anio}-01-01`,
+            {
+              emitEvent: false
+            }
+          );
+
+          hasta?.setValue(
+            `${anio}-12-31`,
+            {
+              emitEvent: false
+            }
+          );
+
+          desde?.disable({
+            emitEvent: false
+          });
+
+          hasta?.disable({
+            emitEvent: false
+          });
+        }
+      );
   }
 
 
   // ==========================================================
-  // CONFIGURAR BUSQUEDA EMPLEADO
+  // EMPLEADOS
   // ==========================================================
 
-  private configurarBusquedaEmpleado():
-    void {
+  private configurarBusquedaEmpleado(): void {
 
     this.form
       .get('empleadoBusqueda')
       ?.valueChanges
       .pipe(
-
-        debounceTime(
-          300
-        ),
-
+        debounceTime(300),
         distinctUntilChanged()
-
       )
       .subscribe(
         valor => {
 
-          // ================================================
-          // SI AUTOCOMPLETE DEVUELVE OBJETO
-          // NO CONSULTAR NUEVAMENTE
-          // ================================================
-
           if (
-            typeof valor === 'object'
-            &&
+            typeof valor === 'object' &&
             valor !== null
           ) {
-
             return;
           }
 
-
           const texto =
-            (
-              valor
-              ??
-              ''
-            )
+            (valor ?? '')
               .toString()
               .trim();
-
-
-          // ================================================
-          // SI ESCRIBE MANUALMENTE,
-          // LIMPIAR ID SELECCIONADO
-          // ================================================
 
           this.form
             .get('idEmpleado')
             ?.setValue(
               null,
               {
-                emitEvent:
-                  false
+                emitEvent: false
               }
             );
 
-
-          // ================================================
-          // TODOS
-          // ================================================
-
           if (
-            texto
-              .toUpperCase()
-            ===
+            texto.toUpperCase() ===
             'TODOS'
           ) {
 
-            this.cargarEmpleadosBusqueda(
-              ''
-            );
+            this.cargarEmpleadosBusqueda('');
 
             return;
           }
-
-
-          // ================================================
-          // BUSCAR
-          // ================================================
 
           this.cargarEmpleadosBusqueda(
             texto
@@ -634,33 +500,22 @@ export class ImpuestosRentaComponent
   }
 
 
-  // ==========================================================
-  // CARGAR EMPLEADOS
-  // ==========================================================
-
   cargarEmpleadosBusqueda(
-    texto:
-      string = ''
+    texto: string = ''
   ): void {
 
     this.cargandoEmpleados =
       true;
 
-
     this.empleadoFichaService
-      .getBusqueda(
-        texto
-      )
+      .getBusqueda(texto)
       .pipe(
-
         finalize(
           () => {
-
             this.cargandoEmpleados =
               false;
           }
         )
-
       )
       .subscribe({
 
@@ -668,14 +523,11 @@ export class ImpuestosRentaComponent
           resp => {
 
             this.empleadosBusqueda =
-              resp.data
-              ??
-              [];
+              resp.data ?? [];
 
             this.empleadosFiltrados =
               this.empleadosBusqueda;
           },
-
 
         error:
           err => {
@@ -696,10 +548,6 @@ export class ImpuestosRentaComponent
   }
 
 
-  // ==========================================================
-  // SELECCIONAR EMPLEADO
-  // ==========================================================
-
   seleccionarEmpleadoBusqueda(
     emp:
       EmpleadoBusquedaResponse
@@ -709,62 +557,39 @@ export class ImpuestosRentaComponent
       return;
     }
 
-
     this.form.patchValue(
       {
-
         idEmpleado:
-          Number(
-            emp.idEmpleado
-          ),
+          Number(emp.idEmpleado),
 
         empleadoBusqueda:
-          emp.nombreCompleto
-          ??
-          ''
-
+          emp.nombreCompleto ?? ''
       },
       {
-        emitEvent:
-          false
+        emitEvent: false
       }
     );
   }
 
 
-  // ==========================================================
-  // SELECCIONAR TODOS
-  // ==========================================================
-
-  seleccionarTodos():
-    void {
+  seleccionarTodos(): void {
 
     this.form.patchValue(
       {
-
         idEmpleado:
           null,
 
         empleadoBusqueda:
           'TODOS'
-
       },
       {
-        emitEvent:
-          false
+        emitEvent: false
       }
     );
 
-
-    this.cargarEmpleadosBusqueda(
-      ''
-    );
+    this.cargarEmpleadosBusqueda('');
   }
 
-
-  // ==========================================================
-  // DISPLAY AUTOCOMPLETE
-  // ==========================================================
 
   displayEmpleado(
     empleado:
@@ -777,27 +602,18 @@ export class ImpuestosRentaComponent
       return '';
     }
 
-
     if (
       typeof empleado ===
       'string'
     ) {
-
       return empleado;
     }
 
-
     return (
-      empleado.nombreCompleto
-      ??
-      ''
+      empleado.nombreCompleto ?? ''
     );
   }
 
-
-  // ==========================================================
-  // LIMPIAR EMPLEADO
-  // ==========================================================
 
   limpiarBusquedaEmpleado(
     event?:
@@ -811,13 +627,12 @@ export class ImpuestosRentaComponent
       event.stopPropagation();
     }
 
-
     this.seleccionarTodos();
   }
 
 
   // ==========================================================
-  // GRID READY
+  // GRID
   // ==========================================================
 
   onGridReady(
@@ -831,38 +646,107 @@ export class ImpuestosRentaComponent
 
 
   // ==========================================================
-  // CONSULTAR / CALCULAR
+  // VALIDAR PERIODO
   // ==========================================================
 
-  consultar():
-    void {
+  private validarPeriodo(): boolean {
+
+    const value =
+      this.form.getRawValue();
 
     if (
-      this.form.invalid
+      !value.fechaDesde ||
+      !value.fechaHasta
     ) {
 
-      this.form
-        .markAllAsTouched();
+      alert(
+        'Debe seleccionar el período.'
+      );
 
+      return false;
+    }
+
+    if (
+      value.fechaDesde >
+      value.fechaHasta
+    ) {
+
+      alert(
+        'La fecha desde no puede ser mayor que la fecha hasta.'
+      );
+
+      return false;
+    }
+
+    const anioDesde =
+      Number(
+        value.fechaDesde.substring(
+          0,
+          4
+        )
+      );
+
+    const anioHasta =
+      Number(
+        value.fechaHasta.substring(
+          0,
+          4
+        )
+      );
+
+    if (
+      anioDesde !==
+      anioHasta
+    ) {
+
+      alert(
+        'El período debe pertenecer al mismo año.'
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+
+  // ==========================================================
+  // CALCULAR
+  // ==========================================================
+
+  consultar(): void {
+
+    this.ejecutarCalculo(
+      false
+    );
+  }
+
+
+  private ejecutarCalculo(
+    forzarRecalculo:
+      boolean
+  ): void {
+
+    if (
+      !this.validarPeriodo()
+    ) {
       return;
     }
 
-
     const value =
-      this.form
-        .getRawValue();
-
+      this.form.getRawValue();
 
     const request:
       CalcularImpuestoRentaRequest = {
 
-      fechaPeriodo:
-        value.fechaPeriodo,
+      fechaDesde:
+        value.fechaDesde,
+
+      fechaHasta:
+        value.fechaHasta,
 
       idEmpresa:
-        Number(
-          value.idEmpresa
-        ),
+        Number(value.idEmpresa),
 
       idLocal:
         this.numeroNullable(
@@ -872,9 +756,16 @@ export class ImpuestosRentaComponent
       idEmpleado:
         this.numeroNullable(
           value.idEmpleado
-        )
+        ),
+
+      forzarRecalculo:
+        forzarRecalculo
     };
 
+    console.log(
+      'REQUEST CALCULAR IR:',
+      request
+    );
 
     this.cargando =
       true;
@@ -885,11 +776,8 @@ export class ImpuestosRentaComponent
     this.pinnedBottomRowData =
       [];
 
-
     this.impuestoRentaService
-      .calcular(
-        request
-      )
+      .calcular(request)
       .subscribe({
 
         next:
@@ -898,20 +786,51 @@ export class ImpuestosRentaComponent
             this.cargando =
               false;
 
+            const tipo =
+              response.type
+                ?.toLowerCase();
+
+            // ===============================================
+            // INFORMACION YA EXISTENTE
+            // ===============================================
 
             if (
-              response.type
-                ?.toLowerCase()
-              ===
-              'error'
+              tipo ===
+              'existing'
             ) {
 
-              this.rowData =
-                [];
+              this.datosGuardadosPendientes =
+                response.data ?? [];
 
-              this.pinnedBottomRowData =
-                [];
+              this.tituloConfirmacion =
+                'Información existente';
 
+              this.mensajeConfirmacion =
+                'Actualmente ya existe información generada del período solicitado.';
+
+              this.textoAceptarConfirmacion =
+                'Sí, recalcular';
+
+              this.textoCancelarConfirmacion =
+                'No, recuperar';
+
+              this.accionConfirmacion =
+                'EXISTENTE';
+
+              this.mostrarConfirmacion =
+                true;
+
+              return;
+            }
+
+            // ===============================================
+            // ERROR
+            // ===============================================
+
+            if (
+              tipo ===
+              'error'
+            ) {
 
               alert(
                 response.message
@@ -922,16 +841,15 @@ export class ImpuestosRentaComponent
               return;
             }
 
+            // ===============================================
+            // RESULTADO NUEVO
+            // ===============================================
 
             this.rowData =
-              response.data
-              ??
-              [];
-
+              response.data ?? [];
 
             this.calcularTotales();
           },
-
 
         error:
           error => {
@@ -939,18 +857,10 @@ export class ImpuestosRentaComponent
             this.cargando =
               false;
 
-            this.rowData =
-              [];
-
-            this.pinnedBottomRowData =
-              [];
-
-
             console.error(
-              'Error Impuesto Renta:',
+              'Error IR:',
               error
             );
-
 
             alert(
               error?.error?.message
@@ -965,12 +875,9 @@ export class ImpuestosRentaComponent
 
   // ==========================================================
   // GRABAR
-  //
-  // SOLO ABRE CONFIRMACION
   // ==========================================================
 
-  grabar():
-    void {
+  grabar(): void {
 
     if (
       this.rowData.length === 0
@@ -983,75 +890,56 @@ export class ImpuestosRentaComponent
       return;
     }
 
-
     if (
+      this.cargando ||
       this.guardando
-      ||
-      this.cargando
     ) {
-
       return;
     }
-
 
     this.tituloConfirmacion =
       'Confirmar grabación';
 
-
     this.mensajeConfirmacion =
       this.rowData.length === 1
-        ? '¿Está seguro de grabar la información de Impuesto a la Renta del empleado seleccionado?'
-        : `¿Está seguro de grabar la información de Impuesto a la Renta de ${this.rowData.length} empleados?`;
-
+        ? '¿Está seguro de grabar la información del empleado seleccionado?'
+        : `¿Está seguro de grabar la información de ${this.rowData.length} empleados?`;
 
     this.textoAceptarConfirmacion =
       'Sí, grabar';
 
+    this.textoCancelarConfirmacion =
+      'Cancelar';
 
     this.accionConfirmacion =
       'GRABAR';
-
 
     this.mostrarConfirmacion =
       true;
   }
 
 
-  // ==========================================================
-  // GRABAR CONFIRMADO
-  // ==========================================================
-
-  private grabarConfirmado():
-    void {
+  private grabarConfirmado(): void {
 
     const value =
-      this.form
-        .getRawValue();
-
-
-    /*
-     * Mantengo el valor que ya utilizabas.
-     *
-     * Cuando confirmemos el campo real del usuario
-     * autenticado se reemplaza.
-     */
-    const idUsuario =
-      1;
-
+      this.form.getRawValue();
 
     const request:
       GrabarImpuestoRentaRequest = {
 
+      // GrabarAsync continúa trabajando con FechaPeriodo.
       fechaPeriodo:
-        value.fechaPeriodo,
+        value.fechaHasta,
 
       idEmpresa:
-        Number(
-          value.idEmpresa
-        ),
+        Number(value.idEmpresa),
 
       idUsuario:
-        idUsuario,
+        Number(
+          this.usuarioActual?.id_usuario
+          ??
+          1
+        ),
 
       empleados:
         this.rowData.map(
@@ -1061,110 +949,76 @@ export class ImpuestosRentaComponent
               item.idEmpleado,
 
             idLocal:
-              item.idLocal
-              ??
-              null,
+              item.idLocal ?? null,
 
             cedula:
-              item.cedula
-              ??
-              '',
+              item.cedula ?? '',
 
             numeroAfiliacion:
-              item.numeroAfiliacion
-              ??
-              '',
+              item.numeroAfiliacion ?? '',
 
             codigoSectorial:
-              item.codigoSectorial
-              ??
-              '',
+              item.codigoSectorial ?? '',
 
             diasTrabajados:
               Number(
-                item.diasTrabajados
-                ??
-                0
+                item.diasTrabajados ?? 0
               ),
 
             fechaIngreso:
-              item.fechaIngreso
-              ??
-              null,
+              item.fechaIngreso ?? null,
 
             fechaSalida:
-              item.fechaSalida
-              ??
-              null,
+              item.fechaSalida ?? null,
 
             baseImponible:
               Number(
-                item.baseImponible
-                ??
-                0
+                item.baseImponible ?? 0
               ),
 
             impuestoRentaAnual:
               Number(
-                item.impuestoRentaAnual
-                ??
-                0
+                item.impuestoRentaAnual ?? 0
               ),
 
             rebaja:
               Number(
-                item.rebaja
-                ??
-                0
+                item.rebaja ?? 0
               ),
 
             impuestoCausado:
               Number(
-                item.impuestoCausado
-                ??
-                0
+                item.impuestoCausado ?? 0
               ),
 
             impuestoPagado:
               Number(
-                item.impuestoPagado
-                ??
-                0
+                item.impuestoPagado ?? 0
               ),
 
             diferencia:
               Number(
-                item.diferencia
-                ??
-                0
+                item.diferencia ?? 0
               ),
 
             cargas:
               Number(
-                item.cargas
-                ??
-                0
+                item.cargas ?? 0
               ),
 
             gastosPersonales:
               Number(
-                item.gastosPersonales
-                ??
-                0
+                item.gastosPersonales ?? 0
               )
           })
         )
     };
 
-
     this.guardando =
       true;
 
-
     this.impuestoRentaService
-      .grabar(
-        request
-      )
+      .grabar(request)
       .subscribe({
 
         next:
@@ -1173,12 +1027,10 @@ export class ImpuestosRentaComponent
             this.guardando =
               false;
 
-
             if (
               response.type
-                ?.toLowerCase()
-              ===
-              'error'
+                ?.toLowerCase() ===
+                'error'
               ||
               response.data !== true
             ) {
@@ -1186,12 +1038,11 @@ export class ImpuestosRentaComponent
               alert(
                 response.message
                 ||
-                'No fue posible grabar la información.'
+                'No fue posible grabar.'
               );
 
               return;
             }
-
 
             alert(
               response.message
@@ -1200,54 +1051,21 @@ export class ImpuestosRentaComponent
             );
           },
 
-
         error:
           error => {
 
             this.guardando =
               false;
 
-
             console.error(
               'Error grabando IR:',
               error
             );
 
-
-            let mensaje =
-              'Error al grabar Impuesto a la Renta.';
-
-
-            if (
-              error?.error?.message
-            ) {
-
-              mensaje =
-                error.error.message;
-            }
-            else if (
-              error?.error?.errors
-            ) {
-
-              const errores =
-                error.error.errors;
-
-
-              mensaje =
-                Object
-                  .keys(
-                    errores
-                  )
-                  .map(
-                    key =>
-                      `${key}: ${errores[key].join(', ')}`
-                  )
-                  .join('\n');
-            }
-
-
             alert(
-              mensaje
+              error?.error?.message
+              ||
+              'Error grabando Impuesto a la Renta.'
             );
           }
 
@@ -1256,113 +1074,64 @@ export class ImpuestosRentaComponent
 
 
   // ==========================================================
-  // GENERAR XML
-  //
-  // SOLO ABRE CONFIRMACION
+  // XML
   // ==========================================================
 
-  generarXml():
-    void {
+  generarXml(): void {
+
+    if (
+      !this.validarPeriodo()
+    ) {
+      return;
+    }
 
     const value =
-      this.form
-        .getRawValue();
-
-
-    if (
-      !value.fechaPeriodo
-    ) {
-
-      alert(
-        'Debe seleccionar un período.'
-      );
-
-      return;
-    }
-
-
-    if (
-      !value.idEmpresa
-      ||
-      Number(
-        value.idEmpresa
-      ) <= 0
-    ) {
-
-      alert(
-        'Debe seleccionar una empresa.'
-      );
-
-      return;
-    }
-
+      this.form.getRawValue();
 
     const anio =
       Number(
-        value.fechaPeriodo.substring(
+        value.fechaHasta.substring(
           0,
           4
         )
       );
 
-
-    const idEmpleado =
-      this.numeroNullable(
-        value.idEmpleado
-      );
-
-
     this.tituloConfirmacion =
       'Generar XML RDEP';
 
-
-    if (
-      idEmpleado !== null
-    ) {
-
-      this.mensajeConfirmacion =
-        `¿Está seguro de generar el archivo RDEP${anio}.xml únicamente para el empleado seleccionado?`;
-    }
-    else {
-
-      this.mensajeConfirmacion =
-        `¿Está seguro de generar el archivo RDEP${anio}.xml para todos los empleados?`;
-    }
-
+    this.mensajeConfirmacion =
+      this.numeroNullable(
+        value.idEmpleado
+      ) !== null
+        ? `¿Desea generar RDEP${anio}.xml para el empleado seleccionado?`
+        : `¿Desea generar RDEP${anio}.xml para todos los empleados?`;
 
     this.textoAceptarConfirmacion =
       'Sí, generar';
 
+    this.textoCancelarConfirmacion =
+      'Cancelar';
 
     this.accionConfirmacion =
       'XML';
-
 
     this.mostrarConfirmacion =
       true;
   }
 
 
-  // ==========================================================
-  // GENERAR XML CONFIRMADO
-  // ==========================================================
-
-  private generarXmlConfirmado():
-    void {
+  private generarXmlConfirmado(): void {
 
     const value =
-      this.form
-        .getRawValue();
-
+      this.form.getRawValue();
 
     const anio =
       Number(
-        value.fechaPeriodo.substring(
+        value.fechaHasta.substring(
           0,
           4
         )
       );
-
 
     const request:
       GenerarRdepRequest = {
@@ -1371,14 +1140,7 @@ export class ImpuestosRentaComponent
         anio,
 
       idEmpresa:
-        Number(
-          value.idEmpresa
-        ),
-
-      // ==============================================
-      // null = TODOS
-      // ID   = EMPLEADO SELECCIONADO
-      // ==============================================
+        Number(value.idEmpresa),
 
       idEmpleado:
         this.numeroNullable(
@@ -1386,21 +1148,11 @@ export class ImpuestosRentaComponent
         )
     };
 
-
-    console.log(
-      'REQUEST XML RDEP:',
-      request
-    );
-
-
     this.generandoXml =
       true;
 
-
     this.impuestoRentaService
-      .generarRdepXml(
-        request
-      )
+      .generarRdepXml(request)
       .subscribe({
 
         next:
@@ -1409,64 +1161,43 @@ export class ImpuestosRentaComponent
             this.generandoXml =
               false;
 
-
             if (
-              !blob
-              ||
+              !blob ||
               blob.size === 0
             ) {
 
               alert(
-                'El archivo XML generado está vacío.'
+                'El archivo XML está vacío.'
               );
 
               return;
             }
 
-
             const url =
               window.URL
-                .createObjectURL(
-                  blob
-                );
-
+                .createObjectURL(blob);
 
             const link =
               document
-                .createElement(
-                  'a'
-                );
-
+                .createElement('a');
 
             link.href =
               url;
 
-
             link.download =
               `RDEP${anio}.xml`;
 
-
             document.body
-              .appendChild(
-                link
-              );
-
+              .appendChild(link);
 
             link.click();
 
-
             document.body
-              .removeChild(
-                link
-              );
-
+              .removeChild(link);
 
             window.URL
-              .revokeObjectURL(
-                url
-              );
+              .revokeObjectURL(url);
           },
-
 
         error:
           async error => {
@@ -1474,16 +1205,8 @@ export class ImpuestosRentaComponent
             this.generandoXml =
               false;
 
-
-            console.error(
-              'Error generando RDEP:',
-              error
-            );
-
-
             let mensaje =
-              'Error al generar el archivo RDEP.';
-
+              'Error al generar el RDEP.';
 
             if (
               error?.error
@@ -1493,15 +1216,10 @@ export class ImpuestosRentaComponent
               try {
 
                 const texto =
-                  await error.error
-                    .text();
-
+                  await error.error.text();
 
                 const resultado =
-                  JSON.parse(
-                    texto
-                  );
-
+                  JSON.parse(texto);
 
                 mensaje =
                   resultado?.message
@@ -1510,15 +1228,10 @@ export class ImpuestosRentaComponent
 
               }
               catch {
-
-                // Mantener mensaje genérico.
               }
             }
 
-
-            alert(
-              mensaje
-            );
+            alert(mensaje);
           }
 
       });
@@ -1526,24 +1239,39 @@ export class ImpuestosRentaComponent
 
 
   // ==========================================================
-  // CONFIRMAR MODAL
+  // CONFIRMACION
   // ==========================================================
 
-  confirmarAccion():
-    void {
+  confirmarAccion(): void {
 
     const accion =
       this.accionConfirmacion;
 
-
-    // Cerramos primero el modal.
     this.mostrarConfirmacion =
       false;
-
 
     this.accionConfirmacion =
       null;
 
+    // "SI" DEL LEGACY:
+    // recalcular ignorando lo almacenado.
+    if (
+      accion ===
+      'EXISTENTE'
+    ) {
+
+      this.datosGuardadosPendientes =
+        [];
+
+      this.textoCancelarConfirmacion =
+        'Cancelar';
+
+      this.ejecutarCalculo(
+        true
+      );
+
+      return;
+    }
 
     if (
       accion ===
@@ -1555,7 +1283,6 @@ export class ImpuestosRentaComponent
       return;
     }
 
-
     if (
       accion ===
       'XML'
@@ -1566,19 +1293,37 @@ export class ImpuestosRentaComponent
   }
 
 
-  // ==========================================================
-  // CANCELAR MODAL
-  // ==========================================================
+  cancelarConfirmacion(): void {
 
-  cancelarConfirmacion():
-    void {
+    const accion =
+      this.accionConfirmacion;
 
     this.mostrarConfirmacion =
       false;
 
-
     this.accionConfirmacion =
       null;
+
+    // "NO" DEL LEGACY:
+    // recuperar los datos almacenados.
+    if (
+      accion ===
+      'EXISTENTE'
+    ) {
+
+      this.rowData =
+        [
+          ...this.datosGuardadosPendientes
+        ];
+
+      this.datosGuardadosPendientes =
+        [];
+
+      this.calcularTotales();
+    }
+
+    this.textoCancelarConfirmacion =
+      'Cancelar';
   }
 
 
@@ -1586,14 +1331,21 @@ export class ImpuestosRentaComponent
   // LIMPIAR
   // ==========================================================
 
-  limpiar():
-    void {
+  limpiar(): void {
+
+    const anio =
+      new Date().getFullYear();
 
     this.form.patchValue(
       {
+        fechaDesde:
+          `${anio}-01-01`,
 
-        fechaPeriodo:
-          this.obtenerFinMesActual(),
+        fechaHasta:
+          `${anio}-12-31`,
+
+        modificarPeriodo:
+          false,
 
         idEmpresa:
           this.usuarioActual?.id_empresa
@@ -1608,32 +1360,37 @@ export class ImpuestosRentaComponent
 
         empleadoBusqueda:
           'TODOS'
-
       },
       {
-        emitEvent:
-          false
+        emitEvent: false
       }
     );
 
+    this.form
+      .get('fechaDesde')
+      ?.disable({
+        emitEvent: false
+      });
+
+    this.form
+      .get('fechaHasta')
+      ?.disable({
+        emitEvent: false
+      });
 
     this.rowData =
       [];
 
-
     this.pinnedBottomRowData =
       [];
 
+    this.datosGuardadosPendientes =
+      [];
 
     this.gridApi
-      ?.setFilterModel(
-        null
-      );
+      ?.setFilterModel(null);
 
-
-    this.cargarEmpleadosBusqueda(
-      ''
-    );
+    this.cargarEmpleadosBusqueda('');
   }
 
 
@@ -1641,8 +1398,7 @@ export class ImpuestosRentaComponent
   // TOTALES
   // ==========================================================
 
-  private calcularTotales():
-    void {
+  private calcularTotales(): void {
 
     if (
       this.rowData.length === 0
@@ -1654,10 +1410,8 @@ export class ImpuestosRentaComponent
       return;
     }
 
-
     this.pinnedBottomRowData = [
       {
-
         local:
           'TOTALES',
 
@@ -1708,12 +1462,6 @@ export class ImpuestosRentaComponent
             'diferencia'
           ),
 
-        fechaIngreso:
-          null,
-
-        fechaSalida:
-          null,
-
         cargas:
           this.sumar(
             'cargas'
@@ -1728,10 +1476,6 @@ export class ImpuestosRentaComponent
   }
 
 
-  // ==========================================================
-  // SUMAR
-  // ==========================================================
-
   private sumar(
     campo:
       keyof ImpuestoRentaResponse
@@ -1744,29 +1488,16 @@ export class ImpuestosRentaComponent
           item
         ) => {
 
-          const valor =
+          const numero =
             Number(
-              item[campo]
-              ??
-              0
+              item[campo] ?? 0
             );
 
-
-          if (
-            !Number.isFinite(
-              valor
-            )
-          ) {
-
-            return total;
-          }
-
-
-          return (
-            total
-            +
-            valor
-          );
+          return Number.isFinite(
+            numero
+          )
+            ? total + numero
+            : total;
         },
         0
       );
@@ -1774,7 +1505,7 @@ export class ImpuestosRentaComponent
 
 
   // ==========================================================
-  // FORMATO NUMERO
+  // FORMATOS
   // ==========================================================
 
   formatearNumero(
@@ -1783,42 +1514,19 @@ export class ImpuestosRentaComponent
   ): string {
 
     const numero =
-      Number(
-        value
-        ??
-        0
-      );
+      Number(value ?? 0);
 
-
-    if (
-      !Number.isFinite(
-        numero
-      )
-    ) {
-
-      return '0.00';
-    }
-
-
-    return numero
-      .toLocaleString(
-        'en-US',
-        {
-
-          minimumFractionDigits:
-            2,
-
-          maximumFractionDigits:
-            2
-
-        }
-      );
+    return Number.isFinite(numero)
+      ? numero.toLocaleString(
+          'en-US',
+          {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }
+        )
+      : '0.00';
   }
 
-
-  // ==========================================================
-  // FORMATO FECHA
-  // ==========================================================
 
   formatearFecha(
     value:
@@ -1831,27 +1539,17 @@ export class ImpuestosRentaComponent
       return '';
     }
 
-
-    const valor =
-      value.substring(
-        0,
-        10
-      );
-
+    const fecha =
+      value.substring(0, 10);
 
     const partes =
-      valor.split(
-        '-'
-      );
-
+      fecha.split('-');
 
     if (
       partes.length !== 3
     ) {
-
       return value;
     }
-
 
     return (
       `${partes[2]}/` +
@@ -1861,93 +1559,25 @@ export class ImpuestosRentaComponent
   }
 
 
-  // ==========================================================
-  // NUMERO NULLABLE
-  // ==========================================================
-
   private numeroNullable(
     value:
       any
   ): number | null {
 
     if (
-      value === null
-      ||
-      value === undefined
-      ||
+      value === null ||
+      value === undefined ||
       value === ''
     ) {
-
       return null;
     }
-
 
     const numero =
-      Number(
-        value
-      );
+      Number(value);
 
-
-    if (
-      !Number.isFinite(
-        numero
-      )
-    ) {
-
-      return null;
-    }
-
-
-    return numero;
-  }
-
-
-  // ==========================================================
-  // FIN DE MES ACTUAL
-  // ==========================================================
-
-  private obtenerFinMesActual():
-    string {
-
-    const hoy =
-      new Date();
-
-
-    const fecha =
-      new Date(
-        hoy.getFullYear(),
-        hoy.getMonth() + 1,
-        0
-      );
-
-
-    const year =
-      fecha.getFullYear();
-
-
-    const month =
-      String(
-        fecha.getMonth() + 1
-      )
-        .padStart(
-          2,
-          '0'
-        );
-
-
-    const day =
-      String(
-        fecha.getDate()
-      )
-        .padStart(
-          2,
-          '0'
-        );
-
-
-    return (
-      `${year}-${month}-${day}`
-    );
+    return Number.isFinite(numero)
+      ? numero
+      : null;
   }
 
 
@@ -1955,8 +1585,7 @@ export class ImpuestosRentaComponent
   // IMPRIMIR
   // ==========================================================
 
-  imprimir():
-    void {
+  imprimir(): void {
 
     if (
       this.rowData.length === 0
@@ -1969,190 +1598,116 @@ export class ImpuestosRentaComponent
       return;
     }
 
-
     const value =
-      this.form
-        .getRawValue();
+      this.form.getRawValue();
 
-
-    if (
-      !value.fechaPeriodo
-    ) {
-
-      alert(
-        'Debe seleccionar un período.'
+    const fechaDesde =
+      this.formatearFecha(
+        value.fechaDesde
       );
 
-      return;
-    }
-
-
-    // ========================================================
-    // PERIODO
-    // ========================================================
+    const fechaHasta =
+      this.formatearFecha(
+        value.fechaHasta
+      );
 
     const anio =
       Number(
-        value.fechaPeriodo.substring(
+        value.fechaHasta.substring(
           0,
           4
         )
       );
 
-
-    const fechaDesde =
-      `01/01/${anio}`;
-
-
-    const fechaHasta =
-      `31/12/${anio}`;
-
-
-    // ========================================================
-    // DOCUMENTO
-    // ========================================================
-
     const doc =
       new jsPDF({
-
-        orientation:
-          'landscape',
-
-        unit:
-          'mm',
-
-        format:
-          'a4'
-
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4'
       });
-
-
-    // ========================================================
-    // CABECERA
-    // ========================================================
 
     doc.setFont(
       'helvetica',
       'bold'
     );
 
-
-    doc.setFontSize(
-      14
-    );
-
+    doc.setFontSize(14);
 
     doc.text(
       'IMPUESTO A LA RENTA',
       148.5,
       10,
       {
-        align:
-          'center'
+        align: 'center'
       }
     );
 
-
-    doc.setFontSize(
-      10
-    );
-
+    doc.setFontSize(10);
 
     doc.text(
       'NÓMINA ESPECIAL',
       148.5,
       15,
       {
-        align:
-          'center'
+        align: 'center'
       }
     );
-
 
     doc.setFont(
       'helvetica',
       'normal'
     );
 
-
-    doc.setFontSize(
-      7
-    );
-
+    doc.setFontSize(7);
 
     doc.text(
       `PERIODO DESDE: ${fechaDesde}   HASTA: ${fechaHasta}`,
       148.5,
       20,
       {
-        align:
-          'center'
+        align: 'center'
       }
     );
-
-
-    doc.text(
-      `Empleados: ${this.rowData.length}`,
-      5,
-      25
-    );
-
-
-    // ========================================================
-    // BODY
-    // ========================================================
 
     const body =
       this.rowData.map(
         item => [
 
-          item.local
-          ??
-          '',
+          item.local ?? '',
 
-          item.numeroAfiliacion
-          ??
-          '',
+          item.numeroAfiliacion ?? '',
 
-          item.cedula
-          ??
-          '',
+          item.cedula ?? '',
 
-          item.codigoSectorial
-          ??
-          '',
+          item.codigoSectorial ?? '',
 
-          item.empleado
-          ??
-          '',
+          item.empleado ?? '',
 
           String(
-            item.diasTrabajados
-            ??
-            0
+            item.diasTrabajados ?? 0
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.baseImponible
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.impuestoRentaAnual
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.rebaja
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.impuestoCausado
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.impuestoPagado
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.diferencia
           ),
 
@@ -2165,493 +1720,75 @@ export class ImpuestosRentaComponent
           ),
 
           String(
-            item.cargas
-            ??
-            0
+            item.cargas ?? 0
           ),
 
-          this.formatearNumeroPdf(
+          this.formatearNumero(
             item.gastosPersonales
           )
-
         ]
       );
-
-
-    // ========================================================
-    // FOOTER
-    // ========================================================
-
-    const footer = [
-      [
-
-        'TOTALES',
-
-        '',
-
-        '',
-
-        '',
-
-        '',
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'diasTrabajados'
-          ),
-          0
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'baseImponible'
-          )
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'impuestoRentaAnual'
-          )
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'rebaja'
-          )
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'impuestoCausado'
-          )
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'impuestoPagado'
-          )
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'diferencia'
-          )
-        ),
-
-        '',
-
-        '',
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'cargas'
-          ),
-          0
-        ),
-
-        this.formatearNumeroPdf(
-          this.sumar(
-            'gastosPersonales'
-          )
-        )
-
-      ]
-    ];
-
-
-    // ========================================================
-    // TABLA
-    // ========================================================
 
     autoTable(
       doc,
       {
-
-        startY:
-          28,
-
+        startY: 28,
 
         head: [[
-
           'Local',
-
           'N.º Afiliación',
-
           'Cédula',
-
           'Cod. Sectorial',
-
           'Nombre',
-
           'N.º Días',
-
           'Base Imponible',
-
           'Imp. Renta Anual',
-
           'Rebaja',
-
           'Imp. Causado',
-
           'Imp. Pagado',
-
           'Diferencia',
-
           'Fecha Ing.',
-
           'Fecha Sal.',
-
           'Cargas',
-
           'G. Personal'
-
         ]],
-
 
         body:
           body,
 
-
-        foot:
-          footer,
-
-
         theme:
           'grid',
 
-
-        margin: {
-
-          left:
-            4,
-
-          right:
-            4,
-
-          top:
-            10,
-
-          bottom:
-            10
-
-        },
-
-
         styles: {
-
-          font:
-            'helvetica',
-
-          fontSize:
-            4.7,
-
-          cellPadding:
-            1,
-
-          overflow:
-            'linebreak',
-
-          valign:
-            'middle',
-
-          lineWidth:
-            0.1
-
+          fontSize: 4.7,
+          cellPadding: 1
         },
-
-
-        headStyles: {
-
-          fontStyle:
-            'bold',
-
-          fontSize:
-            4.7,
-
-          halign:
-            'center',
-
-          fillColor: [
-            235,
-            235,
-            235
-          ],
-
-          textColor: [
-            0,
-            0,
-            0
-          ]
-
-        },
-
-
-        footStyles: {
-
-          fontStyle:
-            'bold',
-
-          fontSize:
-            4.7,
-
-          fillColor: [
-            235,
-            235,
-            235
-          ],
-
-          textColor: [
-            0,
-            0,
-            0
-          ]
-
-        },
-
-
-        columnStyles: {
-
-          0: {
-            cellWidth:
-              18
-          },
-
-          1: {
-            cellWidth:
-              17
-          },
-
-          2: {
-            cellWidth:
-              17
-          },
-
-          3: {
-            cellWidth:
-              17
-          },
-
-          4: {
-            cellWidth:
-              42
-          },
-
-          5: {
-            cellWidth:
-              11,
-
-            halign:
-              'center'
-          },
-
-          6: {
-            cellWidth:
-              18,
-
-            halign:
-              'right'
-          },
-
-          7: {
-            cellWidth:
-              18,
-
-            halign:
-              'right'
-          },
-
-          8: {
-            cellWidth:
-              14,
-
-            halign:
-              'right'
-          },
-
-          9: {
-            cellWidth:
-              18,
-
-            halign:
-              'right'
-          },
-
-          10: {
-            cellWidth:
-              18,
-
-            halign:
-              'right'
-          },
-
-          11: {
-            cellWidth:
-              17,
-
-            halign:
-              'right'
-          },
-
-          12: {
-            cellWidth:
-              15,
-
-            halign:
-              'center'
-          },
-
-          13: {
-            cellWidth:
-              15,
-
-            halign:
-              'center'
-          },
-
-          14: {
-            cellWidth:
-              10,
-
-            halign:
-              'center'
-          },
-
-          15: {
-            cellWidth:
-              17,
-
-            halign:
-              'right'
-          }
-
-        },
-
-
-        // ====================================================
-        // PIE PAGINA
-        // ====================================================
 
         didDrawPage:
           () => {
 
-            const numeroPagina =
-              doc.getNumberOfPages();
-
-
-            doc.setFontSize(
-              6
-            );
-
-
-            doc.setFont(
-              'helvetica',
-              'normal'
-            );
-
+            doc.setFontSize(6);
 
             doc.text(
               `ROL3000 - Impuesto a la Renta ${anio}`,
               5,
               205
             );
-
-
-            doc.text(
-              `Página ${numeroPagina}`,
-              292,
-              205,
-              {
-                align:
-                  'right'
-              }
-            );
           }
-
       }
     );
 
-
-    // ========================================================
-    // ABRIR PDF
-    // ========================================================
-
     const pdfBlob =
-      doc.output(
-        'blob'
-      );
-
+      doc.output('blob');
 
     const pdfUrl =
       URL.createObjectURL(
         pdfBlob
       );
 
-
-    const ventana =
-      window.open(
-        pdfUrl,
-        '_blank'
-      );
-
-
-    if (!ventana) {
-
-      URL.revokeObjectURL(
-        pdfUrl
-      );
-
-
-      alert(
-        'El navegador bloqueó la apertura del PDF.'
-      );
-    }
-  }
-
-
-  // ==========================================================
-  // FORMATO NUMERO PDF
-  // ==========================================================
-
-  private formatearNumeroPdf(
-    value:
-      any,
-
-    decimales:
-      number = 2
-  ): string {
-
-    const numero =
-      Number(
-        value
-        ??
-        0
-      );
-
-
-    if (
-      !Number.isFinite(
-        numero
-      )
-    ) {
-
-      return decimales === 0
-        ? '0'
-        : '0.00';
-    }
-
-
-    return numero
-      .toLocaleString(
-        'en-US',
-        {
-
-          minimumFractionDigits:
-            decimales,
-
-          maximumFractionDigits:
-            decimales
-
-        }
-      );
+    window.open(
+      pdfUrl,
+      '_blank'
+    );
   }
 }

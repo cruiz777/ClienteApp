@@ -20,8 +20,9 @@ import {
 // ==========================================================
 
 export type TipoSalidaJubilacion =
-  | 'RENUNCIA'
-  | 'DESPIDO';
+  'RENUNCIA'
+  |
+  'DESPIDO';
 
 
 // ==========================================================
@@ -50,9 +51,34 @@ export interface JubilacionPatronalDetalleResponse {
 
   mes: number;
 
+
+  // ========================================================
+  // REMUNERACIÓN TOTAL
+  // ========================================================
+
   remuneracion: number;
 
+
+  // ========================================================
+  // REMUNERACIÓN APORTABLE
+  // ========================================================
+
   remuneracionAportable: number;
+
+
+  // ========================================================
+  // SUELDO APORTADO IESS
+  //
+  // Lo dejamos opcional porque el backend actual puede
+  // todavía no devolverlo.
+  // ========================================================
+
+  sueldoAportadoIess?: number | null;
+
+
+  // ========================================================
+  // FONDO DE RESERVA
+  // ========================================================
 
   fondoReserva: number;
 }
@@ -64,9 +90,29 @@ export interface JubilacionPatronalDetalleResponse {
 
 export interface JubilacionPatronalResponse {
 
-  idEmpresa?: number;
+  // ========================================================
+  // IDENTIFICACIÓN
+  // ========================================================
+
+  idEmpresa: number;
 
   idEmpleado: number;
+
+
+  // ========================================================
+  // EMPRESA / REPRESENTANTE LEGAL
+  // ========================================================
+
+  nombreEmpresa: string;
+
+  representanteLegal: string;
+
+  cargoRepresentanteLegal: string;
+
+
+  // ========================================================
+  // EMPLEADO
+  // ========================================================
 
   cedula: string;
 
@@ -74,15 +120,32 @@ export interface JubilacionPatronalResponse {
 
   cargo: string;
 
+
+  // ========================================================
+  // FECHAS
+  // ========================================================
+
   fechaNacimiento?: string | null;
 
   fechaIngreso?: string | null;
 
   fechaSalida?: string | null;
 
+  fechaCalculo?: string | null;
+
+
+  // ========================================================
+  // DATOS LABORALES
+  // ========================================================
+
   sueldoActual: number;
 
   tipoSalida: string;
+
+
+  // ========================================================
+  // TIEMPO SERVICIO
+  // ========================================================
 
   totalDiasServicio: number;
 
@@ -92,13 +155,28 @@ export interface JubilacionPatronalResponse {
 
   diasServicio: number;
 
+
+  // ========================================================
+  // DERECHO
+  // ========================================================
+
   cumpleJubilacionPatronal: boolean;
 
   cumpleJubilacionProporcional: boolean;
 
+
+  // ========================================================
+  // ESTADO
+  // ========================================================
+
   calculoDefinitivo: boolean;
 
   observacion: string;
+
+
+  // ========================================================
+  // TOTALES
+  // ========================================================
 
   totalRemuneraciones: number;
 
@@ -108,14 +186,23 @@ export interface JubilacionPatronalResponse {
 
   totalFondosReserva: number;
 
+
+  // ========================================================
+  // CÁLCULO FINANCIERO
+  // ========================================================
+
   baseCalculo: number;
 
   pensionMensual: number;
 
   fondoGlobal: number;
 
-  detalle:
-    JubilacionPatronalDetalleResponse[];
+
+  // ========================================================
+  // DETALLE
+  // ========================================================
+
+  detalle: JubilacionPatronalDetalleResponse[];
 }
 
 
@@ -128,28 +215,20 @@ export interface JubilacionPatronalResponse {
 })
 export class JubilacionPatronalService {
 
-  /*
-   * IMPORTANTE:
-   *
-   * Usa aquí la URL de nomina_especial_ms.
-   *
-   * Si en tu environment ya tienes otra propiedad
-   * para nómina especial, cambia únicamente esta línea.
-   *
-   * Ejemplo:
-   *
-   * environment.nominaEspecialUrl
-   *
-   * o la misma que actualmente usa
-   * impuesto-renta.service.ts.
-   */
+  // ========================================================
+  // URL
+  // ========================================================
+
   private readonly baseUrl =
     `${environment.nominaEspecialUrl}/JubilacionPatronal`;
 
 
+  // ========================================================
+  // CONSTRUCTOR
+  // ========================================================
+
   constructor(
-    private readonly http:
-      HttpClient
+    private readonly http: HttpClient
   ) {}
 
 
@@ -158,15 +237,10 @@ export class JubilacionPatronalService {
   // ========================================================
 
   calcular(
-    request:
-      CalcularJubilacionPatronalRequest
-  ): Observable<
-    JubilacionPatronalResponse
-  > {
+    request: CalcularJubilacionPatronalRequest
+  ): Observable<JubilacionPatronalResponse> {
 
-    return this.http.post<
-      JubilacionPatronalResponse
-    >(
+    return this.http.post<JubilacionPatronalResponse>(
       `${this.baseUrl}/calcular`,
       request
     );

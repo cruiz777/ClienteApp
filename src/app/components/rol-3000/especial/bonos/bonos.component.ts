@@ -1682,7 +1682,7 @@ abrirModalBanco(): void {
               this.idUsuario ?? 1,
 
             origen:
-              'BONOS'
+              'BONO'
 
           }
 

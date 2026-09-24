@@ -2,23 +2,16 @@
   class="ir-page"
   [formGroup]="form">
 
-
-  <!-- =====================================================
-       HEADER
-  ====================================================== -->
-
+  <!-- HEADER -->
   <div class="page-header">
 
     <div class="header-title">
 
       <div class="header-icon">
-
         <mat-icon>
           request_quote
         </mat-icon>
-
       </div>
-
 
       <div>
 
@@ -37,10 +30,7 @@
   </div>
 
 
-  <!-- =====================================================
-       FILTROS
-  ====================================================== -->
-
+  <!-- FILTROS -->
   <div class="filter-card">
 
     <div class="section-title">
@@ -56,32 +46,54 @@
     </div>
 
 
-    <div class="filters">
-
-
-      <!-- =================================================
-           PERIODO
-      ================================================== -->
+    <!-- PERIODO -->
+    <div class="periodo-row">
 
       <mat-form-field
         appearance="outline"
-        class="field-periodo">
+        class="field-fecha">
 
         <mat-label>
-          Periodo
+          Desde
         </mat-label>
 
         <input
           matInput
           type="date"
-          formControlName="fechaPeriodo">
+          formControlName="fechaDesde">
 
       </mat-form-field>
 
 
-      <!-- =================================================
-           EMPLEADO
-      ================================================== -->
+      <mat-form-field
+        appearance="outline"
+        class="field-fecha">
+
+        <mat-label>
+          Hasta
+        </mat-label>
+
+        <input
+          matInput
+          type="date"
+          formControlName="fechaHasta">
+
+      </mat-form-field>
+
+
+      <mat-checkbox
+        formControlName="modificarPeriodo"
+        class="check-periodo">
+
+        Período personalizado
+
+      </mat-checkbox>
+
+    </div>
+
+
+    <!-- EMPLEADO -->
+    <div class="empleado-row">
 
       <mat-form-field
         appearance="outline"
@@ -91,14 +103,10 @@
           Empleado
         </mat-label>
 
-
         <mat-icon
           matPrefix>
-
           person_search
-
         </mat-icon>
-
 
         <input
           matInput
@@ -109,17 +117,12 @@
           placeholder="Código, cédula o nombre">
 
 
-        <!-- =============================================
-             LIMPIAR EMPLEADO
-        ============================================== -->
-
         <button
           mat-icon-button
           matSuffix
           type="button"
           *ngIf="form.get('idEmpleado')?.value"
-          (click)="limpiarBusquedaEmpleado($event)"
-          matTooltip="Mostrar todos">
+          (click)="limpiarBusquedaEmpleado($event)">
 
           <mat-icon>
             close
@@ -128,19 +131,10 @@
         </button>
 
 
-        <!-- =============================================
-             AUTOCOMPLETE
-        ============================================== -->
-
         <mat-autocomplete
           #autoEmpleado="matAutocomplete"
-          [displayWith]="displayEmpleado"
-          class="autocomplete-empleados">
+          [displayWith]="displayEmpleado">
 
-
-          <!-- ===========================================
-               TODOS
-          ============================================ -->
 
           <mat-option
             [value]="'TODOS'"
@@ -151,17 +145,9 @@
 
             <div class="empleado-opcion">
 
-              <div class="empleado-linea-principal">
-
-                <mat-icon>
-                  groups
-                </mat-icon>
-
-                <span class="empleado-nombre">
-                  TODOS
-                </span>
-
-              </div>
+              <strong>
+                TODOS
+              </strong>
 
               <div class="empleado-documento">
                 Mostrar todos los empleados
@@ -172,26 +158,14 @@
           </mat-option>
 
 
-          <!-- ===========================================
-               CARGANDO
-          ============================================ -->
-
           <mat-option
             *ngIf="cargandoEmpleados"
             disabled>
 
-            <div class="opcion-cargando">
-
-              Buscando empleados...
-
-            </div>
+            Buscando empleados...
 
           </mat-option>
 
-
-          <!-- ===========================================
-               EMPLEADOS
-          ============================================ -->
 
           <mat-option
             *ngFor="
@@ -208,31 +182,18 @@
 
             <div class="empleado-opcion">
 
-
               <div class="empleado-linea-principal">
 
                 <span class="empleado-codigo">
-
-                  {{
-                    empleado.idEmpleado
-                  }}
-
+                  {{ empleado.idEmpleado }}
                 </span>
 
-
-                <span class="empleado-separador">
-
+                <span>
                   -
-
                 </span>
-
 
                 <span class="empleado-nombre">
-
-                  {{
-                    empleado.nombreCompleto
-                  }}
-
+                  {{ empleado.nombreCompleto }}
                 </span>
 
               </div>
@@ -242,21 +203,14 @@
                 class="empleado-documento"
                 *ngIf="empleado.documento">
 
-                {{
-                  empleado.documento
-                }}
+                {{ empleado.documento }}
 
               </div>
-
 
             </div>
 
           </mat-option>
 
-
-          <!-- ===========================================
-               SIN RESULTADOS
-          ============================================ -->
 
           <mat-option
             *ngIf="
@@ -265,219 +219,154 @@
             "
             disabled>
 
-            <div class="sin-resultados">
-
-              No existen empleados
-
-            </div>
+            No existen empleados
 
           </mat-option>
-
 
         </mat-autocomplete>
 
       </mat-form-field>
 
-
-      <!-- =================================================
-           ACCIONES
-      ================================================== -->
-
-      <div class="filter-actions">
+    </div>
 
 
-        <!-- CALCULAR -->
+    <!-- ACCIONES -->
+    <div class="filter-actions">
 
-        <button
-          mat-flat-button
-          color="primary"
-          type="button"
-          class="btn-consultar"
-          [disabled]="
-            cargando ||
-            guardando
-          "
-          (click)="consultar()">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        class="btn-consultar"
+        [disabled]="cargando || guardando"
+        (click)="consultar()">
 
+        <mat-spinner
+          *ngIf="cargando"
+          diameter="16">
+        </mat-spinner>
 
-          <mat-spinner
-            *ngIf="cargando"
-            diameter="16">
+        <mat-icon
+          *ngIf="!cargando">
+          calculate
+        </mat-icon>
 
-          </mat-spinner>
+        {{
+          cargando
+            ? 'Calculando...'
+            : 'Calcular'
+        }}
 
-
-          <mat-icon
-            *ngIf="!cargando">
-
-            calculate
-
-          </mat-icon>
-
-
-          <span>
-
-            {{
-              cargando
-                ? 'Calculando...'
-                : 'Calcular'
-            }}
-
-          </span>
-
-        </button>
+      </button>
 
 
-        <!-- GRABAR -->
+      <button
+        mat-flat-button
+        type="button"
+        class="btn-grabar"
+        [disabled]="
+          cargando ||
+          guardando ||
+          rowData.length === 0
+        "
+        (click)="grabar()">
 
-        <button
-          mat-flat-button
-          type="button"
-          class="btn-grabar"
-          [disabled]="
-            cargando ||
-            guardando ||
-            rowData.length === 0
-          "
-          (click)="grabar()">
+        <mat-spinner
+          *ngIf="guardando"
+          diameter="16">
+        </mat-spinner>
 
+        <mat-icon
+          *ngIf="!guardando">
+          save
+        </mat-icon>
 
-          <mat-spinner
-            *ngIf="guardando"
-            diameter="16">
+        {{
+          guardando
+            ? 'Grabando...'
+            : 'Grabar'
+        }}
 
-          </mat-spinner>
-
-
-          <mat-icon
-            *ngIf="!guardando">
-
-            save
-
-          </mat-icon>
-
-
-          <span>
-
-            {{
-              guardando
-                ? 'Grabando...'
-                : 'Grabar'
-            }}
-
-          </span>
-
-        </button>
+      </button>
 
 
-        <!-- IMPRIMIR -->
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="
+          cargando ||
+          guardando ||
+          rowData.length === 0
+        "
+        (click)="imprimir()">
 
-        <button
-          mat-stroked-button
-          type="button"
-          class="btn-imprimir"
-          [disabled]="
-            cargando ||
-            guardando ||
-            rowData.length === 0
-          "
-          (click)="imprimir()">
+        <mat-icon>
+          print
+        </mat-icon>
 
-          <mat-icon>
-            print
-          </mat-icon>
+        Imprimir
 
-          Imprimir
-
-        </button>
+      </button>
 
 
-        <!-- XML RDEP -->
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="
+          cargando ||
+          guardando ||
+          generandoXml
+        "
+        (click)="generarXml()">
 
-        <button
-          mat-stroked-button
-          type="button"
-          class="btn-xml"
-          [disabled]="
-            cargando ||
-            guardando ||
-            generandoXml
-          "
-          (click)="generarXml()">
+        <mat-spinner
+          *ngIf="generandoXml"
+          diameter="16">
+        </mat-spinner>
 
+        <mat-icon
+          *ngIf="!generandoXml">
+          description
+        </mat-icon>
 
-          <mat-spinner
-            *ngIf="generandoXml"
-            diameter="16">
+        {{
+          generandoXml
+            ? 'Generando...'
+            : 'XML RDEP'
+        }}
 
-          </mat-spinner>
-
-
-          <mat-icon
-            *ngIf="!generandoXml">
-
-            description
-
-          </mat-icon>
-
-
-          <span>
-
-            {{
-              generandoXml
-                ? 'Generando...'
-                : 'XML RDEP'
-            }}
-
-          </span>
-
-        </button>
+      </button>
 
 
-        <!-- LIMPIAR -->
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="cargando || guardando"
+        (click)="limpiar()">
 
-        <button
-          mat-stroked-button
-          type="button"
-          class="btn-limpiar"
-          [disabled]="
-            cargando ||
-            guardando
-          "
-          (click)="limpiar()">
+        <mat-icon>
+          restart_alt
+        </mat-icon>
 
-          <mat-icon>
-            restart_alt
-          </mat-icon>
+        Limpiar
 
-          Limpiar
-
-        </button>
-
-
-      </div>
+      </button>
 
     </div>
 
   </div>
 
 
-  <!-- =====================================================
-       GRID
-  ====================================================== -->
-
+  <!-- GRID -->
   <div class="grid-card">
 
-
     <div class="grid-header">
-
 
       <div class="grid-title">
 
         <mat-icon>
           table_view
         </mat-icon>
-
 
         <div>
 
@@ -500,12 +389,9 @@
           groups
         </mat-icon>
 
-
         <span>
 
-          {{
-            rowData.length
-          }}
+          {{ rowData.length }}
 
           empleado{{
             rowData.length === 1
@@ -555,74 +441,80 @@
     </div>
 
   </div>
-<!-- =====================================================
-     MODAL CONFIRMACION
-====================================================== -->
-
-<div
-  class="confirm-overlay"
-  *ngIf="mostrarConfirmacion">
 
 
-  <div class="confirm-modal">
+  <!-- MODAL CONFIRMACION -->
+  <div
+    class="confirm-overlay"
+    *ngIf="mostrarConfirmacion">
+
+    <div class="confirm-modal">
+
+      <div class="confirm-icon">
+
+        <mat-icon>
+          warning
+        </mat-icon>
+
+      </div>
 
 
-    <!-- ICONO -->
-    <div class="confirm-icon">
-
-      <mat-icon>
-        warning
-      </mat-icon>
-
-    </div>
+      <h3>
+        {{ tituloConfirmacion }}
+      </h3>
 
 
-    <!-- TITULO -->
-    <h3>
-
-      {{ tituloConfirmacion }}
-
-    </h3>
+      <p>
+        {{ mensajeConfirmacion }}
+      </p>
 
 
-    <!-- MENSAJE -->
-    <p>
+      <!-- TEXTO ESPECIAL CUANDO EXISTE -->
+      <div
+        class="confirm-existing-help"
+        *ngIf="accionConfirmacion === 'EXISTENTE'">
 
-      {{ mensajeConfirmacion }}
+        <div>
+          <strong>Sí:</strong>
+          recalcular la información.
+        </div>
 
-    </p>
+        <div>
+          <strong>No:</strong>
+          recuperar la información almacenada.
+        </div>
 
-
-    <!-- BOTONES -->
-    <div class="confirm-actions">
-
-
-      <button
-        mat-flat-button
-        type="button"
-        class="confirm-cancel"
-        (click)="cancelarConfirmacion()">
-
-        Cancelar
-
-      </button>
+      </div>
 
 
-      <button
-        mat-flat-button
-        color="primary"
-        type="button"
-        class="confirm-accept"
-        (click)="confirmarAccion()">
+      <div class="confirm-actions">
 
-        {{ textoAceptarConfirmacion }}
+        <button
+          mat-flat-button
+          type="button"
+          class="confirm-cancel"
+          (click)="cancelarConfirmacion()">
 
-      </button>
+          {{ textoCancelarConfirmacion }}
 
+        </button>
+
+
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          class="confirm-accept"
+          (click)="confirmarAccion()">
+
+          {{ textoAceptarConfirmacion }}
+
+        </button>
+
+      </div>
 
     </div>
 
   </div>
 
-</div>
 </div>

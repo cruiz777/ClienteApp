@@ -1,0 +1,251 @@
+.reporte-wrapper {
+  background: #f3f4f6;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+
+.reporte-actions {
+  max-width: 1150px;
+  margin: 0 auto 12px;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+.reporte-documento {
+  max-width: 1150px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 22px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: #000;
+}
+
+
+.titulo-principal {
+  text-align: center;
+  font-weight: bold;
+  text-decoration: underline;
+  line-height: 1.5;
+  font-size: 14px;
+  margin-bottom: 25px;
+}
+
+
+.titulo-seccion {
+  font-weight: bold;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+
+
+.tabla-datos,
+.tabla-fechas,
+.tabla-resumen-anual,
+.tabla-mensual {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+
+.tabla-datos td {
+  border: 1px solid #000;
+  min-height: 22px;
+  padding: 5px;
+}
+
+
+.tabla-datos .etiqueta {
+  width: 48%;
+  border-left: none;
+}
+
+
+.tabla-datos .valor-dato {
+  width: 52%;
+  text-align: center;
+  font-weight: bold;
+}
+
+
+.valor-numero {
+  text-align: right !important;
+}
+
+
+.tabla-fechas {
+  margin-top: 18px;
+}
+
+
+.tabla-fechas td {
+  padding: 4px 6px;
+}
+
+
+.tabla-fechas td:first-child {
+  width: 70%;
+}
+
+
+.tabla-fechas td:last-child {
+  width: 30%;
+  border: 1px solid #000;
+  text-align: center;
+}
+
+
+.texto-centro {
+  text-align: center;
+  font-weight: bold;
+}
+
+
+.fila-afiliacion {
+  margin-top: 18px;
+
+  display: flex;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #000;
+  padding: 5px;
+}
+
+
+.tabla-resumen-anual {
+  margin-top: 15px;
+}
+
+
+.tabla-resumen-anual th,
+.tabla-resumen-anual td {
+  border: 1px solid #000;
+  padding: 5px;
+}
+
+
+.tabla-resumen-anual th {
+  text-align: center;
+  font-weight: bold;
+}
+
+
+.tabla-resumen-anual .anio {
+  font-weight: bold;
+}
+
+
+.numero {
+  text-align: right;
+  font-variant-numeric:
+    tabular-nums;
+}
+
+
+.responsable {
+  margin-top: 14px;
+  border: 1px solid #000;
+  padding: 6px;
+
+  display: flex;
+  justify-content: space-between;
+}
+
+
+.jubilacion-iess {
+  border: 1px solid #000;
+  padding: 6px;
+
+  display: flex;
+  gap: 25px;
+}
+
+
+.jubilacion-iess strong {
+  flex: 1;
+}
+
+
+.nota-legal {
+  margin-top: 25px;
+  line-height: 1.5;
+}
+
+
+.titulo-tabla {
+  text-align: center;
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+
+.titulo-tabla.espacio {
+  margin-top: 35px;
+}
+
+
+.tabla-mensual th,
+.tabla-mensual td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+}
+
+
+.tabla-mensual th {
+  font-weight: bold;
+  text-align: center;
+}
+
+
+.tabla-mensual .mes {
+  font-weight: normal;
+}
+
+
+.tabla-mensual .total {
+  font-weight: bold;
+}
+
+
+.tabla-mensual td:not(:first-child) {
+  text-align: right;
+}
+
+
+.salto-pagina {
+  page-break-before: always;
+  margin-top: 40px;
+}
+
+
+@media print {
+
+  .no-print {
+    display: none !important;
+  }
+
+
+  .reporte-wrapper {
+    background: #fff;
+    padding: 0;
+  }
+
+
+  .reporte-documento {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}

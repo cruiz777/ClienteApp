@@ -301,6 +301,8 @@ import {
 } from './configuracion/bancos/bancos-terceros/list/bancos-terceros-rol.component';
 
 import { BonosComponent } from './especial/bonos/bonos.component';
+
+import { LiquidacionEmpleadoComponent } from './especial/liquidacion-empleado/liquidacion-empleado.component';
 import {
   RpBancosComponent
 } from './configuracion/bancos/bancos/list/bancos-rol.component';
@@ -948,6 +950,11 @@ const routes: Routes = [
       {
         path: 'impuesto-renta-especial',
         component: ImpuestosRentaComponent
+      },
+
+       {
+        path: 'liquidacion-empleado',
+        component: LiquidacionEmpleadoComponent
       },
 
       // ======================================================

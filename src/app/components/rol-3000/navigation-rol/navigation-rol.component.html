@@ -321,7 +321,7 @@
                 <span *ngIf="isExpanded" class="menu-text">Liquidación</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
-            <a mat-list-item routerLink="/rol-3000/inicio-rol">
+            <a mat-list-item [routerLink]="['/rol-3000', 'liquidacion-empleado']">
             <span *ngIf="isExpanded" class="menu-text">Acta de Finiquito</span>
           </a>
           <a mat-list-item routerLink="/rol-3000/inicio-rol">

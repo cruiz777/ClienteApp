@@ -1,0 +1,926 @@
+<div class="reporte-wrapper">
+
+
+  <!-- =====================================================
+       BOTONES
+  ====================================================== -->
+
+  <div class="reporte-actions no-print">
+
+    <button
+      mat-stroked-button
+      type="button"
+      (click)="volver()">
+
+      <mat-icon>
+        arrow_back
+      </mat-icon>
+
+      Volver
+
+    </button>
+
+
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="imprimir()">
+
+      <mat-icon>
+        print
+      </mat-icon>
+
+      Imprimir / PDF
+
+    </button>
+
+  </div>
+
+
+  <!-- =====================================================
+       REPORTE
+  ====================================================== -->
+
+  <div class="reporte-documento">
+
+
+    <!-- ===================================================
+         TITULO
+    ==================================================== -->
+
+    <div class="titulo-principal">
+
+      DATOS NECESARIOS PARA EL CALCULO DE LA LIQUIDACION DE PENSION
+
+      <br>
+
+      Y ACTA DE FINIQUITO DE JUBILACION PATRONAL
+
+    </div>
+
+
+    <!-- ===================================================
+         EMPRESA
+    ==================================================== -->
+
+    <div class="titulo-seccion">
+
+      DATOS DE LA EMPRESA Y REPRESENTANTE LEGAL
+
+    </div>
+
+
+    <table class="tabla-datos">
+
+      <tr>
+
+        <td class="etiqueta">
+          NOMBRE EMPRESA:
+        </td>
+
+        <td class="valor-dato">
+
+          {{
+            resultado.nombreEmpresa
+            ||
+            ''
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td class="etiqueta">
+          NOMBRE REPRESENTANTE LEGAL:
+        </td>
+
+        <td class="valor-dato">
+
+          {{
+            resultado.representanteLegal
+            ||
+            ''
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td class="etiqueta">
+          CARGO QUE DESEMPEÑA:
+        </td>
+
+        <td class="valor-dato">
+
+          {{
+            resultado.cargoRepresentanteLegal
+            ||
+            ''
+          }}
+
+        </td>
+
+      </tr>
+
+    </table>
+
+
+    <!-- ===================================================
+         TRABAJADOR
+    ==================================================== -->
+
+    <div class="titulo-seccion">
+
+      DATOS DEL TRABAJADOR
+
+    </div>
+
+
+    <table class="tabla-datos trabajador">
+
+      <tr>
+
+        <td class="etiqueta">
+          NOMBRES COMPLETOS:
+        </td>
+
+        <td class="valor-dato">
+
+          {{
+            resultado.nombreEmpleado
+            ||
+            ''
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td class="etiqueta">
+          CARGO QUE DESEMPEÑA:
+        </td>
+
+        <td class="valor-dato">
+
+          {{
+            resultado.cargo
+            ||
+            ''
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td class="etiqueta">
+
+          * SALARIO MINIMO SECTORIAL UNIFICADO QUE
+          CORRESPONDE AL PUESTO QUE OCUPA:
+
+        </td>
+
+        <td class="valor-dato valor-numero">
+
+          {{
+            numero(
+              resultado.sueldoActual
+            )
+          }}
+
+        </td>
+
+      </tr>
+
+    </table>
+
+
+    <!-- ===================================================
+         FECHAS
+    ==================================================== -->
+
+    <table class="tabla-fechas">
+
+      <tr>
+
+        <td>
+          FECHA DE NACIMIENTO:
+        </td>
+
+        <td>
+
+          {{
+            fecha(
+              resultado.fechaNacimiento
+            )
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          FECHA DE INGRESO:
+        </td>
+
+        <td>
+
+          {{
+            fecha(
+              resultado.fechaIngreso
+            )
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+
+          FECHA DE SALIDA
+          (para calcular el tiempo de servicio):
+
+        </td>
+
+        <td>
+
+          {{
+            fecha(
+              resultado.fechaSalida
+            )
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+
+          TIPO DE SALIDA
+          (Renuncia o Despido):
+
+        </td>
+
+        <td class="texto-centro">
+
+          {{
+            resultado.tipoSalida
+          }}
+
+        </td>
+
+      </tr>
+
+
+      <tr>
+
+        <td>
+          FECHA DE CALCULO:
+        </td>
+
+        <td>
+
+          {{
+            fecha(
+              resultado.fechaCalculo
+            )
+          }}
+
+        </td>
+
+      </tr>
+
+    </table>
+
+
+    <!-- ===================================================
+         AFILIACION
+    ==================================================== -->
+
+    <div class="fila-afiliacion">
+
+      <span>
+
+        FECHA DE AFILIACION AL IESS:
+
+      </span>
+
+      <strong>
+
+        {{
+          fecha(
+            resultado.fechaIngreso
+          )
+        }}
+
+      </strong>
+
+    </div>
+
+
+    <!-- ===================================================
+         RESUMEN ANUAL
+    ==================================================== -->
+
+    <table class="tabla-resumen-anual">
+
+      <thead>
+
+        <tr>
+
+          <th>
+            AÑO
+          </th>
+
+          <th>
+            SUELDOS APORTADOS AL I.E.S.S.
+          </th>
+
+          <th>
+            REMUNERACION TOTAL
+          </th>
+
+          <th>
+            FONDOS DE RESERVA
+          </th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody>
+
+        <tr
+          *ngFor="
+            let item of resumenAnual
+          ">
+
+          <td class="anio">
+
+            TOTAL ANUAL DURANTE
+            {{ item.anio }}
+
+          </td>
+
+
+          <td class="numero">
+
+            {{
+              numero(
+                item.sueldoAportadoIess
+              )
+            }}
+
+          </td>
+
+
+          <td class="numero">
+
+            {{
+              numero(
+                item.remuneracionTotal
+              )
+            }}
+
+          </td>
+
+
+          <td class="numero">
+
+            {{
+              numero(
+                item.fondoReserva
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+
+    <!-- ===================================================
+         REINGRESOS
+    ==================================================== -->
+
+    <div class="titulo-seccion">
+
+      EN CASO DE EXISTIR REINGRESOS
+
+    </div>
+
+
+    <table class="tabla-datos">
+
+      <ng-container
+        *ngFor="
+          let periodo of periodosServicio;
+          let i = index
+        ">
+
+        <tr>
+
+          <td class="etiqueta">
+
+            FECHA DE SALIDA {{ i + 1 }}:
+
+          </td>
+
+          <td class="valor-dato">
+
+            {{
+              fecha(
+                periodo.fechaSalida
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+
+        <tr>
+
+          <td class="etiqueta">
+
+            FECHA DE REINGRESO:
+
+          </td>
+
+          <td class="valor-dato">
+
+            {{
+              fecha(
+                periodo.fechaIngreso
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+      </ng-container>
+
+    </table>
+
+
+    <!-- ===================================================
+         RESPONSABLE
+    ==================================================== -->
+
+    <div class="responsable">
+
+      <span>
+
+        PERSONA RESPONSABLE DE LA INFORMACION:
+
+      </span>
+
+      <strong>
+
+        {{
+          datosAdicionales.personaResponsableInformacion
+          ||
+          ''
+        }}
+
+      </strong>
+
+    </div>
+
+
+    <!-- ===================================================
+         JUBILACION IESS
+    ==================================================== -->
+
+    <div class="jubilacion-iess">
+
+      <strong>
+
+        ** EL TRABAJADOR SE ACOGE A LA JUBILACION DEL IESS:
+
+      </strong>
+
+
+      <span>
+
+        SI:
+
+        {{
+          datosAdicionales.seAcogeJubilacionIess
+          ===
+          true
+            ? 'X'
+            : ''
+        }}
+
+      </span>
+
+
+      <span>
+
+        NO:
+
+        {{
+          datosAdicionales.seAcogeJubilacionIess
+          ===
+          false
+            ? 'X'
+            : ''
+        }}
+
+      </span>
+
+    </div>
+
+
+    <!-- ===================================================
+         NOTA
+    ==================================================== -->
+
+    <div class="nota-legal">
+
+      El trabajador que es despedido intempestivamente,
+      teniendo más de 20 y menos de 25 años de servicio,
+      tiene derecho a la parte proporcional de la jubilación
+      patronal.
+
+    </div>
+
+
+    <!-- ===================================================
+         SALTO PAGINA
+    ==================================================== -->
+
+    <div class="salto-pagina"></div>
+
+
+    <!-- ===================================================
+         REMUNERACION TOTAL
+    ==================================================== -->
+
+    <div class="titulo-tabla">
+
+      REMUNERACION TOTAL
+
+    </div>
+
+
+    <table class="tabla-mensual">
+
+      <thead>
+
+        <tr>
+
+          <th>
+            AÑO
+          </th>
+
+          <th
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{ anio }}
+
+          </th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody>
+
+        <tr>
+
+          <th>
+            MESES
+          </th>
+
+          <td
+            *ngFor="
+              let anio of anios
+            ">
+          </td>
+
+        </tr>
+
+
+        <tr
+          *ngFor="
+            let mes of meses
+          ">
+
+          <td class="mes">
+
+            {{ mes.nombre }}
+
+          </td>
+
+
+          <td
+            class="numero"
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{
+              numero(
+                remuneracion(
+                  anio,
+                  mes.numero
+                )
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+
+        <tr class="total">
+
+          <td>
+            TOTAL
+          </td>
+
+          <td
+            class="numero"
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{
+              numero(
+                totalAnual(
+                  anio,
+                  'remuneracion'
+                )
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+
+    <!-- ===================================================
+         SUELDOS APORTADOS IESS
+    ==================================================== -->
+
+    <div class="titulo-tabla espacio">
+
+      SUELDOS APORTADOS AL IESS
+
+    </div>
+
+
+    <table class="tabla-mensual">
+
+      <thead>
+
+        <tr>
+
+          <th>
+            AÑO
+          </th>
+
+          <th
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{ anio }}
+
+          </th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody>
+
+        <tr>
+
+          <th>
+            MESES
+          </th>
+
+          <td
+            *ngFor="
+              let anio of anios
+            ">
+          </td>
+
+        </tr>
+
+
+        <tr
+          *ngFor="
+            let mes of meses
+          ">
+
+          <td class="mes">
+
+            {{ mes.nombre }}
+
+          </td>
+
+
+          <td
+            class="numero"
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{
+              numero(
+                sueldoAportadoIess(
+                  anio,
+                  mes.numero
+                )
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+
+        <tr class="total">
+
+          <td>
+            TOTAL
+          </td>
+
+          <td
+            class="numero"
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{
+              numero(
+                totalAnual(
+                  anio,
+                  'sueldoAportadoIess'
+                )
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+
+    <!-- ===================================================
+         FONDOS DE RESERVA
+    ==================================================== -->
+
+    <div class="titulo-tabla espacio">
+
+      FONDOS DE RESERVA
+
+    </div>
+
+
+    <table class="tabla-mensual">
+
+      <thead>
+
+        <tr>
+
+          <th>
+            AÑO
+          </th>
+
+          <th
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{ anio }}
+
+          </th>
+
+        </tr>
+
+      </thead>
+
+
+      <tbody>
+
+        <tr>
+
+          <th>
+            MESES
+          </th>
+
+          <td
+            *ngFor="
+              let anio of anios
+            ">
+          </td>
+
+        </tr>
+
+
+        <tr
+          *ngFor="
+            let mes of meses
+          ">
+
+          <td class="mes">
+
+            {{ mes.nombre }}
+
+          </td>
+
+
+          <td
+            class="numero"
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{
+              numero(
+                fondoReserva(
+                  anio,
+                  mes.numero
+                )
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+
+        <tr class="total">
+
+          <td>
+            TOTAL
+          </td>
+
+          <td
+            class="numero"
+            *ngFor="
+              let anio of anios
+            ">
+
+            {{
+              numero(
+                totalAnual(
+                  anio,
+                  'fondoReserva'
+                )
+              )
+            }}
+
+          </td>
+
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>

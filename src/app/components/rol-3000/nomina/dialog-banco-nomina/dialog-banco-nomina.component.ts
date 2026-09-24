@@ -28,7 +28,7 @@ import { MatButtonModule } from '@angular/material/button';
 export interface DialogBancoNominaData {
   fechaPeriodo: string;
   idUsuario: number;
-  origen?: 'NOMINA' | 'QUINCENA' | 'DECIMO_CUARTO' | 'DECIMO_TERCERO';
+  origen?: 'NOMINA' | 'QUINCENA' | 'DECIMO_CUARTO' | 'DECIMO_TERCERO' | 'BONO';
 }
 export interface DialogBancoNominaResult {
   accion: 'ARCHIVO' | 'REPORTE';
@@ -200,8 +200,15 @@ private generarDescripcionDefault(): string {
     case 'DECIMO_CUARTO':
       return `DÉCIMO CUARTO ${anio}`;
 
+      case 'DECIMO_TERCERO':
+      return `DÉCIMO TERCERO ${anio}`;
+      case 'BONO':
+      return `BONO ${anio}`;
+
     case 'QUINCENA':
       return `QUINCENA ${meses[mes]} ${anio}`;
+
+     
 
     case 'NOMINA':
     default:

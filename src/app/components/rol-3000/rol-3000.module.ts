@@ -273,6 +273,11 @@ import {
   PeriodosNominaDialogComponent
 } from './especial/dialogs/periodos-nomina-dialog.component';
 
+
+import { JubilacionPatronalReporteComponent
+} from './especial/jubilacion-patronal/jubilacion-patronal-reporte/jubilacion-patronal-reporte.component';
+
+import { LiquidacionEmpleadoComponent } from './especial/liquidacion-empleado/liquidacion-empleado.component';
 // ============================================================
 // CONFIGURACIÓN
 // ============================================================
@@ -430,6 +435,8 @@ import { BonosComponent } from './especial/bonos/bonos.component';
     ImpuestosRentaComponent,
     JubilacionPatronalComponent,
     BonosComponent,
+    JubilacionPatronalReporteComponent,
+    LiquidacionEmpleadoComponent,
     // DIÁLOGOS
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,

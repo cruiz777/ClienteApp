@@ -16,12 +16,6 @@ import {
 } from 'rxjs/operators';
 
 import {
-  ColDef,
-  GridApi,
-  GridReadyEvent
-} from 'ag-grid-community';
-
-import {
   UsuarioService
 } from 'src/app/services/usuario.service';
 
@@ -32,7 +26,6 @@ import {
 
 import {
   CalcularJubilacionPatronalRequest,
-  JubilacionPatronalDetalleResponse,
   JubilacionPatronalResponse,
   JubilacionPatronalService
 } from 'src/app/services/rol/jubilacion-patronal.service';
@@ -66,24 +59,22 @@ export class JubilacionPatronalComponent
   // ESTADOS
   // ==========================================================
 
-  cargando =
-    false;
+  cargando = false;
 
-  cargandoEmpleados =
-    false;
+  cargandoEmpleados = false;
+
+  mostrarReporte = false;
 
 
   // ==========================================================
-  // BÚSQUEDA EMPLEADOS
+  // EMPLEADOS
   // ==========================================================
 
   empleadosBusqueda:
-    EmpleadoBusquedaResponse[] =
-      [];
+    EmpleadoBusquedaResponse[] = [];
 
   empleadosFiltrados:
-    EmpleadoBusquedaResponse[] =
-      [];
+    EmpleadoBusquedaResponse[] = [];
 
 
   // ==========================================================
@@ -92,256 +83,7 @@ export class JubilacionPatronalComponent
 
   resultado:
     JubilacionPatronalResponse |
-    null =
-      null;
-
-
-  // ==========================================================
-  // AG GRID
-  // ==========================================================
-
-  rowData:
-    JubilacionPatronalDetalleResponse[] =
-      [];
-
-  pinnedBottomRowData:
-    any[] =
-      [];
-
-  private gridApi?:
-    GridApi;
-
-
-  overlayNoRowsTemplate =
-    '<span style="padding:10px;">No existen remuneraciones para mostrar.</span>';
-
-
-  // ==========================================================
-  // CONFIGURACIÓN GENERAL GRID
-  // ==========================================================
-
-  defaultColDef:
-    ColDef = {
-
-      sortable:
-        true,
-
-      filter:
-        true,
-
-      resizable:
-        true
-    };
-
-
-  // ==========================================================
-  // COLUMNAS AG GRID
-  // ==========================================================
-
-  columnDefs:
-    ColDef[] = [
-
-      // ======================================================
-      // AÑO
-      // ======================================================
-
-      {
-        headerName:
-          'Año',
-
-        field:
-          'anio',
-
-        width:
-          100,
-
-        minWidth:
-          90,
-
-        pinned:
-          'left',
-
-        cellClass:
-          'text-center',
-
-        valueFormatter:
-          params => {
-
-            if (
-              params.node &&
-              params.node.rowPinned
-            ) {
-
-              return 'TOTAL';
-            }
-
-            return params.value
-              ? String(params.value)
-              : '';
-          }
-      },
-
-
-      // ======================================================
-      // MES
-      // ======================================================
-
-      {
-        headerName:
-          'Mes',
-
-        field:
-          'mes',
-
-        width:
-          140,
-
-        minWidth:
-          120,
-
-        pinned:
-          'left',
-
-        valueFormatter:
-          params => {
-
-            if (
-              params.node &&
-              params.node.rowPinned
-            ) {
-
-              return '';
-            }
-
-            return this.obtenerMes(
-              Number(
-                params.value
-                ??
-                0
-              )
-            );
-          }
-      },
-
-
-      // ======================================================
-      // REMUNERACIÓN
-      // ======================================================
-
-      {
-        headerName:
-          'Remuneración',
-
-        field:
-          'remuneracion',
-
-        flex:
-          1,
-
-        minWidth:
-          160,
-
-        valueFormatter:
-          params =>
-            this.formatearNumero(
-              params.value
-            ),
-
-        cellClass:
-          'cell-money'
-      },
-
-
-      // ======================================================
-      // REMUNERACIÓN APORTABLE
-      // ======================================================
-
-      {
-        headerName:
-          'Remuneración Aportable',
-
-        field:
-          'remuneracionAportable',
-
-        flex:
-          1,
-
-        minWidth:
-          190,
-
-        valueFormatter:
-          params =>
-            this.formatearNumero(
-              params.value
-            ),
-
-        cellClass:
-          'cell-money'
-      },
-
-
-      // ======================================================
-      // FONDO RESERVA
-      // ======================================================
-
-      {
-        headerName:
-          'Fondo Reserva',
-
-        field:
-          'fondoReserva',
-
-        flex:
-          1,
-
-        minWidth:
-          160,
-
-        valueFormatter:
-          params =>
-            this.formatearNumero(
-              params.value
-            ),
-
-        cellClass:
-          'cell-money'
-      }
-    ];
-
-
-  // ==========================================================
-  // MESES
-  // ==========================================================
-
-  private readonly meses:
-    string[] = [
-
-      '',
-
-      'ENERO',
-
-      'FEBRERO',
-
-      'MARZO',
-
-      'ABRIL',
-
-      'MAYO',
-
-      'JUNIO',
-
-      'JULIO',
-
-      'AGOSTO',
-
-      'SEPTIEMBRE',
-
-      'OCTUBRE',
-
-      'NOVIEMBRE',
-
-      'DICIEMBRE'
-    ];
+    null = null;
 
 
   // ==========================================================
@@ -349,7 +91,6 @@ export class JubilacionPatronalComponent
   // ==========================================================
 
   constructor(
-
     private readonly fb:
       FormBuilder,
 
@@ -361,7 +102,6 @@ export class JubilacionPatronalComponent
 
     private readonly empleadoFichaService:
       EmpleadoFichaService
-
   ) {}
 
 
@@ -376,14 +116,12 @@ export class JubilacionPatronalComponent
 
     this.configurarBusquedaEmpleado();
 
-    this.cargarEmpleadosBusqueda(
-      ''
-    );
+    this.cargarEmpleadosBusqueda('');
   }
 
 
   // ==========================================================
-  // CREAR FORMULARIO
+  // FORMULARIO
   // ==========================================================
 
   private crearFormulario():
@@ -392,108 +130,60 @@ export class JubilacionPatronalComponent
     this.form =
       this.fb.group({
 
-        // ====================================================
-        // EMPRESA
-        // ====================================================
-
         idEmpresa: [
-
-          this.usuarioActual
-            ?.id_empresa
+          this.usuarioActual?.id_empresa
           ??
           1,
-
           [
             Validators.required,
             Validators.min(1)
           ]
         ],
 
-
-        // ====================================================
-        // EMPLEADO
-        // ====================================================
-
         idEmpleado: [
-
           null,
-
           Validators.required
         ],
-
-
-        // ====================================================
-        // TEXTO DE BÚSQUEDA
-        // ====================================================
 
         empleadoBusqueda: [
           ''
         ],
 
-
-        // ====================================================
-        // FECHA CÁLCULO
-        // ====================================================
-
         fechaCalculo: [
-
           this.obtenerFechaActual(),
-
           Validators.required
         ],
 
-
-        // ====================================================
-        // TIPO SALIDA
-        // ====================================================
-
         tipoSalida: [
-
           'RENUNCIA',
-
           Validators.required
         ]
-
       });
   }
 
 
   // ==========================================================
-  // CONFIGURAR BÚSQUEDA EMPLEADO
+  // BÚSQUEDA EMPLEADO
   // ==========================================================
 
   private configurarBusquedaEmpleado():
     void {
 
     this.form
-      .get(
-        'empleadoBusqueda'
-      )
+      .get('empleadoBusqueda')
       ?.valueChanges
       .pipe(
-
-        debounceTime(
-          300
-        ),
-
+        debounceTime(300),
         distinctUntilChanged()
-
       )
       .subscribe(
         valor => {
 
-          // ==================================================
-          // SI MAT-AUTOCOMPLETE DEVUELVE OBJETO
-          // NO VOLVER A BUSCAR
-          // ==================================================
-
           if (
-            typeof valor ===
-              'object'
+            typeof valor === 'object'
             &&
             valor !== null
           ) {
-
             return;
           }
 
@@ -508,34 +198,18 @@ export class JubilacionPatronalComponent
               .trim();
 
 
-          // ==================================================
-          // AL ESCRIBIR NUEVAMENTE
-          // QUITAR EMPLEADO SELECCIONADO
-          // ==================================================
-
           this.form
-            .get(
-              'idEmpleado'
-            )
+            .get('idEmpleado')
             ?.setValue(
               null,
               {
-                emitEvent:
-                  false
+                emitEvent: false
               }
             );
 
 
-          // ==================================================
-          // LIMPIAR RESULTADO ANTERIOR
-          // ==================================================
+          this.resultado = null;
 
-          this.limpiarResultado();
-
-
-          // ==================================================
-          // BUSCAR
-          // ==================================================
 
           this.cargarEmpleadosBusqueda(
             texto
@@ -550,28 +224,20 @@ export class JubilacionPatronalComponent
   // ==========================================================
 
   cargarEmpleadosBusqueda(
-    texto:
-      string = ''
+    texto: string = ''
   ): void {
 
-    this.cargandoEmpleados =
-      true;
+    this.cargandoEmpleados = true;
 
 
     this.empleadoFichaService
-      .getBusqueda(
-        texto
-      )
+      .getBusqueda(texto)
       .pipe(
-
         finalize(
           () => {
-
-            this.cargandoEmpleados =
-              false;
+            this.cargandoEmpleados = false;
           }
         )
-
       )
       .subscribe({
 
@@ -583,31 +249,25 @@ export class JubilacionPatronalComponent
               ??
               [];
 
-
             this.empleadosFiltrados =
               this.empleadosBusqueda;
           },
 
 
         error:
-          err => {
+          error => {
 
             console.error(
-              'Error cargando empleados Jubilación Patronal:',
-              err
+              'Error cargando empleados:',
+              error
             );
 
+            this.empleadosBusqueda = [];
 
-            this.empleadosBusqueda =
-              [];
-
-
-            this.empleadosFiltrados =
-              [];
-
+            this.empleadosFiltrados = [];
 
             alert(
-              'Error cargando empleados.'
+              'No fue posible cargar los empleados.'
             );
           }
 
@@ -620,8 +280,7 @@ export class JubilacionPatronalComponent
   // ==========================================================
 
   seleccionarEmpleadoBusqueda(
-    emp:
-      EmpleadoBusquedaResponse
+    emp: EmpleadoBusquedaResponse
   ): void {
 
     if (!emp) {
@@ -636,9 +295,7 @@ export class JubilacionPatronalComponent
 
 
     if (
-      !Number.isFinite(
-        idEmpleado
-      )
+      !Number.isFinite(idEmpleado)
       ||
       idEmpleado <= 0
     ) {
@@ -653,7 +310,6 @@ export class JubilacionPatronalComponent
 
     this.form.patchValue(
       {
-
         idEmpleado:
           idEmpleado,
 
@@ -661,7 +317,6 @@ export class JubilacionPatronalComponent
           emp.nombreCompleto
           ??
           ''
-
       },
       {
         emitEvent:
@@ -670,16 +325,12 @@ export class JubilacionPatronalComponent
     );
 
 
-    // ========================================================
-    // LIMPIAR RESULTADO DEL EMPLEADO ANTERIOR
-    // ========================================================
-
-    this.limpiarResultado();
+    this.resultado = null;
   }
 
 
   // ==========================================================
-  // DISPLAY AUTOCOMPLETE
+  // DISPLAY
   // ==========================================================
 
   displayEmpleado(
@@ -698,45 +349,37 @@ export class JubilacionPatronalComponent
       typeof empleado ===
       'string'
     ) {
-
       return empleado;
     }
 
 
-    return (
-      empleado.nombreCompleto
+    return empleado.nombreCompleto
       ??
-      ''
-    );
+      '';
   }
 
 
   // ==========================================================
-  // LIMPIAR SOLO EMPLEADO
+  // LIMPIAR EMPLEADO
   // ==========================================================
 
   limpiarBusquedaEmpleado(
-    event?:
-      MouseEvent
+    event?: MouseEvent
   ): void {
 
     if (event) {
-
       event.preventDefault();
-
       event.stopPropagation();
     }
 
 
     this.form.patchValue(
       {
-
         idEmpleado:
           null,
 
         empleadoBusqueda:
           ''
-
       },
       {
         emitEvent:
@@ -745,34 +388,14 @@ export class JubilacionPatronalComponent
     );
 
 
-    this.empleadosBusqueda =
-      [];
+    this.resultado = null;
+
+    this.empleadosBusqueda = [];
+
+    this.empleadosFiltrados = [];
 
 
-    this.empleadosFiltrados =
-      [];
-
-
-    this.limpiarResultado();
-
-
-    this.cargarEmpleadosBusqueda(
-      ''
-    );
-  }
-
-
-  // ==========================================================
-  // GRID READY
-  // ==========================================================
-
-  onGridReady(
-    event:
-      GridReadyEvent
-  ): void {
-
-    this.gridApi =
-      event.api;
+    this.cargarEmpleadosBusqueda('');
   }
 
 
@@ -786,7 +409,6 @@ export class JubilacionPatronalComponent
     if (
       this.cargando
     ) {
-
       return;
     }
 
@@ -801,9 +423,7 @@ export class JubilacionPatronalComponent
 
       if (
         !this.form
-          .get(
-            'idEmpleado'
-          )
+          .get('idEmpleado')
           ?.value
       ) {
 
@@ -841,9 +461,7 @@ export class JubilacionPatronalComponent
 
 
     if (
-      !Number.isFinite(
-        idEmpresa
-      )
+      !Number.isFinite(idEmpresa)
       ||
       idEmpresa <= 0
     ) {
@@ -857,9 +475,7 @@ export class JubilacionPatronalComponent
 
 
     if (
-      !Number.isFinite(
-        idEmpleado
-      )
+      !Number.isFinite(idEmpleado)
       ||
       idEmpleado <= 0
     ) {
@@ -873,8 +489,7 @@ export class JubilacionPatronalComponent
 
 
     const request:
-      CalcularJubilacionPatronalRequest =
-      {
+      CalcularJubilacionPatronalRequest = {
 
         idEmpresa:
           idEmpresa,
@@ -887,48 +502,27 @@ export class JubilacionPatronalComponent
 
         tipoSalida:
           value.tipoSalida
-
       };
 
 
-    console.log(
-      'REQUEST JUBILACIÓN PATRONAL:',
-      request
-    );
+    this.cargando = true;
 
-
-    this.cargando =
-      true;
-
-
-    this.limpiarResultado();
+    this.resultado = null;
 
 
     this.jubilacionPatronalService
-      .calcular(
-        request
-      )
+      .calcular(request)
       .pipe(
-
         finalize(
           () => {
-
-            this.cargando =
-              false;
+            this.cargando = false;
           }
         )
-
       )
       .subscribe({
 
         next:
           response => {
-
-            console.log(
-              'RESPONSE JUBILACIÓN PATRONAL:',
-              response
-            );
-
 
             if (!response) {
 
@@ -942,15 +536,6 @@ export class JubilacionPatronalComponent
 
             this.resultado =
               response;
-
-
-            this.rowData =
-              response.detalle
-              ??
-              [];
-
-
-            this.calcularTotales();
           },
 
 
@@ -963,7 +548,7 @@ export class JubilacionPatronalComponent
             );
 
 
-            this.limpiarResultado();
+            this.resultado = null;
 
 
             let mensaje =
@@ -1003,93 +588,41 @@ export class JubilacionPatronalComponent
 
 
   // ==========================================================
-  // CALCULAR FILA TOTAL
+  // VER REPORTE
   // ==========================================================
 
-  private calcularTotales():
+  verReporte():
     void {
 
     if (
       !this.resultado
     ) {
 
-      this.pinnedBottomRowData =
-        [];
+      alert(
+        'Primero debe calcular la Jubilación Patronal.'
+      );
 
       return;
     }
 
 
-    this.pinnedBottomRowData = [
-      {
-
-        anio:
-          null,
-
-        mes:
-          null,
-
-        remuneracion:
-          Number(
-            this.resultado
-              .totalRemuneraciones
-            ??
-            0
-          ),
-
-        remuneracionAportable:
-          Number(
-            this.resultado
-              .totalRemuneracionesAportables
-            ??
-            0
-          ),
-
-        fondoReserva:
-          Number(
-            this.resultado
-              .totalFondosReserva
-            ??
-            0
-          )
-      }
-    ];
+    this.mostrarReporte = true;
   }
 
 
   // ==========================================================
-  // LIMPIAR RESULTADO
+  // CERRAR REPORTE
   // ==========================================================
 
-  private limpiarResultado():
+  cerrarReporte():
     void {
 
-    this.resultado =
-      null;
-
-
-    this.rowData =
-      [];
-
-
-    this.pinnedBottomRowData =
-      [];
-
-
-    if (
-      this.gridApi
-    ) {
-
-      this.gridApi
-        .setFilterModel(
-          null
-        );
-    }
+    this.mostrarReporte = false;
   }
 
 
   // ==========================================================
-  // LIMPIAR FORMULARIO
+  // LIMPIAR
   // ==========================================================
 
   limpiar():
@@ -1099,8 +632,7 @@ export class JubilacionPatronalComponent
       {
 
         idEmpresa:
-          this.usuarioActual
-            ?.id_empresa
+          this.usuarioActual?.id_empresa
           ??
           1,
 
@@ -1115,7 +647,6 @@ export class JubilacionPatronalComponent
 
         tipoSalida:
           'RENUNCIA'
-
       },
       {
         emitEvent:
@@ -1124,98 +655,16 @@ export class JubilacionPatronalComponent
     );
 
 
-    this.empleadosBusqueda =
-      [];
+    this.resultado = null;
+
+    this.mostrarReporte = false;
+
+    this.empleadosBusqueda = [];
+
+    this.empleadosFiltrados = [];
 
 
-    this.empleadosFiltrados =
-      [];
-
-
-    this.limpiarResultado();
-
-
-    this.cargarEmpleadosBusqueda(
-      ''
-    );
-  }
-
-
-  // ==========================================================
-  // ESTADO JUBILACIÓN
-  // ==========================================================
-
-  get textoEstado():
-    string {
-
-    if (
-      !this.resultado
-    ) {
-
-      return '';
-    }
-
-
-    if (
-      this.resultado
-        .cumpleJubilacionPatronal
-    ) {
-
-      return (
-        'CUMPLE JUBILACIÓN PATRONAL'
-      );
-    }
-
-
-    if (
-      this.resultado
-        .cumpleJubilacionProporcional
-    ) {
-
-      return (
-        'CUMPLE JUBILACIÓN PROPORCIONAL'
-      );
-    }
-
-
-    return 'NO CUMPLE';
-  }
-
-
-  // ==========================================================
-  // CLASE ESTADO
-  // ==========================================================
-
-  get claseEstado():
-    string {
-
-    if (
-      !this.resultado
-    ) {
-
-      return '';
-    }
-
-
-    if (
-      this.resultado
-        .cumpleJubilacionPatronal
-    ) {
-
-      return 'estado-cumple';
-    }
-
-
-    if (
-      this.resultado
-        .cumpleJubilacionProporcional
-    ) {
-
-      return 'estado-proporcional';
-    }
-
-
-    return 'estado-no-cumple';
+    this.cargarEmpleadosBusqueda('');
   }
 
 
@@ -1226,10 +675,7 @@ export class JubilacionPatronalComponent
   get tiempoServicio():
     string {
 
-    if (
-      !this.resultado
-    ) {
-
+    if (!this.resultado) {
       return '';
     }
 
@@ -1243,39 +689,11 @@ export class JubilacionPatronalComponent
 
 
   // ==========================================================
-  // MES
-  // ==========================================================
-
-  obtenerMes(
-    mes:
-      number
-  ): string {
-
-    if (
-      mes < 1
-      ||
-      mes > 12
-    ) {
-
-      return '';
-    }
-
-
-    return (
-      this.meses[mes]
-      ??
-      ''
-    );
-  }
-
-
-  // ==========================================================
-  // FORMATO NÚMERO
+  // FORMATEAR NÚMERO
   // ==========================================================
 
   formatearNumero(
-    value:
-      any
+    value: any
   ): string {
 
     const numero =
@@ -1287,11 +705,8 @@ export class JubilacionPatronalComponent
 
 
     if (
-      !Number.isFinite(
-        numero
-      )
+      !Number.isFinite(numero)
     ) {
-
       return '0.00';
     }
 
@@ -1300,20 +715,15 @@ export class JubilacionPatronalComponent
       .toLocaleString(
         'en-US',
         {
-
-          minimumFractionDigits:
-            2,
-
-          maximumFractionDigits:
-            2
-
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
         }
       );
   }
 
 
   // ==========================================================
-  // FORMATO FECHA
+  // FECHA
   // ==========================================================
 
   formatearFecha(
@@ -1328,23 +738,15 @@ export class JubilacionPatronalComponent
     }
 
 
-    const valor =
-      value.substring(
-        0,
-        10
-      );
-
-
     const partes =
-      valor.split(
-        '-'
-      );
+      value
+        .substring(0, 10)
+        .split('-');
 
 
     if (
       partes.length !== 3
     ) {
-
       return value;
     }
 

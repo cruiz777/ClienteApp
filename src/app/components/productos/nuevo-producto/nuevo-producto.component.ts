@@ -736,7 +736,7 @@ export class NuevoProductoComponent implements OnInit {
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text('ESTABAN MUÑOZ MIÑO', centroX, textoBaseY, { align: 'center' });
+        doc.text('ESTEBAN MUÑOZ MIÑO', centroX, textoBaseY, { align: 'center' });
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
