@@ -33,7 +33,6 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
-
 // ============================================================
 // EXTERNOS
 // ============================================================
@@ -366,6 +365,11 @@ import { BonosComponent } from './especial/bonos/bonos.component';
 // ============================================================
 // MODULE
 // ============================================================
+import { PeriodosVacacionesDialogComponent } from './novedades/dialogs/registro-vacaciones-dialog';
+import { ImprimirVacacionesDialogComponent } from './novedades/dialogs/imprimir-vacaciones-dialog.component';
+import { VacacionesExploradorComponent } from './novedades/registro-vacaciones/explorador/vacaciones-explorador.component';
+import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/editar/editar-vacacion-dialog.component';
+
 
 @NgModule({
   declarations: [
@@ -440,7 +444,11 @@ import { BonosComponent } from './especial/bonos/bonos.component';
     // DIÁLOGOS
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,
-    DialogCargaGlobalRubrosFijosComponent
+    DialogCargaGlobalRubrosFijosComponent,
+    PeriodosVacacionesDialogComponent,
+    ImprimirVacacionesDialogComponent,
+    VacacionesExploradorComponent,
+    EditarVacacionDialogComponent    
   ],
 
   imports: [

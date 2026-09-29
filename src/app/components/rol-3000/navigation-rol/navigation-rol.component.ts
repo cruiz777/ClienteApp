@@ -75,6 +75,8 @@ export class NavigationRolComponent implements OnInit{
 
         // Novedades - Procesos
         procesarVacaciones: permisos.includes('rol-3000.novedades.procesos.periodo-de-vacaciones'),
+        exploradorVacaciones: permisos.includes('rol-3000.novedades.procesos.periodo-de-vacaciones'),
+
 
         // Nómina - Roles
         rolMensual: permisos.includes('rol-3000.nomina.roles.rol-mensual'),

@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>Desglose de vacaciones — {{ data.nombreEmpleado }}</h2>
+
+<mat-dialog-content>
+  <div *ngIf="cargando" class="cargando">Cargando...</div>
+
+  <table mat-table [dataSource]="periodos" *ngIf="!cargando" class="tabla-periodos">
+    <ng-container matColumnDef="periodo">
+      <th mat-header-cell *matHeaderCellDef>Período</th>
+      <td mat-cell *matCellDef="let row" [class.fila-total]="row.periodo === 'Totales'">{{ row.periodo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="diasNormal">
+      <th mat-header-cell *matHeaderCellDef>Vacación Normal</th>
+      <td mat-cell *matCellDef="let row" [class.fila-total]="row.periodo === 'Totales'">{{ row.diasNormal }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="diasAdicional">
+      <th mat-header-cell *matHeaderCellDef>Vacación Adicional</th>
+      <td mat-cell *matCellDef="let row" [class.fila-total]="row.periodo === 'Totales'">{{ row.diasAdicional }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="diasTomados">
+      <th mat-header-cell *matHeaderCellDef>Días tomados</th>
+      <td mat-cell *matCellDef="let row" [class.fila-total]="row.periodo === 'Totales'">{{ row.diasTomados }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="diasDisponible">
+      <th mat-header-cell *matHeaderCellDef>Días disponible</th>
+      <td mat-cell *matCellDef="let row" [class.fila-total]="row.periodo === 'Totales'">{{ row.diasDisponible }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+  </table>
+
+  <div *ngIf="!cargando && periodos.length === 0" class="sin-datos">
+    No hay períodos de vacaciones registrados para este empleado.
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" type="button" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

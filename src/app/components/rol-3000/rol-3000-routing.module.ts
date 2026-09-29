@@ -328,10 +328,9 @@ import {
 } from './nomina/explorador-nomina/explorador-nomina.component';
 import { JubilacionPatronalComponent } from './especial/jubilacion-patronal/jubilacion-patronal.component';
 
+import { ImpuestoRentaService } from 'src/app/services/impuestos-renta-rol.service';
+import { VacacionesExploradorComponent } from './novedades/registro-vacaciones/explorador/vacaciones-explorador.component';
 
-// ============================================================
-// RUTAS
-// ============================================================
 
 const routes: Routes = [
 
@@ -414,7 +413,119 @@ const routes: Routes = [
       // ======================================================
       // EMPLEADO - REPORTES
       // ======================================================
-
+        // CONFIGURACIÓN
+        {
+          path: 'cargos',
+          component: RpCargosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.cargos' }
+        },
+        {
+          path: 'tipo-emp',
+          component: RpTipEmpComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-empleado' }
+        },
+        {
+          path: 'tipo-gasto',
+          component: TipoGastoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-gasto' }
+        },
+        {
+          path: 'nivel-instruccion',
+          component: RpNivelInstruccionComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.niveles-de-instruccion' }
+        },
+        {
+          path: 'parametros-costos',
+          component: ParametrosCostosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.parametros-y-costos' }
+        },
+        {
+          path: 'ingreso-descuentos',
+          component: IngresoDescuentosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.ingreso-descuentos' }
+        },
+        {
+          path: 'impuestos-renta',
+          component: ImpuestoRentaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.impuesto-a-la-renta' }
+        },
+        {
+          path: 'sectorial',
+          component: SectorialComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.sectorial' }
+        },
+        {
+          path: 'forma-pago',
+          component: RpFormaPagoRolComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.formas-de-pago' }
+        },
+        {
+          path: 'tipo-sangre',
+          component: RpTipoSangreComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-sangre' }
+        },
+        {
+          path: 'regimen',
+          component: RpRegimenComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.regimen' }
+        },
+        {
+          path: 'tipo-cuenta',
+          component: TipoCuentaBancoComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-cuenta' }
+        },
+        {
+          path: 'bancos-terceros-rol',
+          component: RpBanTerceroComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.bancos.bancos-terceros' }
+        },
+        {
+          path: 'bancos-rol',
+          component: RpBancosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.bancos' }
+        },
+        {
+          path: 'emp-comp',
+          component: RpEmpresaComplementariaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.empresas-complementarias' }
+        },
+        {
+          path: 'tipo-nomina-esp',
+          component: TipoNominaEspComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.configuracion.tipos.tipo-nomina-especial' }
+        },
+        {
+          path: 'explorador-nomina',
+          component: ExploradorNominaComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.acumulados.acumulados' }
+        },
+        {
+          path: 'explorador-empleados',
+          component: ExploradorEmpleadosComponent,
+          canActivate: [PermissionGuard],
+          data: { permission: 'rol-3000.acumulados.explorador-de-empleados' }
+        },
+        {
+          path: 'explorador-vacaciones',
+          component: VacacionesExploradorComponent
+        },
       {
         path: 'reporte-empleados',
         component: ReporteEmpleadosComponent,
