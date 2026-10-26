@@ -3091,3 +3091,22 @@ label[for="secuencial"]{ padding-left: 0 !important; }
     grid-template-columns: 1fr;
   }
 }
+
+.field-observacion {
+  width: 100%;
+  flex: 1 1 100%;
+}
+
+.observacion-wrapper {
+  width: 100%;
+}
+
+.observacion-textarea {
+  width: 100%;
+  min-height: 110px;
+  height: 110px;
+  resize: vertical;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 14px;
+}

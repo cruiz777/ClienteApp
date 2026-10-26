@@ -105,26 +105,35 @@
         </div>
 
 
-        <div class="fi-field fi-cat">
+        <!-- <div class="fi-field fi-cat">
           <label>Categoría:</label>
           <input class="fi-input" type="text" placeholder="Categoría" formControlName="categoria" readonly>
-        </div>
+        </div> -->
 
         <div class="fi-field fi-pref">
-          <mat-form-field class="select-pequeno">
-            <mat-label>*Prefijo</mat-label>
+          <!-- <mat-form-field class="select-pequeno">
+
+            <mat-label>Prefijo</mat-label>
+
             <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
-              <mat-option value="">Seleccione…</mat-option>
+
+              <mat-option value="">
+                Seleccione...
+              </mat-option>
+
               <mat-option *ngFor="let p of prefijos; trackBy: trackByPrefijoId" [value]="p.id_prefijos">
-                {{ p.codpre }} <span *ngIf="p.fechaVista">--- {{ p.fechaVista }}</span>
+
+                {{ p.codpre }}
+
+                <span *ngIf="p.fechaVista">
+                  --- {{ p.fechaVista }}
+                </span>
+
               </mat-option>
 
             </mat-select>
 
-            <mat-error *ngIf="formCliente.get('gcp')?.hasError('required')">
-              El prefijo es obligatorio
-            </mat-error>
-          </mat-form-field>
+          </mat-form-field> -->
         </div>
 
       </div>
@@ -344,29 +353,37 @@
       </div>
       <div class="box-section">
         <div class="refs-row">
-          <div class="field-group">
+          <!-- <div class="field-group">
             <label class="field-label">Orden Compra:</label>
             <div class="input-wrapper">
-              <input type="text" class="text-input campo-normal" formControlName="ordenCompra" >
+              <input type="text" class="text-input campo-normal" formControlName="ordenCompra">
             </div>
           </div>
 
           <div class="field-group">
             <label class="field-label">Guía Remisión:</label>
             <div class="input-wrapper">
-              <input type="text" class="text-input campo-normal" formControlName="guiaRemision" >
+              <input type="text" class="text-input campo-normal" formControlName="guiaRemision">
             </div>
-          </div>
+          </div> -->
 
           <div class="field-group field-observacion">
-            <label class="field-label" for="observacion">Observación:</label>
+  <label class="field-label" for="observacion">
+    Observación:
+  </label>
 
-            <div class="input-wrapper">
-              <textarea id="observacion" class="text-area" rows="3" formControlName="observacion"
-                placeholder="Ingrese una observación" (keydown.enter)="$event.preventDefault()"
-                (input)="quitarSaltosLinea($event)"></textarea>
-            </div>
-          </div>
+  <div class="input-wrapper observacion-wrapper">
+    <textarea
+      id="observacion"
+      class="text-area observacion-textarea"
+      rows="5"
+      formControlName="observacion"
+      placeholder="Ingrese una observación"
+      (keydown.enter)="$event.preventDefault()"
+      (input)="quitarSaltosLinea($event)">
+    </textarea>
+  </div>
+</div>
         </div>
       </div>
     </section>

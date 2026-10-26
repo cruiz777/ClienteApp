@@ -536,8 +536,8 @@ export class FacturacionIndividualComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       direccion: ['', [Validators.required]],
       emailOpcional: ['', [multipleEmailsValidator({ max: 5, separators: /[;,]+/ })]],
-      categoria: ['', [Validators.required]],
-      gcp: ['', [Validators.required]],      // prefijo (select)
+      categoria: [''],
+      gcp: [''],      // prefijo (select)
       prefijo: ['']
 
     });
@@ -2046,12 +2046,9 @@ private cargarClienteDetalle(id: number): void {
     });
   }
 
-  get puedeIrPaso2(): boolean {
-    // Debe haber cliente elegido (codcliO) y prefijo seleccionado (gcp)
-    return this.codcliO > 0 && !!this.formCliente.get('gcp')?.value
-      && this.formCliente.valid;
-  }
-
+ get puedeIrPaso2(): boolean {
+  return this.codcliO > 0 && this.formCliente.valid;
+}
   get puedeIrPaso3(): boolean {
     return this.getCantidadLineas() > 0; // al menos un producto en el grid
   }
