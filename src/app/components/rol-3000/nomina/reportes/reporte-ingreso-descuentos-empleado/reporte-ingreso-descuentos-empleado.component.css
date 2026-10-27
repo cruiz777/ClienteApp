@@ -1,0 +1,92 @@
+.reporte-page {
+  padding: 24px;
+  background: #eef2f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.form-card {
+  background: #ffffff;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  max-width: 1100px;
+}
+
+.form-card h2 {
+  margin: 0 0 18px 0;
+  color: #123b84;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.top-row {
+  margin-bottom: 18px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 48px;
+  flex-wrap: wrap;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.9fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.middle-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #27477d;
+  font-weight: 700;
+}
+
+.checks-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.box-types {
+  border: 1px solid #dbe3f0;
+  border-radius: 6px;
+  padding: 12px;
+  background: #fafbfd;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 140px;
+  flex-wrap: wrap;
+}
+
+::ng-deep .mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape: 6px;
+}
+
+@media (max-width: 1000px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    margin-top: 36px;
+  }
+}

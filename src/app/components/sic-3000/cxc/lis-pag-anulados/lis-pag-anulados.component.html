@@ -1,0 +1,111 @@
+<div class="page">
+  <h2 class="title">Listado de Pagos (Activos y Anulados)</h2>
+
+  <!-- Filtros -->
+  <form [formGroup]="f" (ngSubmit)="onBuscar()" class="toolbar">
+    <div class="field fx1">
+      <label>Nro. Pago:</label>
+      <input class="in compact" placeholder="PAG0000XX" formControlName="numeroPago" />
+    </div>
+
+    <div class="field fx0">
+      <label>Fecha desde:</label>
+      <input class="in compact" type="date" formControlName="desde" />
+    </div>
+
+    <div class="field fx0">
+      <label>Fecha hasta:</label>
+      <input class="in compact" type="date" formControlName="hasta" />
+    </div>
+
+    <div class="field fx0">
+      <label>Estado:</label>
+      <select class="in compact" formControlName="estado">
+        <option value="TODOS">Todos</option>
+        <option value="ACTIVO">Activos</option>
+        <option value="ANULADO">Anulados</option>
+      </select>
+    </div>
+
+    <div class="field fx0">
+      <label>Cliente (código):</label>
+      <input class="in compact" type="number" min="1" placeholder="Ej: 36556" formControlName="clienteCodigo" />
+    </div>
+
+    <div class="fx0 btn-wrap">
+      <button class="btn primary" type="submit" [disabled]="loading">
+        {{ loading ? 'Buscando…' : 'Buscar' }}
+      </button>
+
+      <div class="form-actions">
+        <button
+          mat-stroked-button
+          class="export-pill"
+          [matMenuTriggerFor]="menuExportar"
+          [disabled]="loading || pagedData.length===0">
+          Exportar
+        </button>
+        <button 
+          mat-raised-button 
+          color="primary"
+          (click)="imprimirSeleccionadas()"
+          [disabled]="loading"
+          matTooltip="Imprimir pagos seleccionados en un solo PDF">
+          <mat-icon>print</mat-icon>
+          Imprimir Seleccionados
+        </button>
+        <mat-menu #menuExportar="matMenu" [overlapTrigger]="false" panelClass="export-menu">
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+  </form>
+
+  <!-- Tabla -->
+  <div class="table-wrap">
+    <ag-grid-angular
+      class="ag-theme-alpine compact-grid full"
+      style="width: 100%; height: 620px;"
+      [defaultColDef]="defaultColDef"
+      [columnDefs]="columnDefs"
+      [rowData]="pagedData"
+      [domLayout]="'normal'"
+      [rowHeight]="rowHeight"
+      [getRowHeight]="getRowHeight"
+      [tooltipShowDelay]="200"
+      (gridReady)="onGridReady($event)"
+      [pagination]="true"
+      [paginationPageSize]="20"
+      [paginationPageSizeSelector]="[10, 20, 50]"
+      [rowSelection]="'multiple'"
+      [suppressRowClickSelection]="true">
+    </ag-grid-angular>
+
+    <!-- Footer / paginación -->
+    <!-- <div class="footer">
+      <div class="left">
+        <span>No Páginas</span>
+        <select class="in compact small" [value]="pageSize" (change)="changePageSize($any($event.target).value)">
+          <option *ngFor="let s of pageSizeOptions" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div class="center">
+        Páginas mostradas {{ rangeLabel }}
+      </div>
+
+      <div class="right pager">
+        <button class="icon" (click)="goToFirst()" [disabled]="pageIndex===0" title="Primera">«</button>
+        <button class="icon" (click)="prev()" [disabled]="pageIndex===0" title="Anterior">‹</button>
+
+        <button class="page-btn" *ngFor="let p of visiblePages" [class.active]="p===pageIndex+1" (click)="goTo(p-1)">
+          {{p}}
+        </button>
+
+        <button class="icon" (click)="next()" [disabled]="(pageIndex+1)>=pageCount" title="Siguiente">›</button>
+        <button class="icon" (click)="goToLast()" [disabled]="(pageIndex+1)>=pageCount" title="Última">»</button>
+      </div>
+    </div> -->
+  </div>
+</div>

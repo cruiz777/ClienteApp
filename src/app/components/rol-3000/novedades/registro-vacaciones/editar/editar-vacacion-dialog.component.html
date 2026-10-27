@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>Editar solicitud de vacaciones — {{ data.row.nombreEmpleado }}</h2>
+
+<mat-dialog-content [formGroup]="form">
+  <p class="nota">
+    Días ({{ data.row.diasTomados }}) y fechas ya consumieron saldo real, no son editables aquí.
+    Si necesitas cambiarlos, elimina esta solicitud y crea una nueva.
+  </p>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Reemplazo</mat-label>
+    <input matInput formControlName="personaReemplazo" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Usuario que autoriza</mat-label>
+    <input matInput formControlName="usuarioAutoriza" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Usuario que aprueba</mat-label>
+    <input matInput formControlName="usuarioAprueba" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Observación</mat-label>
+    <textarea matInput rows="4" formControlName="observacion"></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" [disabled]="guardando" (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" type="button" [disabled]="guardando" (click)="guardar()">
+    Guardar
+  </button>
+</mat-dialog-actions>

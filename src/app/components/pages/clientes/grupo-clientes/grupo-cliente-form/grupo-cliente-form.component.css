@@ -1,0 +1,164 @@
+.form-wrapper {
+  padding: 30px 40px;
+  font-family: Inter, sans-serif;
+  background-color: #fff;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 6px;
+  box-shadow: none;
+  border: 1px solid #e1e5ea;
+}
+
+.form-title {
+  font-size: 20px;
+  color: #002c6c;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 50px;
+  row-gap: 20px;
+  align-items: start;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-label {
+  width: 160px;
+  font-size: 13px;
+  color: #002c6c;
+  text-align: right;
+}
+
+.field-input {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 13px;
+  background-color: transparent;
+}
+
+.field-input:focus {
+  outline: none;
+  border-bottom: 1px solid #002c6c;
+}
+
+.field-static {
+  flex: 1;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid #ccd5e2;
+  background-color: transparent;
+}
+
+.field-select {
+  flex: 1;
+  padding: 6px;
+  font-size: 13px;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  background-color: #fff;
+  max-width: 200px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.action-button {
+  padding: 8px 30px;
+  background-color: #eef4f7;
+  color: #002c6c;
+  font-size: 13px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #dce9f2;
+}
+/* Mejora específica para el campo Estado */
+.field-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.field-select-label {
+  width: 160px;
+  font-size: 13px;
+  color: #002c6c;
+  text-align: right;
+}
+
+.field-select {
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  background-color: #fff;
+  width: 100%;
+  max-width: 200px;
+}
+/* Campos inválidos subrayados en rojo */
+.field-input.ng-invalid.ng-touched,
+.field-select.ng-invalid.ng-touched {
+  border-color: #d32f2f !important;
+  background-color: #fff0f0;
+}
+
+/* Etiqueta de campo requerido con asterisco rojo */
+.field-label.required::after {
+  content: ' *';
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* Mensaje de error debajo de los campos */
+.error-message {
+  margin-left: 170px; /* igual o mayor al .field-label */
+  color: #d32f2f;
+  font-size: 12px;
+  margin-top: -10px;
+}
+@media (max-width: 991px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field-label {
+    width: 130px;
+    text-align: left;
+  }
+
+  .error-message {
+    margin-left: 0;
+    padding-left: 10px;
+  }
+}
+.field-select:focus {
+  outline: none;
+  border-color: #002c6c;
+}

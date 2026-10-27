@@ -1,0 +1,175 @@
+.form-container {
+
+   width: 100%;
+  max-width: 1200px;     /* más ancho en desktop */
+  padding: 24px;         /* más “aire” interno */
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;       /* importante para redondeo del header */
+
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: #f44336;
+}
+
+
+input,
+select {
+ /* padding: 10px 12px;*/
+  padding: 6px 10px; 
+  border-radius: 6px;
+  border: 1px solid #ccd5e2;
+  background-color: #eef4f7;
+  /*font-size: 14px;*/
+  font-size: 13px; 
+   height: 34px; 
+}
+
+
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #002c6c;
+  background-color: #fff;
+}
+
+.error {
+  color: #f44336;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.primary-button {
+  background-color: #002c6c;
+  color: white;
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.primary-button:hover {
+  background-color: #001f4d;
+}
+
+.cancel-button {
+  background-color: #f5f5f5;
+  color: #333;
+  padding: 8px 24px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+
+.form-actions {
+  display: flex;
+  justify-content: center;  /* centra horizontalmente */
+  align-items: center;      /* alinea verticalmente */
+  gap: 10px;                /* espacio entre botones */
+ /* margin-top: 14px;*/
+  padding: 0 16px 16px;   /* padding inferior del card */
+
+}
+
+
+/*  colores de los fondos de texti */
+
+/* Fondo general de inputs en modo edición */
+.form-container.edit-mode input,
+.form-container.edit-mode select,
+.form-container.edit-mode textarea {
+  background-color: #fff7d6;      /* amarillo suave */
+  border-color: #e5b400;
+  color: #333;
+}
+
+/* Foco en modo edición */
+.form-container.edit-mode input:focus,
+.form-container.edit-mode select:focus,
+.form-container.edit-mode textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229, 180, 0, 0.25);
+  border-color: #d4a100;
+}
+
+/* Estilo visual para campos sólo lectura (cuando estás editando) */  
+.form-container.edit-mode input[readonly],
+.form-container.edit-mode textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.9;
+  background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  border-color: #f3f3f7;
+  background-color: #eae6e6;
+}
+
+/* (Opcional) si sólo quieres colorear los readonly en edit-mode, usa esto en lugar del bloque general:
+.form-container.edit-mode input:read-only,
+.form-container.edit-mode select:read-only,
+.form-container.edit-mode textarea:read-only {
+  background-color: #fff7d6;
+  border-color: #e5b400;
+}
+*/

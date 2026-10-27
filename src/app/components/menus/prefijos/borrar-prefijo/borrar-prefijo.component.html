@@ -1,0 +1,111 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'eliminar'" (click)="cambiarTab('eliminar')">Borra Prefijo</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.eliminar-prefijo.listado'))"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.eliminar-prefijo.listado')) ? '1' : '0.3'"
+          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.eliminar-prefijo.listado')) ? 'auto' : 'none'"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.eliminar-prefijo.listado')) ? 'Sin permisos' : ''"
+          matInput
+  >Listado</button>
+</div>
+<div class="contenido-tablas">
+
+  <div  [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.eliminar-prefijo.borrar-prefijo')) ? '1' : '0.3'"
+        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.eliminar-prefijo.borrar-prefijo')) ? 'auto' : 'none'">
+    <!-- TAB ELIMINAR -->
+    <ng-container *ngIf="activeTab === 'eliminar'">
+
+      <div class="encabezado-acciones">
+        <div class="titulo-y-busqueda">
+          <h2>Eliminacion de Prefijos</h2>
+          <div class="form-group">
+            <div class="form-row">
+              <label>Buscar Prefijo:</label>
+              <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" placeholder="Ej. 12062"
+                (keyup.enter)="buscarPrefijos(filtroBusqueda)" (keypress)="CustomValidators.permitirSoloNumeros($event)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button (click)="limpiarBusqueda()">Nueva Busqueda</button>
+          <button (click)="eliminarPrefijo()">Eliminar</button>
+        </div>
+
+      </div>
+
+
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th style="display: none;">Id</th>
+            <th>Prefijo</th>
+            <th>Cliente</th>
+            <th>Ruc</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of eliminar; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td style="display: none;">{{ item.id }}</td>
+            <td>{{ item.prefijo }}</td>
+            <td>{{ item.cliente }}</td>
+            <td>{{ item.ruc }}</td>
+            <td>{{ item.fecha }}</td>
+
+          </tr>
+        </tbody>
+      </table>
+    </ng-container>
+  </div>
+  <!-- TAB LISTADO-->
+  <ng-container *ngIf="activeTab === 'Listado'">
+
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Listado de Prefijos Eliminados</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar Prefijo:</label>
+            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Cliente</th>
+          <th>Ruc</th>
+          <th>Usuario</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listado; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.cliente }}</td>
+          <td>{{ item.ruc }}</td>
+          <td>{{ item.usuario}}</td>
+          <td>{{ item.fecha }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </ng-container>
+
+</div>

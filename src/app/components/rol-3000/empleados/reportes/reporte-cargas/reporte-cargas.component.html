@@ -1,0 +1,157 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+
+    <div class="header-section">
+      <div class="header-icon">
+        <mat-icon>family_restroom</mat-icon>
+      </div>
+
+      <div class="header-text">
+        <h2>Reporte de Cargas</h2>
+        <p>Seleccione los filtros para generar el reporte.</p>
+      </div>
+    </div>
+
+    <div class="contenido-grid">
+
+      <!-- ZONAS -->
+      <div class="panel-zonas">
+        <label class="section-label">Zonas</label>
+
+        <div class="checks-column">
+          <mat-checkbox
+            *ngFor="let zona of zonas"
+            [checked]="zonaSeleccionada(zona.id)"
+            (change)="toggleZona(zona.id, $event.checked)">
+            {{ zona.nombre }}
+          </mat-checkbox>
+        </div>
+      </div>
+
+      <!-- FILTROS CENTRALES -->
+      <div class="panel-filtros">
+
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+
+          <input
+            matInput
+            type="number"
+            formControlName="anio"
+            min="1900"
+            max="2100" />
+
+          <mat-error *ngIf="form.get('anio')?.hasError('required')">
+            El año es obligatorio
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Área Inicial</mat-label>
+
+          <mat-select formControlName="areaInicial">
+            <mat-option [value]="null">
+              Todas
+            </mat-option>
+
+            <mat-option
+              *ngFor="let item of locales"
+              [value]="item.id">
+              {{ item.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Área Final</mat-label>
+
+          <mat-select formControlName="areaFinal">
+            <mat-option [value]="null">
+              Todas
+            </mat-option>
+
+            <mat-option
+              *ngFor="let item of locales"
+              [value]="item.id">
+              {{ item.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cargo Inicial</mat-label>
+
+          <mat-select formControlName="cargoInicial">
+            <mat-option [value]="null">
+              Todos
+            </mat-option>
+
+            <mat-option
+              *ngFor="let item of cargos"
+              [value]="item.id">
+              {{ item.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cargo Final</mat-label>
+
+          <mat-select formControlName="cargoFinal">
+            <mat-option [value]="null">
+              Todos
+            </mat-option>
+
+            <mat-option
+              *ngFor="let item of cargos"
+              [value]="item.id">
+              {{ item.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+      </div>
+
+      <!-- TIPOS EMPLEADO -->
+      <div class="panel-tipos">
+        <label class="section-label">Tipo de Empleados</label>
+
+        <div class="checks-column">
+          <mat-checkbox
+            *ngFor="let tipo of tiposEmpleado"
+            [checked]="tipoEmpleadoSeleccionado(tipo.id)"
+            (change)="toggleTipoEmpleado(tipo.id, $event.checked)">
+            {{ tipo.nombre }}
+          </mat-checkbox>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="actions">
+
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="generandoDetalle || cargandoCatalogos"
+        (click)="generarDetalle()">
+
+        <mat-icon>picture_as_pdf</mat-icon>
+        Aceptar
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="generandoDetalle"
+        (click)="cancelar()">
+
+        <mat-icon>close</mat-icon>
+        Cancelar
+      </button>
+
+    </div>
+
+  </div>
+</div>

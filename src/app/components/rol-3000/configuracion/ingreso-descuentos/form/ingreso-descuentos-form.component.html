@@ -1,0 +1,178 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Ingreso / Descuento' : 'Nuevo Ingreso / Descuento' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- SECCIÓN: Datos Generales -->
+    <div class="seccion-titulo">Datos Generales</div>
+    <div class="grid-3">
+      <div class="form-group">
+        <label for="codigo">Código</label>
+        <input id="codigo" type="text" formControlName="codigo" placeholder="Ej: ING001" maxlength="20" />
+        <div class="error" *ngIf="form.get('codigo')?.touched && form.get('codigo')?.errors">
+          <span *ngIf="form.get('codigo')?.hasError('maxlength')">Máximo 20 caracteres.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="tipoPago">Tipo Pago</label>
+        <input id="tipoPago" type="text" formControlName="tipoPago" placeholder="Ej: Mensual" maxlength="50" />
+        <div class="error" *ngIf="form.get('tipoPago')?.touched && form.get('tipoPago')?.errors">
+          <span *ngIf="form.get('tipoPago')?.hasError('maxlength')">Máximo 50 caracteres.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="dH">D / H</label>
+        <input id="dH" type="text" formControlName="dH" placeholder="D o H" maxlength="1" />
+        <div class="error" *ngIf="form.get('dH')?.touched && form.get('dH')?.errors">
+          <span *ngIf="form.get('dH')?.hasError('maxlength')">Máximo 1 carácter.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción <span class="required">*</span></label>
+      <input id="descripcion" type="text" formControlName="descripcion" placeholder="Ej: Sueldo Básico" maxlength="248" />
+      <div class="error" *ngIf="form.get('descripcion')?.touched && form.get('descripcion')?.errors">
+        <span *ngIf="form.get('descripcion')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('descripcion')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="porcenCant">Porcentaje / Cantidad</label>
+        <input id="porcenCant" type="text" formControlName="porcenCant" placeholder="Ej: 9.45" maxlength="50" />
+        <div class="error" *ngIf="form.get('porcenCant')?.touched && form.get('porcenCant')?.errors">
+          <span *ngIf="form.get('porcenCant')?.hasError('maxlength')">Máximo 50 caracteres.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="orden">Orden</label>
+        <input id="orden" type="number" formControlName="orden" placeholder="Ej: 1" min="0" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="observacion">Observación</label>
+      <textarea id="observacion" formControlName="observacion" placeholder="Notas adicionales..." maxlength="500" rows="2"></textarea>
+      <div class="error" *ngIf="form.get('observacion')?.touched && form.get('observacion')?.errors">
+        <span *ngIf="form.get('observacion')?.hasError('maxlength')">Máximo 500 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- SECCIÓN: Cuentas Contables -->
+    <div class="seccion-titulo">Cuentas Contables</div>
+    <div class="cuentas-grid">
+      <div class="form-group">
+        <label for="ctaContable">Cta. Contable 1</label>
+        <input id="ctaContable" type="text" formControlName="ctaContable" placeholder="Ej: 6101001" maxlength="50" />
+      </div>
+      <div class="form-group">
+        <label for="ctaContable2">Cta. Contable 2</label>
+        <input id="ctaContable2" type="text" formControlName="ctaContable2" placeholder="Ej: 6101002" maxlength="50" />
+      </div>
+      <div class="form-group">
+        <label for="ctaContable3">Cta. Contable 3</label>
+        <input id="ctaContable3" type="text" formControlName="ctaContable3" placeholder="Ej: 6101003" maxlength="50" />
+      </div>
+      <div class="form-group">
+        <label for="ctaContable4">Cta. Contable 4</label>
+        <input id="ctaContable4" type="text" formControlName="ctaContable4" placeholder="Ej: 6101004" maxlength="50" />
+      </div>
+      <div class="form-group">
+        <label for="ctaContable5">Cta. Contable 5</label>
+        <input id="ctaContable5" type="text" formControlName="ctaContable5" placeholder="Ej: 6101005" maxlength="50" />
+      </div>
+    </div>
+
+    <!-- SECCIÓN: Flags Generales -->
+    <div class="seccion-titulo">Opciones Generales</div>
+    <div class="checkboxes-grid">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estado" />
+        <span class="checkbox-custom"></span>Activo
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="incluir" />
+        <span class="checkbox-custom"></span>Incluir
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="calculado" />
+        <span class="checkbox-custom"></span>Calculado
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="aportaciones" />
+        <span class="checkbox-custom"></span>Aportaciones
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="desac" />
+        <span class="checkbox-custom"></span>Desactivado
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="parSue" />
+        <span class="checkbox-custom"></span>Par. Sueldo
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="sumaDias" />
+        <span class="checkbox-custom"></span>Suma Días
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="aplicaAportesPatPer" />
+        <span class="checkbox-custom"></span>Aportes Pat./Per.
+      </label>
+    </div>
+
+    <!-- SECCIÓN: Estados de Rubros -->
+    <div class="seccion-titulo">Estados de Rubros</div>
+    <div class="checkboxes-grid">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estVacaciones" />
+        <span class="checkbox-custom"></span>Vacaciones
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estFondosReserva" />
+        <span class="checkbox-custom"></span>Fondos Reserva
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estDecimoTercer" />
+        <span class="checkbox-custom"></span>Décimo Tercero
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estImpuestoRenta" />
+        <span class="checkbox-custom"></span>Impuesto Renta
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estOtrosIng" />
+        <span class="checkbox-custom"></span>Otros Ingresos
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estRubrosLiquida" />
+        <span class="checkbox-custom"></span>Rubros Liquida
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estOtrosIngImp" />
+        <span class="checkbox-custom"></span>Otros Ing. Imp.
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estIngImp" />
+        <span class="checkbox-custom"></span>Ing. Imponible
+      </label>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estIngImpFr" />
+        <span class="checkbox-custom"></span>Ing. Imp. FR
+      </label>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button type="submit" [disabled]="form.invalid" [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>

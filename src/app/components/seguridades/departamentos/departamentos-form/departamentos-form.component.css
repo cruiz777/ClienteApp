@@ -1,0 +1,125 @@
+:host {
+  display: block;
+  padding: 40px 20px;
+  background-color: #f5f6fa;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.form-wrapper {
+  padding: 30px 40px;
+  font-family: Inter, sans-serif;
+  background-color: #fff;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e1e5ea;
+}
+
+.form-title {
+  font-size: 20px;
+  color: #002c6c;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 50px;
+  row-gap: 20px;
+  align-items: start;
+  width: 100%;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.field-label {
+  width: 200px;
+  font-size: 13px;
+  color: #002c6c;
+  text-align: right;
+}
+
+.field-input {
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 13px;
+  background-color: transparent;
+}
+
+.field-input:focus {
+  outline: none;
+  border-bottom: 1px solid #002c6c;
+}
+
+.field-select {
+  flex: 1;
+  padding: 6px;
+  font-size: 13px;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  background-color: #fff;
+  max-width: 100%;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.action-button {
+  padding: 8px 30px;
+  background-color: #eef4f7;
+  color: #002c6c;
+  font-size: 13px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #dce9f2;
+}
+
+@media (max-width: 991px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .field-label {
+    width: 130px;
+  }
+}
+/* Estilo general cuando el campo es inválido */
+.field-input.ng-invalid.ng-touched,
+.field-select.ng-invalid.ng-touched {
+  border-color: #d32f2f !important;
+  background-color: #fff0f0;
+}
+
+/* Etiqueta del campo obligatorio en rojo */
+.field-label.required::after {
+  content: ' *';
+  color: #d32f2f;
+  font-weight: bold;
+}

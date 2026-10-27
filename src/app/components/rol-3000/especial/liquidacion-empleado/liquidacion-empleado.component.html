@@ -1,0 +1,734 @@
+<div class="liquidacion-container">
+
+
+  <!-- =========================================================
+       CABECERA
+  ========================================================== -->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+        Liquidación de Empleado
+      </h2>
+
+      <p>
+        Cálculo de valores correspondientes
+        al acta de finiquito.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <form
+    [formGroup]="form"
+    class="form-container">
+
+
+    <!-- =======================================================
+         EMPLEADO
+    ======================================================== -->
+
+    <mat-card>
+
+      <mat-card-header>
+
+        <mat-card-title>
+          Datos del empleado
+        </mat-card-title>
+
+      </mat-card-header>
+
+
+      <mat-card-content>
+
+
+        <div class="empleado-row">
+
+          <mat-form-field
+            appearance="outline"
+            class="empleado-field">
+
+            <mat-label>
+              Empleado
+            </mat-label>
+
+
+            <mat-icon matPrefix>
+              person_search
+            </mat-icon>
+
+
+            <input
+              matInput
+              formControlName="empleadoBusqueda"
+              placeholder="Código, cédula o nombre"
+              autocomplete="off"
+              [matAutocomplete]="autoEmpleado">
+
+
+            <mat-spinner
+              *ngIf="buscandoEmpleados"
+              matSuffix
+              diameter="18">
+            </mat-spinner>
+
+
+            <mat-autocomplete
+              #autoEmpleado="matAutocomplete"
+              [displayWith]="displayEmpleado"
+              (optionSelected)="
+                seleccionarEmpleadoBusqueda(
+                  $event.option.value
+                )
+              ">
+
+              <mat-option
+                *ngFor="
+                  let emp of empleadosFiltrados
+                "
+                [value]="emp">
+
+                <div class="empleado-opcion">
+
+                  <strong>
+
+                    {{ emp.idEmpleado }}
+                    -
+                    {{ emp.nombreCompleto }}
+
+                  </strong>
+
+                  <div class="empleado-documento">
+
+                    Cédula:
+                    {{ emp.documento }}
+
+                  </div>
+
+                </div>
+
+              </mat-option>
+
+            </mat-autocomplete>
+
+          </mat-form-field>
+
+        </div>
+
+
+        <!-- ===================================================
+             DATOS
+        ==================================================== -->
+
+        <div class="form-grid">
+
+
+          <mat-form-field
+            appearance="outline">
+
+            <mat-label>
+              Local
+            </mat-label>
+
+            <input
+              matInput
+              formControlName="local"
+              readonly>
+
+          </mat-form-field>
+
+
+          <mat-form-field
+            appearance="outline">
+
+            <mat-label>
+              Fecha de ingreso
+            </mat-label>
+
+            <input
+              matInput
+              [matDatepicker]="pickerIngreso"
+              formControlName="fechaIngreso"
+              readonly>
+
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="pickerIngreso">
+            </mat-datepicker-toggle>
+
+            <mat-datepicker
+              #pickerIngreso>
+            </mat-datepicker>
+
+          </mat-form-field>
+
+
+          <mat-form-field
+            appearance="outline">
+
+            <mat-label>
+              Última remuneración
+            </mat-label>
+
+            <span matPrefix>
+              $&nbsp;
+            </span>
+
+            <input
+              matInput
+              type="number"
+              formControlName="ultimaRemuneracion"
+              readonly>
+
+          </mat-form-field>
+
+
+          <mat-form-field
+            appearance="outline">
+
+            <mat-label>
+              Fecha de salida
+            </mat-label>
+
+            <input
+              matInput
+              [matDatepicker]="pickerSalida"
+              formControlName="fechaSalida"
+              readonly>
+
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="pickerSalida">
+            </mat-datepicker-toggle>
+
+            <mat-datepicker
+              #pickerSalida>
+            </mat-datepicker>
+
+          </mat-form-field>
+
+        </div>
+
+
+        <!-- ===================================================
+             MENSAJES
+        ==================================================== -->
+
+        <div
+          class="loading-empleado"
+          *ngIf="cargandoEmpleado">
+
+          <mat-spinner
+            diameter="22">
+          </mat-spinner>
+
+          Cargando empleado...
+
+        </div>
+
+
+        <div
+          class="loading-empleado"
+          *ngIf="validandoNomina">
+
+          <mat-spinner
+            diameter="20">
+          </mat-spinner>
+
+          Verificando nómina...
+
+        </div>
+
+
+        <div
+          class="loading-empleado"
+          *ngIf="
+            mensajeNomina &&
+            !validandoNomina
+          ">
+
+          <mat-icon>
+
+            {{
+              debeIncluirNomina
+                ? 'warning'
+                : 'check_circle'
+            }}
+
+          </mat-icon>
+
+          {{ mensajeNomina }}
+
+        </div>
+
+
+        <!-- ===================================================
+             SALIDA
+        ==================================================== -->
+
+        <div class="tipo-salida">
+
+          <div class="subtitulo">
+            Tipo de salida
+          </div>
+
+
+          <mat-radio-group
+            formControlName="tipoSalida">
+
+            <mat-radio-button
+              value="DESAHUCIO">
+
+              Desahucio
+
+            </mat-radio-button>
+
+
+            <mat-radio-button
+              value="DESPIDO_INTEMPESTIVO">
+
+              Despido intempestivo
+
+            </mat-radio-button>
+
+          </mat-radio-group>
+
+        </div>
+
+
+        <!-- ===================================================
+             OPCIONES
+        ==================================================== -->
+
+        <div class="opciones">
+
+          <mat-checkbox
+            formControlName="incluirNomina">
+
+            Incluir nómina del mes
+
+          </mat-checkbox>
+
+
+          <mat-checkbox
+            formControlName="vacacionesAnticipadas">
+
+            Vacaciones anticipadas
+
+          </mat-checkbox>
+
+        </div>
+
+
+        <!-- ===================================================
+             BOTONES
+        ==================================================== -->
+
+        <div class="acciones">
+
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            [disabled]="
+              cargando ||
+              cargandoEmpleado ||
+              validandoNomina
+            "
+            (click)="calcular()">
+
+            <mat-icon>
+              calculate
+            </mat-icon>
+
+            Calcular
+
+          </button>
+
+
+          <button
+            mat-stroked-button
+            type="button"
+            (click)="limpiar()">
+
+            <mat-icon>
+              refresh
+            </mat-icon>
+
+            Limpiar
+
+          </button>
+
+        </div>
+
+
+      </mat-card-content>
+
+    </mat-card>
+
+
+    <!-- =======================================================
+         LOADING
+    ======================================================== -->
+
+    <div
+      class="loading"
+      *ngIf="cargando">
+
+      <mat-spinner
+        diameter="40">
+      </mat-spinner>
+
+      Calculando liquidación...
+
+    </div>
+
+
+    <!-- =======================================================
+         RESULTADO
+    ======================================================== -->
+
+    <ng-container
+      *ngIf="
+        resultado &&
+        !cargando
+      ">
+
+
+      <!-- =====================================================
+           RESUMEN
+      ====================================================== -->
+
+      <mat-card
+        class="resultado-card">
+
+        <mat-card-header>
+
+          <mat-card-title>
+            Resultado del cálculo
+          </mat-card-title>
+
+        </mat-card-header>
+
+
+        <mat-card-content>
+
+          <div class="resumen-grid">
+
+
+            <div class="resumen-item">
+
+              <span class="label">
+                Años
+              </span>
+
+              <strong>
+                {{ resultado.anios }}
+              </strong>
+
+            </div>
+
+
+            <div class="resumen-item">
+
+              <span class="label">
+                Meses
+              </span>
+
+              <strong>
+                {{ resultado.meses }}
+              </strong>
+
+            </div>
+
+
+            <div class="resumen-item">
+
+              <span class="label">
+                Días
+              </span>
+
+              <strong>
+                {{ resultado.dias }}
+              </strong>
+
+            </div>
+
+
+            <div class="resumen-item">
+
+              <span class="label">
+                Última remuneración
+              </span>
+
+              <strong>
+
+                {{
+                  resultado.ultimaRemuneracion
+                    | currency:'USD':'symbol':'1.2-2'
+                }}
+
+              </strong>
+
+            </div>
+
+
+          </div>
+
+        </mat-card-content>
+
+      </mat-card>
+
+
+      <!-- =====================================================
+           GRIDS
+      ====================================================== -->
+
+      <div class="detalle-layout">
+
+
+        <!-- ===================================================
+             INGRESOS
+        ==================================================== -->
+
+        <mat-card>
+
+
+          <mat-card-header>
+
+            <mat-card-title>
+
+              Ingresos / Provisiones
+
+            </mat-card-title>
+
+
+            <span class="card-spacer"></span>
+
+
+            <!-- ===============================================
+                 INSERTAR INGRESO
+            ================================================ -->
+
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              class="btn-insertar"
+              (click)="insertarIngreso()">
+
+              <mat-icon>
+                add
+              </mat-icon>
+
+              Insertar
+
+            </button>
+
+          </mat-card-header>
+
+
+          <mat-card-content>
+
+
+            <ag-grid-angular
+              class="ag-theme-alpine liquidacion-grid"
+              [rowData]="ingresos"
+              [columnDefs]="columnDefsIngresos"
+              [defaultColDef]="defaultColDef"
+              [domLayout]="'autoHeight'"
+              [animateRows]="true"
+              [rowHeight]="40"
+              [headerHeight]="40"
+              [stopEditingWhenCellsLoseFocus]="true"
+              (cellValueChanged)="
+                onCellValueChanged(
+                  $event
+                )
+              ">
+
+            </ag-grid-angular>
+
+
+            <div
+              class="sin-registros"
+              *ngIf="
+                ingresos.length === 0
+              ">
+
+              No existen ingresos.
+
+            </div>
+
+
+          </mat-card-content>
+
+        </mat-card>
+
+
+        <!-- ===================================================
+             EGRESOS
+        ==================================================== -->
+
+        <mat-card>
+
+
+          <mat-card-header>
+
+            <mat-card-title>
+
+              Egresos
+
+            </mat-card-title>
+
+
+            <span class="card-spacer"></span>
+
+
+            <!-- ===============================================
+                 INSERTAR EGRESO
+            ================================================ -->
+
+            <button
+              mat-stroked-button
+              color="primary"
+              type="button"
+              class="btn-insertar"
+              (click)="insertarEgreso()">
+
+              <mat-icon>
+                add
+              </mat-icon>
+
+              Insertar
+
+            </button>
+
+          </mat-card-header>
+
+
+          <mat-card-content>
+
+
+            <ag-grid-angular
+              class="ag-theme-alpine liquidacion-grid"
+              [rowData]="egresos"
+              [columnDefs]="columnDefsEgresos"
+              [defaultColDef]="defaultColDef"
+              [domLayout]="'autoHeight'"
+              [animateRows]="true"
+              [rowHeight]="40"
+              [headerHeight]="40"
+              [stopEditingWhenCellsLoseFocus]="true"
+              (cellValueChanged)="
+                onCellValueChanged(
+                  $event
+                )
+              ">
+
+            </ag-grid-angular>
+
+
+            <div
+              class="sin-registros"
+              *ngIf="
+                egresos.length === 0
+              ">
+
+              No existen egresos.
+
+            </div>
+
+
+          </mat-card-content>
+
+        </mat-card>
+
+
+      </div>
+
+
+      <!-- =====================================================
+           TOTALES
+      ====================================================== -->
+
+      <mat-card
+        class="totales-card">
+
+        <mat-card-content>
+
+          <div class="totales">
+
+
+            <div class="total">
+
+              <span>
+                Total ingresos
+              </span>
+
+              <strong>
+
+                {{
+                  totalIngresos
+                    | currency:'USD':'symbol':'1.2-2'
+                }}
+
+              </strong>
+
+            </div>
+
+
+            <div class="total">
+
+              <span>
+                Total egresos
+              </span>
+
+              <strong>
+
+                {{
+                  totalEgresos
+                    | currency:'USD':'symbol':'1.2-2'
+                }}
+
+              </strong>
+
+            </div>
+
+
+            <div
+              class="total liquido">
+
+              <span>
+                Líquido a recibir
+              </span>
+
+              <strong>
+
+                {{
+                  liquidoRecibir
+                    | currency:'USD':'symbol':'1.2-2'
+                }}
+
+              </strong>
+
+            </div>
+
+
+          </div>
+
+        </mat-card-content>
+
+      </mat-card>
+
+
+    </ng-container>
+
+
+  </form>
+
+</div>

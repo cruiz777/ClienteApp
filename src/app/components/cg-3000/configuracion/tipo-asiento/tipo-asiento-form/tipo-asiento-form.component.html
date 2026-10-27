@@ -1,0 +1,62 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Tipo de Documento' : 'Nuevo Tipo de Documento' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <!-- TIP ASIENTO -->
+    <div class="form-group">
+      <label for="TipAsiento">Tipo Documento <span class="required">*</span></label>
+
+      <input
+        id="TipAsiento"
+        type="text"
+        formControlName="TipAsiento"
+        placeholder="Ej: FA"
+        maxlength="2"
+        style="text-transform: uppercase"
+        [readonly]="isEditMode"
+        [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+      />
+
+      <!-- errores -->
+      <div class="error" *ngIf="form.get('TipAsiento')?.touched && form.get('TipAsiento')?.errors">
+        <span *ngIf="form.get('TipAsiento')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('TipAsiento')?.hasError('maxlength')">Máximo 2 caracteres.</span>
+        <span *ngIf="form.get('TipAsiento')?.hasError('tipAsientoDuplicado')">Campo ya existe (duplicado).</span>
+      </div>
+    </div>
+
+    <!-- DESCRIPCION -->
+    <div class="form-group">
+      <label for="Descripcion">Descripción <span class="required">*</span></label>
+
+      <input
+        id="Descripcion"
+        type="text"
+        formControlName="Descripcion"
+        placeholder="Ej: Factura"
+        maxlength="20"
+      />
+
+      <div class="error" *ngIf="form.get('Descripcion')?.touched && form.get('Descripcion')?.errors">
+        <span *ngIf="form.get('Descripcion')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('Descripcion')?.hasError('maxlength')">Máximo 20 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn-azul"
+        [disabled]="form.invalid || form.pending"
+        [ngClass]="{ 'btn-rojo': isEditMode, 'btn-azul': !isEditMode }"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+
+      <button type="button" class="cancel-button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </form>
+</div>

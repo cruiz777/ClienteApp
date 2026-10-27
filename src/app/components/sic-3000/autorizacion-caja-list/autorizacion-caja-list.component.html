@@ -1,0 +1,96 @@
+<!-- src/app/components/sic-3000/autorizacion-caja-list/autorizacion-caja-list.component.html -->
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Caja</h2>
+    <button mat-raised-button class="btn-azul" (click)="abrirCrear()">Nuevo</button>
+  </div>
+
+  <div class="zona-subtitle">Autorización Caja</div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por caja, autorización, tipo, secuencia, ruc, empresa o dirección"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <div *ngIf="error" class="state error">{{ error }}</div>
+
+  <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 60px;">#</th>
+          <th style="width: 80px;">Id</th>
+          <th style="width: 70px;">Caja</th>
+          <th style="width: 140px;"># Autorización</th>
+          <th style="width: 90px;">Tipo</th>
+          <th style="width: 90px;">Número</th>
+          <th style="width: 80px;">Estado</th>
+          <th style="width: 120px;">Establecimiento</th>
+          <th>Dirección</th>
+          <th style="width: 150px;">RUC</th>
+          <th style="width: 160px;">Empresa</th>
+          <th style="width: 110px;">Generar xml</th>
+          <th style="width: 220px;">Sucursal</th>
+          <th style="width: 90px;">Prod.</th>
+          <th style="width: 80px;">Editar</th>
+         
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let it of filtered; let i = index; trackBy: trackById">
+          <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+          <td>{{ it.id_autorizacion_caja }}</td>
+          <td>{{ it.caja }}</td>
+          <td>{{ it.numero_autorizacion }}</td>
+          <td>{{ fmtTipo(it) }}</td>
+          <td class="mono">{{ it.numero }}</td>
+          <td>{{ it.estado }}</td>
+          <td>{{ it.num_establecimiento }}</td>
+          <td>{{ it.direccion }}</td>
+          <td class="mono">{{ it.ruc }}</td>
+          <td>{{ it.nombre_comercial }}</td>
+
+          <td>
+            <span class="badge-si" *ngIf="it.generar_xml">Si</span>
+            <span class="badge-no" *ngIf="!it.generar_xml">No</span>
+          </td>
+
+          <td>{{ it.sucursal }}</td>
+          <td class="mono">{{ it.produccion }}</td>
+
+          <td class="acciones">
+            <button type="button" class="icon-btn" (click)="abrirEditar(it)" title="Editar">
+              <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+            </button>
+          </td>
+
+          
+        </tr>
+
+        <tr *ngIf="filtered.length === 0">
+          <td colspan="16" class="empty">No hay resultados.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="paginacion" *ngIf="totalPages > 0">
+      <button class="btn-page" (click)="paginaAnterior()" [disabled]="page <= 1">‹ Anterior</button>
+      <span class="page-info">Página {{ page }} de {{ totalPages }} · Total: {{ totalItems }}</span>
+      <button class="btn-page" (click)="paginaSiguiente()" [disabled]="page >= totalPages">Siguiente ›</button>
+    </div>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Cargando...</div>
+  </ng-template>
+</div>

@@ -1,0 +1,34 @@
+<div class="vacaciones-explorador-page">
+  <h2>Solicitudes de Vacaciones</h2>
+
+  <div class="filtros" [formGroup]="filtrosForm">
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha Desde</mat-label>
+      <input matInput type="date" formControlName="fechaDesde" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha Hasta</mat-label>
+      <input matInput type="date" formControlName="fechaHasta" />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" type="button" [disabled]="loading" (click)="buscar()">
+      Buscar
+    </button>
+
+    <button mat-stroked-button type="button" [disabled]="loading" (click)="limpiarFiltros()">
+      Limpiar
+    </button>
+  </div>
+
+  <div class="grid-container ag-theme-alpine">
+    <ag-grid-angular
+      style="width: 100%; height: 600px;"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      (gridReady)="onGridReady($event)"
+    >
+    </ag-grid-angular>
+  </div>
+</div>

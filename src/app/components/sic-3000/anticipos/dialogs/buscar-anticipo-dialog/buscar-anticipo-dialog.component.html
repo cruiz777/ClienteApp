@@ -1,0 +1,97 @@
+<!-- src/app/components/anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component.html -->
+<div class="dialog-container">
+  <h2 mat-dialog-title>Buscar Anticipo</h2>
+
+  <mat-dialog-content>
+    <!-- Buscador de Cliente -->
+    <div class="search-section">
+      <label>Buscar por Cliente:</label>
+      <mat-form-field appearance="outline" class="full-width">
+        <input
+          matInput
+          [formControl]="clienteControl"
+          [matAutocomplete]="autoCliente"
+          placeholder="Escriba el nombre del cliente..."
+        />
+        <mat-autocomplete
+          #autoCliente="matAutocomplete"
+          [displayWith]="mostrarNombreCliente"
+          (optionSelected)="seleccionarCliente($event.option.value)">
+          <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
+            {{ cliente.nomcli }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+    </div>
+
+    <!-- Mensaje de carga -->
+    <div *ngIf="cargando" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Buscando anticipos...</p>
+    </div>
+
+    <!-- Mensaje sin resultados -->
+    <div *ngIf="sinResultados && !cargando" class="no-results">
+      <mat-icon>search_off</mat-icon>
+      <p>No se encontraron anticipos para este cliente</p>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div *ngIf="anticipos.length > 0 && !cargando" class="results-table">
+      <table mat-table [dataSource]="anticipos" class="mat-elevation-z0">
+
+        <!-- Columna Número -->
+        <ng-container matColumnDef="numero_anticipo">
+          <th mat-header-cell *matHeaderCellDef>N° Anticipo</th>
+          <td mat-cell *matCellDef="let ant">{{ ant.numero_anticipo || ant.id_anticipo }}</td>
+        </ng-container>
+
+        <!-- Columna Fecha -->
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let ant">{{ formatearFecha(ant.fecha) }}</td>
+        </ng-container>
+
+        <!-- Columna Monto -->
+        <ng-container matColumnDef="monto">
+          <th mat-header-cell *matHeaderCellDef>Monto</th>
+          <td mat-cell *matCellDef="let ant" class="monto-cell">{{ formatearMonto(ant.monto) }}</td>
+        </ng-container>
+
+        <!-- Columna Forma de Pago -->
+        <ng-container matColumnDef="forma_pago">
+          <th mat-header-cell *matHeaderCellDef>Forma Pago</th>
+          <td mat-cell *matCellDef="let ant">{{ ant.descripcion_forma_pago || 'N/A' }}</td>
+        </ng-container>
+
+        <!-- Columna Concepto -->
+        <ng-container matColumnDef="concepto">
+          <th mat-header-cell *matHeaderCellDef>Concepto</th>
+          <td mat-cell *matCellDef="let ant">{{ ant.concepto || 'Sin concepto' }}</td>
+        </ng-container>
+
+        <!-- Columna Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let ant">
+            <button mat-raised-button color="primary" (click)="seleccionarAnticipo(ant)">
+              Seleccionar
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- Info de paginación -->
+      <div class="pagination-info" *ngIf="totalItems > 0">
+        <p>Mostrando {{ anticipos.length }} de {{ totalItems }} anticipo(s)</p>
+      </div>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cerrar()">Cancelar</button>
+  </mat-dialog-actions>
+</div>

@@ -1,0 +1,92 @@
+
+<h2 mat-dialog-title  class="dialog-title">
+  Datos Tributarios
+   <span *ngIf="data.movLabel" class="movimiento-label">&nbsp;—&nbsp;{{ data.movLabel }}</span>
+</h2>
+
+<mat-dialog-content [formGroup]="form" class="dialog-grid">
+
+  <div class="row">
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Sustento Tributario</mat-label>
+      <mat-select formControlName="idSustentoTrib">
+        <mat-option *ngFor="let s of listaSustentos" [value]="s.id">
+          {{ s.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Tipo Comprobante SRI</mat-label>
+      <mat-select formControlName="idTipoCompSri">
+        <mat-option *ngFor="let t of listaTiposCompSri" [value]="t.id">
+          {{ t.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="row">
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Autorización</mat-label>
+      <input matInput formControlName="autorizacion"
+          maxlength="49"
+          (keypress)="soloNumerosKeypress($event)"
+      >
+    </mat-form-field>
+
+    <mat-form-field class="styled-field compact-field">
+      <mat-label>Fecha Caduca</mat-label>
+      <input
+        matInput
+        type="date"
+        formControlName="fechacaduca">
+    </mat-form-field>
+  </div>
+
+  <div class="row">
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Tipo de Retención</mat-label>
+      <mat-select formControlName="idTipoRetencion">
+        <mat-option *ngFor="let r of listaTiposRetencion" [value]="r.id">
+          {{ r.label }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Centro Costos</mat-label>
+      <mat-select formControlName="idCentroCostos">
+        <mat-option *ngFor="let c of listaCentroCostos" [value]="c.id">
+          {{ c.descripcion }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="row">
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Proyecto</mat-label>
+      <mat-select formControlName="idProyecto">
+        <mat-option *ngFor="let p of listaProyectos" [value]="p.id">
+          {{ p.descripcion }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill" class="styled-field compact-field">
+      <mat-label>Subproyecto</mat-label>
+      <mat-select formControlName="idSubproyecto">
+        <mat-option *ngFor="let sp of listaSubProyectos" [value]="sp.id">
+          {{ sp.descripcion }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions class="dialog-actions" align="center">
+  <button  class="btn-verde" (click)="guardar()">Aplicar</button>
+  <button mat-button  (click)="cancelar()">Cancelar</button>
+</mat-dialog-actions>

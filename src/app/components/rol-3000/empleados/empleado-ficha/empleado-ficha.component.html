@@ -1,0 +1,786 @@
+<div class="empleado-page" [formGroup]="form">
+  <mat-tab-group animationDuration="0ms" class="empleado-tabs">
+
+    <!-- DATOS GENERALES -->
+    <mat-tab label="Datos Generales">
+      <div class="tab-content" formGroupName="datosGenerales">
+        <h2>Datos Generales</h2>
+
+        <div class="grid-2">
+          <div class="card-section">
+            <h3>Datos Personales</h3>
+
+            <div class="datos-personales-layout">
+              <div class="photo-area">
+                <div class="photo-box">
+                  <button *ngIf="form.get('datosGenerales.linkFoto')?.value" type="button" class="btn-clear-photo"
+                    (click)="limpiarFoto()">
+                    ×
+                  </button>
+
+                  <img *ngIf="form.get('datosGenerales.linkFoto')?.value"
+                    [src]="form.get('datosGenerales.linkFoto')?.value" alt="Foto empleado">
+                </div>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Link de Foto</mat-label>
+                  <input matInput formControlName="linkFoto">
+                </mat-form-field>
+              </div>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline" class="full-width empleado-busqueda">
+                  <mat-label>Buscar empleado</mat-label>
+
+                  <input matInput formControlName="empleadoBusqueda" [matAutocomplete]="autoEmpleado">
+
+                  <button mat-icon-button matSuffix type="button"
+                    *ngIf="form.get('datosGenerales.empleadoBusqueda')?.value" (click)="limpiarBusquedaEmpleado()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+
+                  <mat-autocomplete #autoEmpleado="matAutocomplete">
+                    <mat-option *ngFor="let emp of empleadosFiltrados" [value]="emp.nombreCompleto"
+                      (onSelectionChange)="seleccionarEmpleadoBusqueda(emp)">
+                      {{ emp.nombreCompleto }}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Código de Empleado</mat-label>
+                  <input matInput formControlName="codigoEmpleado" (keyup.enter)="buscarEmpleadoPorCodigo()"
+                    (blur)="buscarEmpleadoPorCodigo()" readonly>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo Documento</mat-label>
+                  <mat-select formControlName="tipoDocumento">
+                    <mat-option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento">
+                      {{ tipo.descripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cédula / Pasaporte</mat-label>
+                  <input matInput formControlName="identificacion">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Sexo</mat-label>
+                  <mat-select formControlName="sexo">
+                    <mat-option *ngFor="let genero of generos" [value]="genero.generoCodigo">
+                      {{ genero.generoDescripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombres</mat-label>
+                  <input matInput formControlName="nombres">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Apellidos</mat-label>
+                  <input matInput formControlName="apellidos">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Estado Civil</mat-label>
+                  <mat-select formControlName="estadoCivil">
+                    <mat-option *ngFor="let estado of estadosCivil" [value]="estado.estadoCivilCodigo">
+                      {{ estado.estadoCivilNombre }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Fecha de Nacimiento</mat-label>
+                  <input matInput type="date" formControlName="fechaNacimiento">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <h3>Domicilio</h3>
+
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Ciudad</mat-label>
+
+                <input matInput type="text" [formControl]="ciudadCtrl" [matAutocomplete]="autoCiudad"
+                  placeholder="Buscar ciudad, cantón o provincia">
+
+                <button mat-icon-button matSuffix type="button" *ngIf="ciudadCtrl.value" (click)="limpiarCiudad()">
+
+                  <mat-icon>close</mat-icon>
+                </button>
+
+                <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad">
+
+                  <mat-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad" (onSelectionChange)="
+        $event.isUserInput && seleccionarCiudad(ciudad)
+      ">
+
+                    <strong>{{ ciudad.ciudad }}</strong>
+
+                    <span>
+                      - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                    </span>
+                  </mat-option>
+
+                </mat-autocomplete>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Dirección</mat-label>
+                <input matInput formControlName="direccion">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <input matInput formControlName="telefono">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Nacionalidad</mat-label>
+                <mat-select formControlName="nacionalidad">
+                  <mat-option *ngFor="let nac of nacionalidades" [value]="nac.id_nacionalidad">
+                    {{ nac.descripcion }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>E-mail</mat-label>
+                <input matInput formControlName="email">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section mt-16">
+          <h3>Datos Dentro de la Empresa</h3>
+
+          <div class="form-grid-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Empresa Aportación</mat-label>
+              <input matInput formControlName="empresaAportacion">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Zona</mat-label>
+              <mat-select formControlName="zona">
+                <mat-option *ngFor="let zona of zonas" [value]="zona.id">
+                  {{ zona.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudad de Trabajo</mat-label>
+
+              <input matInput type="text" [formControl]="ciudadTrabajoCtrl" [matAutocomplete]="autoCiudadTrabajo"
+                placeholder="Buscar ciudad, cantón o provincia">
+
+              <button mat-icon-button matSuffix type="button" *ngIf="ciudadTrabajoCtrl.value"
+                (click)="limpiarCiudadTrabajo()">
+
+                <mat-icon>close</mat-icon>
+              </button>
+
+              <mat-autocomplete #autoCiudadTrabajo="matAutocomplete" [displayWith]="displayCiudad">
+
+                <mat-option *ngFor="let ciudad of ciudadesTrabajoFiltradas" [value]="ciudad" (onSelectionChange)="
+        $event.isUserInput && seleccionarCiudadTrabajo(ciudad)
+      ">
+
+                  <strong>{{ ciudad.ciudad }}</strong>
+
+                  <span>
+                    - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                  </span>
+                </mat-option>
+
+              </mat-autocomplete>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Local</mat-label>
+              <mat-select formControlName="local">
+                <mat-option *ngFor="let local of locales" [value]="local.id">
+                  {{ local.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Departamento</mat-label>
+              <mat-select formControlName="departamento">
+                <mat-option *ngFor="let dep of departamentos" [value]="dep.id_departamento">
+                  {{ dep.nombre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cargo</mat-label>
+              <mat-select formControlName="cargo">
+                <mat-option *ngFor="let cargo of cargos" [value]="cargo.idCargo">
+                  {{ cargo.descargo }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de Empleado</mat-label>
+              <mat-select formControlName="tipoEmpleado">
+                <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.idTipemp">
+                  {{ tipo.desTipemp }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Grupo Ocupación</mat-label>
+              <mat-select formControlName="grupoOcupacion">
+                <mat-option *ngFor="let item of gruposOcupacionales" [value]="item.id_grupo_ocupacional">
+                  {{ item.descripcion }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS ADICIONALES -->
+    <mat-tab label="Datos Adicionales">
+      <div class="tab-content" formGroupName="datosAdicionales">
+        <h2>Datos Adicionales</h2>
+
+        <div class="grid-2">
+          <div>
+            <mat-form-field appearance="outline" class="empleado-nombre-box">
+              <mat-label>Empleado</mat-label>
+              <input matInput formControlName="empleado" readonly>
+            </mat-form-field>
+
+            <div class="card-section">
+              <h3>Cronología del Empleado</h3>
+
+              <div class="grid-toolbar">
+                <button mat-stroked-button color="primary" type="button" (click)="agregarFilaCronologia()">
+                  Agregar fila
+                </button>
+              </div>
+
+              <ag-grid-angular class="ag-theme-alpine cronologia-ag-grid" [rowData]="cronologiaRowData"
+                [columnDefs]="cronologiaColumnDefs" [defaultColDef]="cronologiaDefaultColDef"
+                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true" [rowHeight]="32" [headerHeight]="30">
+              </ag-grid-angular>
+            </div>
+
+            <div class="card-section mt-16">
+              <h3>Provisiones y Fondos de Reserva</h3>
+
+              <div class="checks-grid">
+                <mat-checkbox formControlName="noRecibeProvisiones">No Recibe provisiones</mat-checkbox>
+                <mat-checkbox formControlName="pagoDecimoCuarto">Pago Décimo 4to</mat-checkbox>
+                <mat-checkbox formControlName="pagoDecimoTercero">Pago Décimo 3ro</mat-checkbox>
+                <mat-checkbox formControlName="pagoFondosReserva">Pago fondos de Reserva</mat-checkbox>
+                <mat-checkbox formControlName="terceraEdad">Tercera Edad</mat-checkbox>
+              </div>
+            </div>
+
+            <div class="form-grid-2 mt-16">
+              <div class="date-range">
+                <mat-form-field appearance="outline">
+                  <mat-label>Inicio Pago Décimos</mat-label>
+                  <input matInput type="date" formControlName="fechaPagoDecimoInicio">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Fin Pago Décimos</mat-label>
+                  <input matInput type="date" formControlName="fechaPagoDecimoFin">
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Régimen</mat-label>
+                <mat-select formControlName="regimen">
+                  <mat-option *ngFor="let item of regimenes" [value]="item.id_regimen">
+                    {{ item.descripcion }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <div class="checks-column">
+                <label class="sub-label">Representante Legal</label>
+                <mat-checkbox formControlName="gerenteRepLegal">Gerente / Rep. Legal</mat-checkbox>
+                <mat-checkbox formControlName="noPagaImpuestoRenta">No paga impuesto a la renta</mat-checkbox>
+              </div>
+            </div>
+
+            <div class="card-section mt-16">
+              <h3>Información para utilidades</h3>
+
+              <div class="form-grid-2">
+                <div class="checks-column">
+                  <label class="sub-label">Carga cónyuge para utilidades</label>
+                  <mat-checkbox formControlName="cargaConyugeUtilidades">Sí</mat-checkbox>
+                </div>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Carga hijos para utilidades</mat-label>
+                  <input matInput formControlName="cargaHijosUtilidades">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card-section">
+              <h3>Datos para el Banco / Empleado</h3>
+
+              <div class="grid-toolbar">
+                <button mat-stroked-button color="primary" type="button" (click)="agregarFilaBanco()">
+                  Agregar fila
+                </button>
+              </div>
+
+              <ag-grid-angular class="ag-theme-alpine banco-ag-grid" [rowData]="bancoRowData"
+                [columnDefs]="bancoColumnDefs" [defaultColDef]="bancoDefaultColDef"
+                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true" [rowHeight]="32" [headerHeight]="30">
+              </ag-grid-angular>
+            </div>
+
+            <div class="card-section mt-16">
+              <h3>Datos para el Banco / Empleado</h3>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Establecimiento</mat-label>
+                  <input matInput formControlName="establecimiento">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Código Sectorial del IESS</mat-label>
+                  <mat-select formControlName="codigoSectorialIess">
+                    <mat-option *ngFor="let item of sectoriales" [value]="item.idSectorial">
+                      {{ item.codigo }} - {{ item.desSectorial }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Grupo Sanguíneo</mat-label>
+                  <mat-select formControlName="grupoSanguineo">
+                    <mat-option *ngFor="let item of tiposSangre" [value]="item.idTipoSangre">
+                      {{ item.descripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Empresa Complementaria</mat-label>
+
+                  <mat-select formControlName="rucEmpresaComplementaria">
+                    <mat-option [value]="null">-- NINGUNA --</mat-option>
+
+                    <mat-option *ngFor="let emp of empresaComplementaria" [value]="emp.idEmpresaComplementaria">
+                      {{ emp.empresa }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Libreta Militar</mat-label>
+                  <input matInput formControlName="libretaMilitar">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS SALARIALES -->
+    <mat-tab label="Datos Salariales">
+      <div class="tab-content" formGroupName="datosSalariales">
+        <h2>Datos Salariales</h2>
+
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput formControlName="empleado" readonly>
+        </mat-form-field>
+
+        <div class="grid-2">
+          <div class="card-section">
+            <h3>Datos Salariales</h3>
+
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha del Salario</mat-label>
+                <input matInput type="date" formControlName="fechaSalario">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Salario</mat-label>
+                <input matInput formControlName="salario">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valor de la hora normal</mat-label>
+                <input matInput formControlName="valorHoraNormal">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valor de la hora especial</mat-label>
+                <input matInput formControlName="valorHoraEspecial">
+              </mat-form-field>
+            </div>
+
+            <mat-checkbox formControlName="incluyeAportacion">Incluye aportación</mat-checkbox>
+          </div>
+
+          <div class="card-section">
+            <h3>Valores de Quincena</h3>
+
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Anticipo I Quincenal %</mat-label>
+                <input matInput formControlName="anticipoQuincenal1">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Anticipo II Quincenal %</mat-label>
+                <input matInput formControlName="anticipoQuincenal2">
+              </mat-form-field>
+            </div>
+
+            <h3 class="mt-16">Retención Judicial</h3>
+
+            <div class="form-grid-2">
+              <mat-checkbox formControlName="retencionJudicial">Retención Judicial</mat-checkbox>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valores</mat-label>
+                <input matInput formControlName="valoresRetencion">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- CARGAS -->
+    <mat-tab label="Cargas">
+      <div class="tab-content">
+        <h2>Cargas</h2>
+
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput
+            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+        </mat-form-field>
+
+        <div class="grid-toolbar">
+          <button mat-stroked-button color="primary" type="button" (click)="agregarFilaCarga()">
+            Agregar fila
+          </button>
+        </div>
+
+        <div class="table-container">
+          <ag-grid-angular class="ag-theme-alpine cargas-ag-grid" [rowData]="cargasRowData"
+            [columnDefs]="cargasColumnDefs" [defaultColDef]="cargasDefaultColDef" [pagination]="true"
+            [paginationPageSize]="10" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
+          </ag-grid-angular>
+        </div>
+
+        <div class="center-action">
+          <button mat-stroked-button color="primary" (click)="actualizarCargas()">
+            Actualizar Cargas
+          </button>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- GASTOS PERSONALES -->
+    <mat-tab label="Gastos Personales">
+      <div class="tab-content">
+        <h2>Gastos Personales</h2>
+
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput
+            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+        </mat-form-field>
+        <div class="grid-toolbar">
+          <button mat-stroked-button color="primary" type="button" (click)="agregarFilaGasto()">
+            Agregar fila
+          </button>
+        </div>
+        <div class="table-container">
+          <ag-grid-angular class="ag-theme-alpine gastos-ag-grid" [rowData]="gastosRowData"
+            [columnDefs]="gastosColumnDefs" [defaultColDef]="gastosDefaultColDef" [pagination]="true"
+            [paginationPageSize]="10" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
+          </ag-grid-angular>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS ACADÉMICOS -->
+    <mat-tab label="Datos Académicos">
+      <div class="tab-content" formGroupName="datosAcademicos">
+        <h2>Datos Académicos</h2>
+
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput formControlName="empleado" readonly>
+        </mat-form-field>
+
+        <div class="grid-toolbar">
+          <button mat-stroked-button color="primary" type="button" (click)="agregarFilaAcademica()">
+            Agregar fila
+          </button>
+        </div>
+
+        <div class="table-container">
+          <ag-grid-angular class="ag-theme-alpine academicos-ag-grid" [rowData]="academicosRowData"
+            [columnDefs]="academicosColumnDefs" [defaultColDef]="academicosDefaultColDef" [singleClickEdit]="true"
+            [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
+          </ag-grid-angular>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- OBSERVACIONES -->
+    <mat-tab label="Observaciones">
+      <div class="tab-content">
+        <h2>Observaciones</h2>
+
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput
+            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+        </mat-form-field>
+
+        <div class="grid-toolbar">
+          <button mat-stroked-button color="primary" type="button" (click)="agregarFilaObservacion()">
+            Agregar fila
+          </button>
+        </div>
+
+        <div class="table-container">
+          <ag-grid-angular class="ag-theme-alpine observacion-ag-grid" [rowData]="observacionRowData"
+            [columnDefs]="observacionColumnDefs" [defaultColDef]="observacionDefaultColDef" [pagination]="true"
+            [paginationPageSize]="10" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
+          </ag-grid-angular>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS ESPECIALES -->
+    <mat-tab label="Datos Especiales">
+      <div class="tab-content" formGroupName="datosEspeciales">
+        <h2>Datos Especiales</h2>
+
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput formControlName="empleado" readonly>
+        </mat-form-field>
+
+        <div class="grid-2">
+          <div>
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Residencial del Trabajador</mat-label>
+                <input matInput formControlName="residenciaTrabajador">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Aplica Convenio evitar doble imposición</mat-label>
+                <input matInput formControlName="aplicaConvenio">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Sistema Salario Neto</mat-label>
+                <input matInput formControlName="sistemaSalarioNeto">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>País de Residencia</mat-label>
+                <input matInput formControlName="paisResidencia">
+              </mat-form-field>
+            </div>
+
+            <mat-checkbox formControlName="beneficioGalapagos">
+              Beneficio provincia de Galápagos
+            </mat-checkbox>
+
+            <div class="card-section mt-16">
+              <h3>Datos otros empleadores / Salario Digno</h3>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Ingresos agraviados</mat-label>
+                  <input matInput formControlName="ingresosAgraviados">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Aporte personal del IESS</mat-label>
+                  <input matInput formControlName="aportePersonalIess">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Valor del impuesto retenido durante el periodo declarado</mat-label>
+                  <input matInput formControlName="valorImpuestoRetenido">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Compensación Económica Digna</mat-label>
+                  <input matInput formControlName="compensacionEconomicaDigna">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card-section">
+              <h3>Datos Personales con Capacidades Especiales</h3>
+
+              <div class="form-grid-2">
+                <mat-checkbox formControlName="discapacitado">
+                  Discapacitado
+                </mat-checkbox>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Carnet Conadis</mat-label>
+                  <input matInput formControlName="carnetConadis">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Condición del Trabajador</mat-label>
+                  <input matInput formControlName="condicionTrabajador">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Discapacidad</mat-label>
+
+                  <mat-select formControlName="idTipoDiscapacidad">
+                    <mat-option *ngFor="let item of tiposDiscapacidad" [value]="item.idTipoDiscapacidad">
+                      {{ item.descripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Porcentaje de Discapacidad</mat-label>
+                  <input matInput formControlName="porcentajeDiscapacidad">
+                </mat-form-field>
+
+                <mat-checkbox formControlName="enfermedadCatastrofica">
+
+                  Enfermedad Catastrófica
+
+                </mat-checkbox>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Descripción de la Discapacidad</mat-label>
+                  <textarea matInput rows="3" formControlName="descripcionDiscapacidad"></textarea>
+                </mat-form-field>
+
+                <!-- <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Identidad</mat-label>
+                  <input matInput formControlName="tipoIdentidad">
+                </mat-form-field> -->
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cédula / Pasaporte / ID</mat-label>
+                  <input matInput formControlName="identificacion">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre de Discapacitado</mat-label>
+                  <input matInput formControlName="nombreDiscapacidad">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <!-- <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button> -->
+          <!-- <button mat-stroked-button (click)="imprimir()">Imprimir</button> -->
+          <!-- <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button> -->
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

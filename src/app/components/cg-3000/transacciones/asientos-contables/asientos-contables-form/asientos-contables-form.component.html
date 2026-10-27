@@ -1,0 +1,271 @@
+
+  <div class="toolbar sticky-header">
+
+      <div class="title">{{ titulo() }}</div>
+
+      <div class="actions">
+        <button (click)="guardar()" [disabled]="isReadOnly()"
+        [ngClass]="(modo() === 'nuevo' || modo() === 'plantilla') ? 'btn-verde' : 'btn-tomate'">
+          <ng-container *ngIf="modo() === 'nuevo' || modo() === 'plantilla'; else actualizarLbl">
+            {{ modo() === 'plantilla' ? 'Guardar' : 'Guardar' }}
+          </ng-container>
+          <ng-template #actualizarLbl>Actualizar</ng-template>
+        </button>
+        <button class="btn" (click)="cancelar()">Cancelar</button>
+      </div>
+</div>
+
+<div class="content-scroll" [class.cabecera-readonly]="cabeceraBloqueada">
+    <form [formGroup]="form" class="header-form header-compact" >
+      <div class="grid">
+
+        <div class="form-group">
+          <label for="idZona">
+            Zona
+            <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }">*</span>
+          </label>
+
+          <select
+            id="idZona"
+            class="control"
+            [disabled]="isReadOnly()"
+            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
+            formControlName="idZona"
+            [attr.title]="'Seleccione la zona'"
+          >
+            <!-- Opción placeholder -->
+            <option [ngValue]="0" disabled>Seleccione...</option>
+
+            <!-- Opciones de zonas -->
+            <option *ngFor="let z of (zonas$ | async)"  [ngValue]="z.idZona">
+              {{ z.idZona }} - {{ z.nombre }}
+            </option>
+
+          </select>
+
+          <!-- Mensajes de error -->
+          <div class="error" *ngIf="form.get('idZona')?.hasError('required') && form.get('idZona')?.touched">
+            Campo obligatorio.
+          </div>
+
+          <div  class="error" *ngIf="form.get('idZona')?.hasError('min') && form.get('idZona')?.touched">
+             Campo obligatorio.
+          </div>
+        </div>
+
+
+        <div class="form-group">
+          <label for="idTipoAsiento">Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }" >*</span></label>
+          <select
+            id="IdTipoAsiento"
+            class="control"
+            [disabled]="modo() === 'editar'"
+            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
+            formControlName="idTipoAsiento"
+            [attr.title]="'Seleccione el tipo documento'"
+          >
+            <option [ngValue]="null" disabled>Seleccione...</option>
+            <option *ngFor="let ta of (tiposAsiento$ | async)" [ngValue]="ta.IdTipoAsiento">
+              {{ ta.TipAsiento }} — {{ ta.Descripcion }}
+            </option>
+          </select>
+          <div class="error" *ngIf="form.get('idTipoAsiento')?.invalid && form.get('idTipoAsiento')?.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+
+        <div class="form-group">
+          <label>Fecha Transacción</label>
+          <input
+           class="control"
+           type="date"
+           [value]="form.value.fechatransaccion"
+           (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Ingreso</label>
+          <input
+            class="control"
+            type="datetime-local"
+            [value]="form.value.fechaingreso | date:'yyyy-MM-ddTHH:mm'"
+            (input)="form.patchValue({ fechaingreso: $any($event.target).value })"
+            readonly
+          />
+        </div>
+
+
+
+
+        <div class="form-group span-2-left">
+          <label>Beneficiario<span class="required">*</span></label>
+          <input
+              type="text"
+              class="control"
+              placeholder="Buscar por identificación o razón social..."
+              formControlName="beneficiario"
+              [matAutocomplete]="autoBenef"
+              [readonly]="isReadOnly()"
+              (input)="validarTexto('beneficiario', $event)"
+              [ngClass]="{
+                'ng-invalid ng-touched':
+                  form.get('beneficiario')?.invalid && form.get('beneficiario')?.touched
+              }"
+          />
+            <!-- es para realizar un proceso al seleccionar valor del list  [value]="formatearBeneficiario(c)" estaba antes-->
+            <mat-autocomplete #autoBenef="matAutocomplete"
+              (optionSelected)="onBeneficiarioSelected($event.option.value)">
+              <mat-option
+                *ngFor="let c of (beneficiariosFiltrados$ | async)"
+                [value]="c"
+              >
+                {{ c.Identificacionauxiliar }} — {{ c.Razonsocial }}
+              </mat-option>
+            </mat-autocomplete>
+            <div class="error" *ngIf="form.get('beneficiario')?.invalid && form.get('beneficiario')?.touched">
+                Campo obligatorio.
+            </div>
+        </div>
+
+        <div class="form-group span-2-right">
+          <label>Concepto<span class="required">*</span></label>
+          <textarea
+            class="control allow-edit"
+            type="text"
+            formControlName="observacion"
+            (input)="validarTexto('observacion', $event)"
+          ></textarea>
+          <div class="error" *ngIf="form.get('observacion')?.invalid && form.get('observacion')?.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <!--
+
+        <div class="form-group">
+          <label>Zona *</label>
+          <input class="control" type="number" formControlName="idZona" />
+          <div class="error" *ngIf="form.get('idZona')?.invalid && form.get('idZona')?.touched">
+              Campo obligatorio.
+          </div>
+        </div>
+
+         <div class="form-group">
+          <label>Usuario</label>
+           <div class="constante-box">
+              {{ nombreusuario }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Número</label>
+          <input class="control" type="number" formControlName="numdoc" />
+          <div class="error" *ngIf="form.get('numdoc')?.invalid && form.get('numdoc')?.touched">
+              Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipo Asiento *</label>
+          <input type="number" formControlName="idTipoAsiento" />
+        </div>
+        <div class="field">
+          <label>Tip. Doc.</label>
+          <input type="text" formControlName="tipdoc" />
+        </div>
+        <div class="field">
+          <label>Año</label>
+          <input type="text" formControlName="anio" />
+        </div>
+
+        <div class="field">
+          <label>Solicitado</label>
+          <input type="text" formControlName="solicitado" />
+        </div>
+
+        <div class="field">
+          <label>Depto</label>
+          <input type="text" formControlName="depto" />
+        </div>
+
+        <div class="field">
+          <label>Autorizado</label>
+          <input type="text" formControlName="autorizado" />
+        </div>
+
+        <div class="field">
+          <label>Cierre</label>
+          <input type="text" formControlName="cierre" />
+        </div>
+
+        <div class="field">
+          <label>Fecha Cierre</label>
+          <input
+            type="datetime-local"
+            [value]="form.value.fechacierre | date:'yyyy-MM-ddTHH:mm'"
+            (input)="form.patchValue({ fechacierre: $any($event.target).value })"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Estado</label>
+          <select class="control" formControlName="estado">
+            <option [ngValue]="true">Activo</option>
+            <option [ngValue]="false">Inactivo</option>
+          </select>
+        </div>
+        -->
+      </div>
+    </form>
+</div>
+
+<div class="subtoolbar subtoolbar--right">
+  <button class="btn" (click)="agregarLinea()" [disabled]="isReadOnly()" title="Añadir línea">
+      <img src="assets/icons/aniadir.png" alt="" class="btn-add__icon">
+      Agregar Linea
+  </button>
+  <div *ngIf="isViewOnly()" class="alert-readonly" [attr.title]="motivoSoloLectura()">
+          ASIENTO SOLO DE LECTURA
+  </div>
+
+</div>
+
+<ag-grid-angular
+  class="ag-theme-alpine grid custom-grid"
+  style="width: 100%; height: 380px"
+  [gridOptions]="gridOptions"
+  [rowData]="rowData()"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [rowSelection]="'single'"
+  [animateRows]="true"
+  (gridReady)="onGridReady($event)"
+  (cellClicked)="onCellClicked($event)"
+  (cellValueChanged)="onCellValueChanged($event)"
+  (cellKeyDown)="onCellKeyDown($event)"
+  >
+
+</ag-grid-angular>
+
+<div class="totales">
+
+  <div class="usuario-totales">
+    <span class="usuario-label">USUARIO:</span>
+    <span class="usuario-valor">{{ (usuarioAsientoNombre() || '') | uppercase }}</span>
+  </div>
+
+  <div class="tot">
+    <span class="total-label">Total Debe:</span>
+    <strong>{{ totDebe() | number:'1.2-2' }}</strong>
+  </div>
+  <div class="tot">
+    <span class="total-label">Total Haber:</span>
+    <strong>{{ totHaber() | number:'1.2-2' }}</strong>
+  </div>
+  <div class="tot diff" [class.ok]="diferencia() === 0" [class.bad]="diferencia() !== 0">
+    <span class="total-label">Diferencia:</span>
+    <strong>{{ diferencia() | number:'1.2-2' }}</strong>
+  </div>
+</div>

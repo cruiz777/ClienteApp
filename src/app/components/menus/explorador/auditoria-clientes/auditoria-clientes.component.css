@@ -1,0 +1,562 @@
+/* ==========================================================
+   GENERAL
+   ========================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+
+:host {
+  display: block;
+
+  width: 100%;
+
+  height: 100%;
+}
+
+
+/* ==========================================================
+   MODAL
+   ========================================================== */
+
+.auditoria-dialog {
+
+  display: flex;
+
+  flex-direction: column;
+
+  width: 100%;
+
+  height: 100%;
+
+  min-height: 600px;
+
+  background-color: #ffffff;
+
+  overflow: hidden;
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.auditoria-header {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 20px;
+
+  padding: 18px 22px;
+
+  background-color: #f8fbff;
+
+  border-bottom:
+    1px solid #dce3ea;
+}
+
+
+.titulo-container {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.auditoria-header h2 {
+
+  margin: 0;
+
+  color: #002c6c;
+
+  font-size: 21px;
+
+  font-weight: 700;
+}
+
+
+.subtitulo {
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+
+.header-actions {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+
+.header-actions button {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 4px;
+}
+
+
+.header-actions mat-icon {
+
+  width: 18px;
+
+  height: 18px;
+
+  font-size: 18px;
+}
+
+
+/* ==========================================================
+   SUMMARY
+   ========================================================== */
+
+.auditoria-summary {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 10px 20px;
+
+  background-color: #ffffff;
+
+  border-bottom:
+    1px solid #e6ebf0;
+}
+
+
+.summary-item {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.summary-label {
+
+  color: #64748b;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+
+.summary-value {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 34px;
+
+  height: 27px;
+
+  padding: 0 8px;
+
+  color: #ffffff;
+
+  background-color: #002c6c;
+
+  border-radius: 14px;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+
+.summary-info {
+
+  color: #64748b;
+
+  font-size: 11px;
+
+  text-align: right;
+}
+
+
+/* ==========================================================
+   GRID CONTAINER
+   ========================================================== */
+
+.grid-container {
+
+  flex: 1;
+
+  min-height: 0;
+
+  padding: 12px;
+}
+
+
+/* ==========================================================
+   AG GRID
+   ========================================================== */
+
+.auditoria-grid {
+
+  width: 100%;
+
+  height: 100%;
+
+  min-height: 500px;
+
+  border:
+    1px solid #d5dce5;
+
+  border-radius: 6px;
+
+  overflow: hidden;
+
+
+  --ag-font-size:
+    12px;
+
+  --ag-font-family:
+    'Segoe UI',
+    Tahoma,
+    Geneva,
+    Verdana,
+    sans-serif;
+
+  --ag-header-background-color:
+    #f5f8fb;
+
+  --ag-header-foreground-color:
+    #333333;
+
+  --ag-row-hover-color:
+    #f8f9fa;
+
+  --ag-selected-row-background-color:
+    #e3f2fd;
+
+  --ag-border-color:
+    #dce3ea;
+}
+
+
+/* ==========================================================
+   HEADER AG GRID
+   ========================================================== */
+
+:host ::ng-deep
+.auditoria-grid
+.ag-header-cell {
+
+  border-bottom:
+    2px solid #d0d7de;
+}
+
+
+:host ::ng-deep
+.auditoria-grid
+.ag-header-cell-label {
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  font-size: 11px;
+
+  letter-spacing:
+    0.3px;
+}
+
+
+/* ==========================================================
+   CELDAS
+   ========================================================== */
+
+:host ::ng-deep
+.auditoria-grid
+.ag-cell {
+
+  display: flex;
+
+  align-items: center;
+
+  color: #333333;
+
+  font-size: 12px;
+}
+
+
+:host ::ng-deep
+.auditoria-grid
+.ag-row {
+
+  border-bottom:
+    1px solid #ededed;
+}
+
+
+/* ==========================================================
+   CLIENTE
+   ========================================================== */
+
+:host ::ng-deep
+.cell-cliente {
+
+  color: #002c6c !important;
+
+  font-weight: 700 !important;
+}
+
+
+/* ==========================================================
+   CENTRADO
+   ========================================================== */
+
+:host ::ng-deep
+.cell-center {
+
+  justify-content: center;
+
+  text-align: center;
+}
+
+
+/* ==========================================================
+   CAMPOS AUDITORÍA
+   ========================================================== */
+
+:host ::ng-deep
+.cell-campo-prefijo {
+
+  color: #1565c0 !important;
+
+  font-weight: 700 !important;
+}
+
+
+:host ::ng-deep
+.cell-campo-guia {
+
+  color: #ef6c00 !important;
+
+  font-weight: 700 !important;
+}
+
+
+:host ::ng-deep
+.cell-campo-otros {
+
+  color: #7b1fa2 !important;
+
+  font-weight: 700 !important;
+}
+
+
+/* ==========================================================
+   SI / NO
+   ========================================================== */
+
+:host ::ng-deep
+.cell-si {
+
+  color: #2e7d32 !important;
+
+  font-weight: 800 !important;
+
+  justify-content: center;
+}
+
+
+:host ::ng-deep
+.cell-no {
+
+  color: #c62828 !important;
+
+  font-weight: 800 !important;
+
+  justify-content: center;
+}
+
+
+/* ==========================================================
+   PINNED
+   ========================================================== */
+
+:host ::ng-deep
+.ag-pinned-left-header,
+
+:host ::ng-deep
+.ag-pinned-left-cols-container {
+
+  border-right:
+    2px solid #d0d7de !important;
+}
+
+
+/* ==========================================================
+   LOADING
+   ========================================================== */
+
+.loading-container {
+
+  flex: 1;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  min-height: 420px;
+
+  color: #002c6c;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+
+.spinner {
+
+  width: 38px;
+
+  height: 38px;
+
+  border:
+    4px solid #dbeafe;
+
+  border-top-color:
+    #002c6c;
+
+  border-radius:
+    50%;
+
+  animation:
+    spin 0.8s linear infinite;
+}
+
+
+@keyframes spin {
+
+  to {
+
+    transform:
+      rotate(360deg);
+  }
+
+}
+
+
+/* ==========================================================
+   ERROR
+   ========================================================== */
+
+.error-container {
+
+  margin: 20px;
+
+  padding: 15px;
+
+  color: #991b1b;
+
+  background-color: #fef2f2;
+
+  border:
+    1px solid #fecaca;
+
+  border-radius: 6px;
+
+  font-size: 13px;
+}
+
+
+/* ==========================================================
+   EMPTY
+   ========================================================== */
+
+.empty-container {
+
+  flex: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-height: 420px;
+
+  color: #64748b;
+
+  font-size: 14px;
+}
+
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media
+(max-width: 768px) {
+
+  .auditoria-header {
+
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+
+
+  .header-actions {
+
+    width: 100%;
+
+    justify-content: flex-end;
+  }
+
+
+  .auditoria-summary {
+
+    flex-direction: column;
+
+    align-items: flex-start;
+  }
+
+
+  .summary-info {
+
+    text-align: left;
+  }
+
+
+  .auditoria-grid {
+
+    min-height: 450px;
+  }
+}

@@ -1,0 +1,103 @@
+<!-- src/app/components/sic-3000/forma-pago-form/forma-pago-form.component.html -->
+
+<h2 mat-dialog-title>{{ titulo }}</h2>
+
+<div mat-dialog-content class="fp-container">
+  <form [formGroup]="form" class="fp-grid">
+
+    <!-- Descripción (full) -->
+    <div class="fp-field fp-full">
+      <label class="fp-label">
+        Descripción<span class="fp-required">*</span>
+      </label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput formControlName="descripcionPago" />
+        <mat-error *ngIf="form.get('descripcionPago')?.hasError('required')">
+          La descripción es obligatoria
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Id Clasificación -->
+    <div class="fp-field">
+      <label class="fp-label">
+        Id Clasificación<span class="fp-required">*</span>
+      </label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput type="number" formControlName="idClasificacion" />
+      </mat-form-field>
+    </div>
+
+    <!-- Id Forma Pago SRI -->
+    <div class="fp-field">
+      <label class="fp-label">
+        Id Forma Pago SRI<span class="fp-required">*</span>
+      </label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput type="number" formControlName="idFormaPagoSri" />
+      </mat-form-field>
+    </div>
+
+    <!-- Código Cuenta -->
+    <div class="fp-field">
+      <label class="fp-label">Código Cuenta</label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput formControlName="codigoCuenta" />
+      </mat-form-field>
+    </div>
+
+    <!-- Id Plan -->
+    <div class="fp-field">
+      <label class="fp-label">Id Plan</label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput type="number" formControlName="idPlan" />
+      </mat-form-field>
+    </div>
+
+    <!-- Código CG -->
+    <div class="fp-field">
+      <label class="fp-label">Código CG</label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput formControlName="codigocg" />
+      </mat-form-field>
+    </div>
+
+    <!-- Código SIC -->
+    <div class="fp-field">
+      <label class="fp-label">Código SIC</label>
+
+      <mat-form-field appearance="outline" class="fp-mat-field">
+        <input matInput formControlName="codigosic" />
+      </mat-form-field>
+    </div>
+
+    <!-- Opciones (full) -->
+    <div class="fp-field fp-full fp-flags">
+      <div class="fp-flags-title">Opciones</div>
+
+      <div class="fp-flags-grid">
+        <mat-checkbox formControlName="activarFactura">Activar factura</mat-checkbox>
+        <mat-checkbox formControlName="activarCuentas">Activar cuentas</mat-checkbox>
+        <mat-checkbox formControlName="cxc">CXC</mat-checkbox>
+        <mat-checkbox formControlName="activarFacturaHis">Factura HIS</mat-checkbox>
+        <mat-checkbox formControlName="activarLiqTarjeta">Liq. tarjeta</mat-checkbox>
+        <mat-checkbox formControlName="activarPagTarjeta">Pag. tarjeta</mat-checkbox>
+        <mat-checkbox formControlName="activarAnticipo">Anticipo</mat-checkbox>
+      </div>
+    </div>
+
+  </form>
+</div>
+
+<div mat-dialog-actions align="end" class="fp-actions">
+  <button mat-button (click)="cancelar()" [disabled]="guardando">Cancelar</button>
+  <button mat-raised-button class="btn-azul" (click)="guardar()" [disabled]="guardando">
+    {{ guardando ? 'Guardando...' : 'Guardar' }}
+  </button>
+</div>

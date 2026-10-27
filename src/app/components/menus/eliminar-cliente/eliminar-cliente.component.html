@@ -1,0 +1,49 @@
+<div class="eliminar-cliente-container">
+  <header class="encabezado">
+    <div>
+      <h2>Eliminar cliente</h2>
+      <p>Busque y seleccione un cliente. Solo se podrá eliminar si no tiene productos asociados.</p>
+    </div>
+    <button type="button" class="btn btn-secondary" (click)="limpiar()" [disabled]="eliminando">Nueva búsqueda</button>
+  </header>
+
+  <section class="tarjeta">
+    <h3>1. Buscar cliente</h3>
+    <mat-form-field appearance="outline" class="busqueda">
+      <mat-label>Nombre del cliente</mat-label>
+      <input matInput type="text" [formControl]="clienteControl" [matAutocomplete]="autoCliente"
+        placeholder="Buscar cliente..." />
+      <mat-autocomplete #autoCliente="matAutocomplete" [displayWith]="mostrarNombreCliente"
+        (optionSelected)="seleccionarCliente($event.option.value)">
+        <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
+          {{ cliente.nomcli }} — Código: {{ cliente.clientes_codigo }}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+    <p class="ayuda" *ngIf="buscando">Buscando clientes...</p>
+    <p class="error" *ngIf="mensajeError">{{ mensajeError }}</p>
+  </section>
+
+  <section class="tarjeta" *ngIf="clienteSeleccionado as cliente">
+    <h3>2. Revisar cliente</h3>
+    <div class="detalle">
+      <div><span>Código</span><strong>{{ cliente.clientes_codigo }}</strong></div>
+      <div><span>Nombre</span><strong>{{ cliente.nomcli }}</strong></div>
+    </div>
+    <p class="aviso">La eliminación es definitiva. El servidor verificará productos, datos adicionales y códigos 14; si existen, no se eliminará ningún registro.</p>
+    <div class="acciones">
+      <button type="button" class="btn btn-danger" (click)="eliminarCliente()" [disabled]="!puedeEliminar">
+        {{ eliminando ? 'Eliminando...' : 'Eliminar cliente' }}
+      </button>
+    </div>
+  </section>
+
+  <section class="tarjeta" *ngIf="resultado as r">
+    <h3>{{ r.success ? 'Eliminación completada' : 'No se puede eliminar' }}</h3>
+    <p>{{ r.message }}</p>
+    <div class="detalle" *ngIf="r.success">
+      <div><span>GLN eliminados</span><strong>{{ r.totalGln ?? 0 }}</strong></div>
+      <div><span>Prefijos eliminados</span><strong>{{ r.totalPrefijos ?? 0 }}</strong></div>
+    </div>
+  </section>
+</div>

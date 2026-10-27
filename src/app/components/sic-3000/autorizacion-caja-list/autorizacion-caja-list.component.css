@@ -1,0 +1,261 @@
+/* =========================
+   Contenedor general
+   ========================= */
+.zona-container {
+  padding: 14px 18px;
+  background: #ffffff;
+}
+
+/* =========================
+   Header: título + botón
+   ========================= */
+.zona-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.zona-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2b2b2b;
+}
+
+/* Botón estilo azul */
+.btn-azul {
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: none;
+}
+
+/* =========================
+   Buscador
+   ========================= */
+.zona-busqueda {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 14px 0;
+}
+
+.zona-busqueda label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a3a3a;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 520px;
+  max-width: 100%;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid #d7dbe2;
+  padding: 0 36px 0 10px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+
+.input-wrapper input:focus {
+  border-color: #2b74ff;
+  box-shadow: 0 0 0 3px rgba(43, 116, 255, 0.10);
+}
+
+.input-wrapper img {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  opacity: 0.7;
+}
+
+/* =========================
+   Estados (error/loading)
+   ========================= */
+.state.error {
+  margin: 8px 0 12px 0;
+  color: #b42318;
+  background: #fff1f0;
+  border: 1px solid #ffd2cf;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.loading {
+  padding: 18px;
+  font-size: 13px;
+  color: #4a4a4a;
+}
+
+/* =========================
+   Tabla + scroll interno
+   ========================= */
+.table-wrap {
+  border: 1px solid #e6e9ef;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* hace que el scroll sea del grid y no de la página */
+.zona-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.zona-tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f7f9fc;
+  color: #2d2d2d;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #e6e9ef;
+  padding: 10px 10px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zona-tabla tbody td {
+  border-bottom: 1px solid #eef1f6;
+  padding: 9px 10px;
+  font-size: 12.5px;
+  color: #2d2d2d;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.zona-tabla tbody tr:hover {
+  background: #fbfcff;
+}
+
+/* wrapper para scroll (si usas un div interno) */
+.table-wrap {
+  max-height: calc(100vh - 270px); /* ajusta si tu layout tiene más/menos header */
+  overflow: auto;
+}
+
+/* fila vacía */
+.empty {
+  text-align: center;
+  padding: 14px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* =========================
+   Badges
+   ========================= */
+.badge-si,
+.badge-no {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.badge-si {
+  background: #e7f8ee;
+  color: #1a7f37;
+  border: 1px solid #b7e7c6;
+}
+
+.badge-no {
+  background: #fff4f4;
+  color: #b42318;
+  border: 1px solid #ffd2cf;
+}
+
+/* =========================
+   Botones icono (Editar)
+   ========================= */
+.acciones {
+  text-align: center;
+}
+
+.icon-btn {
+  border: 1px solid #dde2ea;
+  background: #fff;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: #f6f8fc;
+  border-color: #cfd6e1;
+}
+
+.icon-btn img {
+  width: 16px;
+  height: 16px;
+}
+
+/* =========================
+   Paginación
+   ========================= */
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid #e6e9ef;
+  background: #fff;
+}
+
+.btn-page {
+  border: 1px solid #d7dbe2;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-page:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.page-info {
+  font-size: 12px;
+  color: #4b5563;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+@media (max-width: 900px) {
+  .zona-busqueda {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .input-wrapper {
+    width: 100%;
+  }
+}

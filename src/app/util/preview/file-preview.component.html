@@ -1,0 +1,23 @@
+<div class="preview-root">
+  <div class="preview-toolbar">
+    <div class="title">{{ config.title || 'Vista previa' }}</div>
+    <div class="spacer"></div>
+    <button *ngIf="config.showDownloadButton !== false" (click)="download()">Descargar</button>
+    <button *ngIf="config.showPrintButton !== false" (click)="print()">Imprimir</button>
+    <button (click)="close()">Cerrar</button>
+  </div>
+
+  <div class="preview-body">
+    <ng-container *ngIf="!error; else errorTpl">
+      <iframe
+        class="preview-iframe"
+        *ngIf="previewUrl"
+        [src]="previewUrl"
+        style="width:100%;height:100%;border:0;">
+      </iframe>
+    </ng-container>
+    <ng-template #errorTpl>
+      <div class="error">{{ error }}</div>
+    </ng-template>
+  </div>
+</div>

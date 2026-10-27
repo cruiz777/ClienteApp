@@ -1,0 +1,179 @@
+<div class="rol-container" [formGroup]="form">
+  <!-- CABECERA -->
+  <div class="page-header">
+    <div>
+      <h2>Generación de Roles Quincenales</h2>
+      <p>Administre y genere la nómina quincenal de empleados.</p>
+    </div>
+  </div>
+
+  <!-- CONTENIDO -->
+  <div class="main-layout">
+    <!-- PANEL IZQUIERDO -->
+    <div class="card left-panel">
+      <div class="left-panel-body">
+        <ng-container *ngFor="let nodo of nodos">
+          <!-- RAÍZ -->
+          <div class="tree-item"
+            [class.active]="nodoSeleccionado?.tipo === nodo.tipo && nodoSeleccionado?.id === nodo.id"
+            (click)="seleccionarNodo(nodo)">
+
+            <mat-icon class="tree-icon" (click)="toggleNodo(nodo, $event)">
+              {{ nodo.expandido ? 'folder_open' : 'folder' }}
+            </mat-icon>
+
+            <span>{{ nodo.nombre }}</span>
+          </div>
+
+          <!-- HIJOS -->
+          <div class="tree-children" *ngIf="nodo.expandido">
+            <div *ngFor="let hijo of nodo.hijos" class="tree-item child"
+              [class.active]="nodoSeleccionado?.tipo === hijo.tipo && nodoSeleccionado?.id === hijo.id"
+              (click)="seleccionarNodo(hijo)">
+
+              <mat-icon class="tree-icon">business</mat-icon>
+              <span>{{ hijo.nombre }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO -->
+    <div class="card right-panel">
+      <div class="panel-header">
+        <mat-icon>table_view</mat-icon>
+        <span>Detalle de Quincena</span>
+      </div>
+
+      <div class="periodo-cerrado-banner" *ngIf="periodoCerrado">
+        Periodo cerrado. La quincena se muestra solo en modo consulta.
+      </div>
+
+      <div class="tabla-wrapper">
+        <ag-grid-angular
+  class="ag-theme-alpine rol-grid"
+  [rowData]="detalleRol"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [pinnedBottomRowData]="pinnedBottomRowData"
+  rowSelection="multiple"
+  [suppressRowClickSelection]="true"
+  (gridReady)="onGridReady($event)"
+  (cellValueChanged)="onCellValueChanged($event)"
+  (gridSizeChanged)="onGridSizeChanged()"
+  (firstDataRendered)="onFirstDataRendered()">
+</ag-grid-angular>
+
+        <div class="sin-datos" *ngIf="!detalleRol || detalleRol.length === 0">
+          Genere o consulte un periodo para visualizar la quincena.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCIONES -->
+  <div class="actions-card">
+   <div class="actions-left">
+  <div class="periodo-inline">
+    <label>Periodo</label>
+
+    <mat-form-field appearance="outline" class="fecha-field">
+      <mat-label>Periodo</mat-label>
+
+      <input
+        matInput
+        [matDatepicker]="pickerPeriodo"
+        formControlName="fechaPeriodo"
+        [matDatepickerFilter]="soloFechaQuincena"
+        readonly />
+
+      <mat-datepicker-toggle matSuffix [for]="pickerPeriodo">
+      </mat-datepicker-toggle>
+
+      <mat-datepicker #pickerPeriodo></mat-datepicker>
+
+      <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
+        Solo puede seleccionar el día 15 del mes.
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    class="action-button"
+    [disabled]="
+      generando ||
+      cargando ||
+      validandoCierre ||
+      procesandoModificar ||
+      modificarBloqueado ||
+      (periodoExiste && periodoCerrado)
+    "
+    (click)="accionPrincipalPeriodo()">
+
+    <mat-icon>
+      {{ procesandoModificar ? 'hourglass_top' : (periodoExiste ? 'edit' : 'add') }}
+    </mat-icon>
+
+    <span>
+      {{ procesandoModificar ? 'Procesando...' : (periodoExiste ? 'Modificar' : 'Nuevo') }}
+    </span>
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button"
+    [disabled]="actualizando || cargando || generando || validandoCierre"
+    (click)="actualizarQuincena()">
+
+    <mat-icon>
+      {{ actualizando ? 'sync' : 'refresh' }}
+    </mat-icon>
+
+    <span>
+      {{ actualizando ? 'Actualizando...' : 'Actualizar' }}
+    </span>
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button action-excel"
+    [disabled]="!detalleRol || detalleRol.length === 0 || exportandoExcel"
+    (click)="exportarQuincenaExcel()">
+
+    <mat-icon>description</mat-icon>
+
+    <span>
+      {{ exportandoExcel ? 'Exportando...' : 'Excel' }}
+    </span>
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    class="action-button action-banco"
+    [disabled]="!periodoExiste || cargando || generando || actualizando"
+    (click)="abrirModalBanco()">
+
+    <mat-icon>account_balance</mat-icon>
+    <span>Banco</span>
+  </button>
+
+  <button
+    mat-stroked-button
+    color="warn"
+    type="button"
+    class="action-button action-cancelar"
+    (click)="cancelar()">
+
+    <mat-icon>close</mat-icon>
+    <span>Cancelar</span>
+  </button>
+</div>
+  </div>
+</div>

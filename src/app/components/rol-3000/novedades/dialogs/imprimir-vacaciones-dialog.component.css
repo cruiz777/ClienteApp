@@ -1,0 +1,29 @@
+.contenido {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.texto-preview {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 260px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid rgba(0, 0, 0, 0.24);
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.texto-preview:focus {
+  outline: none;
+  border-color: var(--mdc-theme-primary, #3f51b5);
+  border-width: 2px;
+}
+
+.nota {
+  font-size: 12px;
+  color: var(--text-secondary, #666);
+  margin-top: 8px;
+}

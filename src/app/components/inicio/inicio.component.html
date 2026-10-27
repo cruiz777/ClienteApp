@@ -1,0 +1,45 @@
+<section class="gs1-section">
+  <div class="carousel-container">
+    <img *ngFor="let img of images; let i = index" [src]="img" class="carousel-image"
+      [ngStyle]="{ opacity: currentIndex === i ? '1' : '0' }" alt="Imagen carrusel" />
+  </div>
+
+  <div class="logo-container">
+    <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo de la empresa" class="gs1-logo" />
+  </div>
+
+  <!-- Sistemas con permisos dinámicos -->
+  <div class="product-icons">
+    <ng-container *ngFor="let sistema of sistemas">
+      <div *ngIf="sistema.id !== 'seguridades' || sistema.tienePermiso"
+           class="sistema-container"
+           [class.sin-permisos]="!sistema.tienePermiso"
+           [class.con-permisos]="sistema.tienePermiso"
+           (click)="navegarA(sistema, $event)">
+
+        <img [src]="sistema.imagenInactiva"
+             [alt]="sistema.nombre"
+             class="sistema-icon"
+             [style.cursor]="sistema.tienePermiso ? 'pointer' : 'not-allowed'"
+             [style.opacity]="sistema.tienePermiso ? '1' : '0.4'" />
+
+        <!-- Imagen hover (solo se muestra en hover si tiene permisos) -->
+        <img [src]="sistema.imagenActiva"
+             [alt]="sistema.nombre"
+             class="sistema-icon sistema-icon-hover" />
+      </div>
+    </ng-container>
+  </div>
+    <!-- NUEVO: Botón de ayuda -->
+  <div class="help-button-container">
+    <button class="btn-help" (click)="abrirModalAyuda()" matTooltip="Ver videos de ayuda">
+      <i class="bi bi-question-circle"></i>
+      <span>¿Necesitas ayuda?</span>
+    </button>
+  </div>
+
+  <!-- Botón avatar fijo -->
+  <div class="avatar-wrapper">
+    <app-user-avatar position="fixed-top"></app-user-avatar>
+  </div>
+</section>

@@ -1,0 +1,39 @@
+<div class="form-container">
+  <h2>{{ esEdicion ? 'Editar Proyecto' : 'Nuevo Proyecto' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-group">
+      <label>Descripción</label>
+      <input formControlName="descripcion" type="text" placeholder="Descripción del proyecto" />
+      <div *ngIf="form.get('descripcion')?.invalid && form.get('descripcion')?.touched" class="error">
+        La descripción es requerida y no debe exceder 100 caracteres.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Estado</label>
+      <select formControlName="estado">
+        <option [ngValue]="true">Activo</option>
+        <option [ngValue]="false">Inactivo</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Empresa</label>
+      <select formControlName="empresaCodigo">
+        <option [ngValue]="null" disabled>Seleccione una empresa</option>
+        <option *ngFor="let empresa of empresas" [ngValue]="empresa.empresaCodigo">
+          {{ empresa.empresaNombre }}
+        </option>
+      </select>
+      <div *ngIf="form.get('empresaCodigo')?.invalid && form.get('empresaCodigo')?.touched" class="error">
+        Debe seleccionar una empresa.
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit">Guardar</button>
+      <button type="button" class="cancelar" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

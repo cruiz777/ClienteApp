@@ -1,0 +1,197 @@
+.form-container {
+  width: 100%;
+  max-width: 1200px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.required { color: #f44336; }
+
+input[type="text"],
+select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccd5e2;
+  background-color: #eef4f7;
+  font-size: 13px;
+  height: 34px;
+}
+
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: #002c6c;
+  background-color: #fff;
+}
+
+.error {
+  color: #f44336;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ── Grid de cuentas contables 2 columnas ── */
+.cuentas-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafd;
+  margin-bottom: 20px;
+}
+
+/* ── Checkbox ── */
+.checkboxes-group {
+  display: flex;
+  gap: 24px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafd;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  font-size: 13px;
+  margin-bottom: 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  border: 2px solid #ccd5e2;
+  border-radius: 4px;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom {
+  background: #093679;
+  border-color: #093679;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkbox-custom::after {
+  content: '';
+  display: block;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+/* ── Acciones ── */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 16px 4px;
+  margin-top: 8px;
+}
+
+.btn-azul {
+  background: #093679;
+  color: #fff;
+  border: 1px solid #0d6efd;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-azul:hover    { background: #48b0ff; border-color: #48b0ff; }
+.btn-azul:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-rojo:hover    { background: #ef4444; border-color: #ef4444; }
+.btn-rojo:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cancel-button {
+  background-color: #f5f5f5;
+  color: #333;
+  padding: 8px 24px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.cancel-button:hover { background-color: #e0e0e0; }
+
+/* ── Modo edición: inputs amarillos ── */
+.form-container.edit-mode input[type="text"],
+.form-container.edit-mode select {
+  background-color: #fff7d6;
+  border-color: #e5b400;
+  color: #333;
+}
+
+.form-container.edit-mode input[type="text"]:focus,
+.form-container.edit-mode select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229, 180, 0, 0.25);
+  border-color: #d4a100;
+}
+
+.form-container.edit-mode .cuentas-grid,
+.form-container.edit-mode .checkboxes-group {
+  border-color: #e5b400;
+  background: #fffbeb;
+}
+
+.form-container.edit-mode .checkbox-custom {
+  border-color: #e5b400;
+}

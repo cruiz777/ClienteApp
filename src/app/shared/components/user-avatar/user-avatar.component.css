@@ -1,0 +1,324 @@
+/* =============================
+   AVATAR Y PANEL DE USUARIO
+   ============================= */
+
+/* Contenedor principal - DEBE SER INLINE */
+.user-avatar-container {
+  position: relative; /* ← AGREGAR ESTO */
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Resto del código igual... */
+.user-name-text {
+  font-weight: 700;
+  font-size: clamp(14px, 1.1vw, 18px);
+  color: #333;
+  white-space: nowrap;
+}
+
+.user-avatar-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #001f4f;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar-toggle:hover {
+  transform: scale(1.05);
+}
+
+.user-avatar-container.footer .user-avatar-toggle {
+  width: 45px;
+  height: 45px;
+  font-size: 18px;
+}
+
+.user-panel {
+  position: absolute;
+  width: 220px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 24px 20px;
+  font-family: 'Poppins', sans-serif;
+  z-index: 1001; /* ← Mayor que el wrapper */
+}
+
+/* Panel para posición fixed-top */
+.user-avatar-container.fixed-top .user-panel {
+  top: 52px;
+  right: 0;
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.user-avatar-large {
+  width: 64px;
+  height: 64px;
+  aspect-ratio: 1 / 1;
+  background-color: #001f4f;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #001f4f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info {
+  font-size: 13px;
+  color: #444;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
+
+.user-info span {
+  font-weight: 500;
+  color: #001f4f;
+}
+
+.logout-button {
+  background-color: #cd3c0d;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-button:hover {
+  background-color: #a9280a;
+}
+
+.logout-button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 768px) {
+  .user-avatar-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .user-panel {
+    width: 200px;
+    padding: 20px 16px;
+  }
+}
+/* =============================
+   AVATAR Y PANEL DE USUARIO
+   ============================= */
+
+/* Contenedor principal */
+.user-avatar-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Nombre de usuario en footer */
+.user-name-text {
+  font-weight: 700;
+  font-size: clamp(14px, 1.1vw, 18px);
+  color: #333;
+  white-space: nowrap;
+}
+
+/* Avatar clickeable */
+.user-avatar-toggle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #001f4f;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.user-avatar-toggle:hover {
+  transform: scale(1.05);
+}
+
+/* Avatar MÁS PEQUEÑO en footer */
+.user-avatar-container.footer .user-avatar-toggle {
+  width: 35px;   /* ← CAMBIAR de 45px a 35px */
+  height: 35px;  /* ← CAMBIAR de 45px a 35px */
+  font-size: 14px; /* ← CAMBIAR de 18px a 14px */
+}
+
+/* Panel flotante desplegable */
+.user-panel {
+  position: absolute;
+  width: 220px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 24px 20px;
+  font-family: 'Poppins', sans-serif;
+  z-index: 1001;
+}
+
+/* Panel para posición fixed-top */
+.user-avatar-container.fixed-top .user-panel {
+  top: 52px;
+  right: 0;
+}
+
+/* Panel para footer - ajustado */
+.user-avatar-container.footer .user-panel {
+  bottom: 45px;
+  right: 0;          /* Borde derecho del panel = borde derecho del avatar */
+  left: auto;
+  transform: none;   /* Sin transformaciones */
+}
+
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.user-avatar-large {
+  width: 64px;
+  height: 64px;
+  aspect-ratio: 1 / 1;
+  background-color: #001f4f;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #001f4f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info {
+  font-size: 13px;
+  color: #444;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: break-word;
+}
+
+.user-info span {
+  font-weight: 500;
+  color: #001f4f;
+}
+
+.logout-button {
+  background-color: #cd3c0d;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-button:hover {
+  background-color: #a9280a;
+}
+
+.logout-button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 768px) {
+  .user-avatar-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  
+  /* Avatar aún más pequeño en mobile */
+  .user-avatar-container.footer .user-avatar-toggle {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .user-panel {
+    width: 200px;
+    padding: 20px 16px;
+  }
+}

@@ -1,0 +1,549 @@
+<div class="explorador-vb6">
+  <header class="barra-titulo">
+    <div>
+      <h1>Acumulados de Nómina</h1>
+      <span>Explorador dinámico del sistema de nómina</span>
+    </div>
+
+    <div class="acciones-superiores">
+      <button mat-stroked-button type="button" (click)="limpiar()">
+        <mat-icon>refresh</mat-icon>
+        Limpiar
+      </button>
+
+      <button mat-raised-button color="primary" type="button"
+              (click)="generar()"
+              [disabled]="generando || cargandoCatalogos">
+        <mat-icon>play_arrow</mat-icon>
+        {{ generando ? 'Generando...' : 'Generar' }}
+      </button>
+
+      <button mat-stroked-button type="button"
+              (click)="exportarExcel()"
+              [disabled]="rowData.length === 0">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+    </div>
+  </header>
+
+  <div class="cargando-catalogos" *ngIf="cargandoCatalogos">
+    <mat-spinner diameter="30"></mat-spinner>
+    Cargando catálogos...
+  </div>
+
+  <section class="panel-control" *ngIf="!cargandoCatalogos">
+    <aside class="selector-principal">
+      <div class="titulo-caja">Filtros</div>
+
+      <button type="button"
+              [class.activo]="panelActivo === 'LOCALES'"
+              (click)="cambiarPanel('LOCALES')">
+        <mat-checkbox [checked]="totalLocalesSeleccionados > 0"
+                      (click)="$event.preventDefault()">
+        </mat-checkbox>
+        Locales
+      </button>
+
+      <button type="button"
+              [class.activo]="panelActivo === 'RUBROS'"
+              (click)="cambiarPanel('RUBROS')">
+        <mat-checkbox [checked]="totalRubrosSeleccionados > 0"
+                      (click)="$event.preventDefault()">
+        </mat-checkbox>
+        Rubros
+      </button>
+
+      <button type="button"
+              [class.activo]="panelActivo === 'PERIODOS'"
+              (click)="cambiarPanel('PERIODOS')">
+        <mat-checkbox [checked]="totalPeriodosSeleccionados > 0"
+                      (click)="$event.preventDefault()">
+        </mat-checkbox>
+        Períodos
+      </button>
+
+      <button type="button"
+              [class.activo]="panelActivo === 'DISENO'"
+              (click)="cambiarPanel('DISENO')">
+        <mat-icon>view_quilt</mat-icon>
+        Diseño
+      </button>
+    </aside>
+
+    <main class="contenido-selector">
+      <section class="panel-arbol" *ngIf="panelActivo === 'LOCALES'">
+        <div class="cabecera-arbol">
+          <strong>Locales</strong>
+          <span>{{ totalLocalesSeleccionados }} seleccionados</span>
+        </div>
+
+        <div class="herramientas-arbol">
+          <input type="text"
+                 placeholder="Buscar local"
+                 [(ngModel)]="filtroLocal"
+                 [ngModelOptions]="{standalone: true}"
+                 (ngModelChange)="actualizarFiltroLocales()">
+
+          <button type="button" (click)="seleccionarTodos(locales)">
+            Todos
+          </button>
+
+          <button type="button" (click)="deseleccionarTodos(locales)">
+            Ninguno
+          </button>
+        </div>
+
+        <div class="arbol-lista">
+          <div class="nodo raiz">
+            <span>−</span>
+            <span>📁</span>
+            Listado de Locales
+          </div>
+
+          <label class="nodo hijo" *ngFor="let local of localesFiltrados; trackBy: trackByCatalogo">
+            <mat-checkbox
+              [checked]="local.seleccionado"
+              (change)="cambiarSeleccionCatalogo(local, $event.checked)">
+            </mat-checkbox>
+            <span>📂</span>
+            {{ local.item.descripcion }}
+          </label>
+        </div>
+      </section>
+
+      <section class="panel-arbol" *ngIf="panelActivo === 'RUBROS'">
+        <div class="cabecera-arbol">
+          <strong>Rubros</strong>
+          <span>{{ totalRubrosSeleccionados }} seleccionados</span>
+        </div>
+
+        <div class="dos-arboles">
+          <div>
+            <div class="grupo-rubro-titulo ingreso">
+              <strong>📁 INGRESOS</strong>
+
+              <button type="button"
+                      (click)="seleccionarTodos(rubrosIngresos)">
+                Todos
+              </button>
+
+              <button type="button"
+                      (click)="deseleccionarTodos(rubrosIngresos)">
+                Ninguno
+              </button>
+            </div>
+
+            <input class="buscador-simple"
+                   type="text"
+                   placeholder="Buscar ingreso"
+                   [(ngModel)]="filtroIngreso"
+                   [ngModelOptions]="{standalone: true}"
+                   (ngModelChange)="actualizarFiltroIngresos()">
+
+            <div class="arbol-lista rubros">
+              <label class="nodo hijo"
+                     *ngFor="let rubro of ingresosFiltrados; trackBy: trackByCatalogo">
+                <mat-checkbox
+                  [checked]="rubro.seleccionado"
+                  (change)="cambiarSeleccionRubro(rubro, $event.checked)">
+                </mat-checkbox>
+                <span>📂</span>
+                {{ rubro.item.codigo }} - {{ rubro.item.descripcion }}
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <div class="grupo-rubro-titulo egreso">
+              <strong>📁 EGRESOS</strong>
+
+              <button type="button"
+                      (click)="seleccionarTodos(rubrosDescuentos)">
+                Todos
+              </button>
+
+              <button type="button"
+                      (click)="deseleccionarTodos(rubrosDescuentos)">
+                Ninguno
+              </button>
+            </div>
+
+            <input class="buscador-simple"
+                   type="text"
+                   placeholder="Buscar egreso"
+                   [(ngModel)]="filtroDescuento"
+                   [ngModelOptions]="{standalone: true}"
+                   (ngModelChange)="actualizarFiltroDescuentos()">
+
+            <div class="arbol-lista rubros">
+              <label class="nodo hijo"
+                     *ngFor="let rubro of descuentosFiltrados; trackBy: trackByCatalogo">
+                <mat-checkbox
+                  [checked]="rubro.seleccionado"
+                  (change)="cambiarSeleccionRubro(rubro, $event.checked)">
+                </mat-checkbox>
+                <span>📂</span>
+                {{ rubro.item.codigo }} - {{ rubro.item.descripcion }}
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-arbol" *ngIf="panelActivo === 'PERIODOS'">
+        <div class="cabecera-arbol">
+          <strong>Períodos</strong>
+          <span>{{ totalPeriodosSeleccionados }} seleccionados</span>
+        </div>
+
+        <div class="herramientas-arbol">
+          <button type="button" (click)="seleccionarTodos(periodos)">
+            Todos
+          </button>
+
+          <button type="button" (click)="deseleccionarTodos(periodos)">
+            Ninguno
+          </button>
+        </div>
+
+        <div class="arbol-lista periodos">
+          <div class="grupo-anio" *ngFor="let grupo of periodosPorAnio">
+            <div class="nodo raiz">
+              <span>−</span>
+              <span>📁</span>
+              {{ grupo.anio }}
+            </div>
+
+            <label class="nodo hijo"
+                   *ngFor="let periodo of grupo.periodos; trackBy: trackByPeriodo">
+              <mat-checkbox
+                [checked]="periodo.seleccionado"
+                (change)="cambiarSeleccionPeriodo(periodo, $event.checked)">
+              </mat-checkbox>
+              <span>📂</span>
+              {{ periodo.item.descripcion }}
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel-diseno drag-diseno"
+               *ngIf="panelActivo === 'DISENO'">
+
+        <div class="caja-dimension zona-drag">
+          <div class="titulo-dimension">
+            Filas
+            <small>
+              Máximo una dimensión adicional
+            </small>
+          </div>
+
+          <div
+            id="listaFilas"
+            cdkDropList
+            class="lista-dimensiones-drop"
+            [cdkDropListData]="filasConfigurables"
+            [cdkDropListConnectedTo]="listasDisenoConectadas"
+            (cdkDropListDropped)="dropDimension($event, 'FILAS')">
+
+            <div
+              class="dimension-drag"
+              *ngFor="
+                let dimension of filasConfigurables;
+                trackBy: trackByDimension
+              "
+              cdkDrag>
+
+              <mat-icon cdkDragHandle>
+                drag_indicator
+              </mat-icon>
+
+              <span>
+                {{ descripcionDimension(dimension) }}
+              </span>
+
+              <button
+                type="button"
+                title="Mover a Columnas"
+                (click)="
+                  moverDimensionConTeclado(
+                    dimension,
+                    'FILAS',
+                    'COLUMNAS'
+                  )
+                ">
+                →
+              </button>
+
+              <button
+                type="button"
+                title="Mover a Opciones"
+                (click)="
+                  moverDimensionConTeclado(
+                    dimension,
+                    'FILAS',
+                    'OPCIONES'
+                  )
+                ">
+                ↓
+              </button>
+            </div>
+
+            <div
+              class="zona-vacia"
+              *ngIf="filasConfigurables.length === 0">
+              Arrastre aquí Rubros, Locales o Períodos
+            </div>
+          </div>
+
+          <div class="dimension-fija">
+            <mat-icon>lock</mat-icon>
+            <span>Empleado</span>
+          </div>
+        </div>
+
+        <div class="caja-dimension zona-drag">
+          <div class="titulo-dimension">
+            Columnas
+            <small>
+              Debe conservar al menos una
+            </small>
+          </div>
+
+          <div
+            id="listaColumnas"
+            cdkDropList
+            cdkDropListOrientation="vertical"
+            class="lista-dimensiones-drop"
+            [cdkDropListData]="columnasSeleccionadas"
+            [cdkDropListConnectedTo]="listasDisenoConectadas"
+            (cdkDropListDropped)="dropDimension($event, 'COLUMNAS')">
+
+            <div
+              class="dimension-drag"
+              *ngFor="
+                let dimension of columnasSeleccionadas;
+                trackBy: trackByDimension
+              "
+              cdkDrag>
+
+              <mat-icon cdkDragHandle>
+                drag_indicator
+              </mat-icon>
+
+              <span>
+                {{ descripcionDimension(dimension) }}
+              </span>
+
+              <button
+                type="button"
+                title="Mover a Filas"
+                (click)="
+                  moverDimensionConTeclado(
+                    dimension,
+                    'COLUMNAS',
+                    'FILAS'
+                  )
+                ">
+                ←
+              </button>
+
+              <button
+                type="button"
+                title="Mover a Opciones"
+                (click)="
+                  moverDimensionConTeclado(
+                    dimension,
+                    'COLUMNAS',
+                    'OPCIONES'
+                  )
+                ">
+                ↓
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="caja-opciones zona-drag">
+          <div class="titulo-dimension">
+            Opciones
+            <small>
+              Dimensiones disponibles
+            </small>
+          </div>
+
+          <div
+            id="listaOpciones"
+            cdkDropList
+            cdkDropListOrientation="horizontal"
+            class="
+              lista-dimensiones-drop
+              lista-opciones-drop
+            "
+            [cdkDropListData]="opcionesSeleccionadas"
+            [cdkDropListConnectedTo]="listasDisenoConectadas"
+            (cdkDropListDropped)="dropDimension($event, 'OPCIONES')">
+
+            <div
+              class="dimension-drag"
+              *ngFor="
+                let dimension of opcionesSeleccionadas;
+                trackBy: trackByDimension
+              "
+              cdkDrag>
+
+              <mat-icon cdkDragHandle>
+                drag_indicator
+              </mat-icon>
+
+              <span>
+                {{ descripcionDimension(dimension) }}
+              </span>
+
+              <button
+                type="button"
+                title="Mover a Filas"
+                (click)="
+                  moverDimensionConTeclado(
+                    dimension,
+                    'OPCIONES',
+                    'FILAS'
+                  )
+                ">
+                ↑
+              </button>
+
+              <button
+                type="button"
+                title="Mover a Columnas"
+                (click)="
+                  moverDimensionConTeclado(
+                    dimension,
+                    'OPCIONES',
+                    'COLUMNAS'
+                  )
+                ">
+                →
+              </button>
+            </div>
+
+            <div
+              class="zona-vacia"
+              *ngIf="opcionesSeleccionadas.length === 0">
+              Sin opciones pendientes
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside
+      class="opciones-laterales"
+      [formGroup]="form">
+
+      
+
+      <div class="grupo-estado-empleado">
+        <strong>Estado de Empleados</strong>
+
+        <mat-radio-group
+          formControlName="estadoEmpleado">
+
+          <mat-radio-button value="TODOS">
+            Todos
+          </mat-radio-button>
+
+          <mat-radio-button value="ACTIVOS">
+            Activos
+          </mat-radio-button>
+
+          <mat-radio-button value="EXEMPLEADOS">
+            Ex-Empleados
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <div class="grupo-tipo">
+        <strong>Tipo contractual</strong>
+
+        <input
+          type="text"
+          placeholder="Buscar tipo"
+          [(ngModel)]="filtroTipo"
+          [ngModelOptions]="{
+            standalone: true
+          }"
+          (ngModelChange)="
+            actualizarFiltroTipos()
+          ">
+
+        <label
+          *ngFor="
+            let tipo of tiposFiltrados;
+            trackBy: trackByCatalogo
+          ">
+
+          <mat-checkbox
+            [checked]="tipo.seleccionado"
+            (change)="
+              cambiarSeleccionCatalogo(
+                tipo,
+                $event.checked
+              )
+            ">
+            {{ tipo.item.descripcion }}
+          </mat-checkbox>
+        </label>
+      </div>
+
+      
+    </aside>
+  </section>
+
+  <section class="resumen-diseno">
+    <div>
+      <strong>Filas</strong>
+      <span *ngFor="let dimension of filasSeleccionadas">
+        {{ descripcionDimension(dimension) }}
+      </span>
+    </div>
+
+    <div>
+      <strong>Columnas</strong>
+      <span *ngFor="let dimension of columnasSeleccionadas">
+        {{ descripcionDimension(dimension) }}
+      </span>
+    </div>
+
+    <div>
+      <strong>Opciones</strong>
+      <span *ngFor="let opcion of opcionesSeleccionadas">
+        {{ descripcionDimension(opcion) }}
+      </span>
+    </div>
+  </section>
+
+  <section class="resultado">
+    <div class="estado-vacio"
+         *ngIf="!generando && rowData.length === 0">
+      Configure el diseño, seleccione filtros y presione Generar.
+    </div>
+
+    <div class="cargando"
+         *ngIf="generando">
+      <mat-spinner diameter="28"></mat-spinner>
+      Generando reporte...
+    </div>
+
+    <ag-grid-angular
+      *ngIf="!generando"
+      class="ag-theme-alpine grid-explorador"
+      [columnDefs]="columnDefs"
+      [rowData]="rowData"
+      [defaultColDef]="defaultColDef"
+      [pinnedBottomRowData]="pinnedBottomRowData"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+  </section>
+</div>

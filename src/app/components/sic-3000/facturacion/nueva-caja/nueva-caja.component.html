@@ -1,0 +1,151 @@
+<div class="dialog-header">
+  <h3>Nueva Caja</h3>
+</div>
+
+<div class="dialog-content">
+  <form [formGroup]="form" (ngSubmit)="crear()" class="form-grid">
+
+    <!-- Fila 1 -->
+    <div class="row">
+      <div class="field xs">
+        <label>Establecimiento*</label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="\d*"
+          formControlName="num_establecimiento"
+          maxlength="3"
+          (blur)="pad3('num_establecimiento')"
+        />
+        <small class="err" *ngIf="touched('num_establecimiento') && hasErr('num_establecimiento','required')">
+          Requerido.
+        </small>
+        <small class="err" *ngIf="touched('num_establecimiento') && hasErr('num_establecimiento','pattern')">
+          Debe tener exactamente 3 dígitos.
+        </small>
+        <small class="err" *ngIf="hasErr('num_establecimiento','duplicated')">
+          Ya existe una Caja con este Establecimiento.
+        </small>
+      </div>
+
+      <div class="field xs">
+        <label>Caja*</label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="\d*"
+          formControlName="caja"
+          maxlength="3"
+          (blur)="pad3('caja')"
+        />
+        <small class="err" *ngIf="touched('caja') && hasErr('caja','required')">
+          Requerido.
+        </small>
+        <small class="err" *ngIf="touched('caja') && hasErr('caja','pattern')">
+          Debe tener exactamente 3 dígitos.
+        </small>
+        <small class="err" *ngIf="hasErr('caja','duplicated')">
+          Ya existe este código de Caja.
+        </small>
+      </div>
+    </div>
+
+    <!-- Fila 2 -->
+    <div class="row">
+      <div class="field md">
+        <label>Empresa (Nombre)*</label>
+        <input type="text" formControlName="nombre_comercial" maxlength="80" />
+        <small class="err" *ngIf="touched('nombre_comercial') && hasErr('nombre_comercial','required')">
+          Requerido.
+        </small>
+      </div>
+
+      <div class="field md">
+        <label>RUC*</label>
+        <input
+          type="text"
+          inputmode="numeric"
+          pattern="\d*"
+          formControlName="ruc"
+          maxlength="13"
+        />
+        <small class="err" *ngIf="touched('ruc') && hasErr('ruc','required')">
+          Requerido.
+        </small>
+        <small class="err" *ngIf="touched('ruc') && hasErr('ruc','pattern')">
+          Debe tener exactamente 13 dígitos.
+        </small>
+      </div>
+
+      <div class="field full">
+        <label>Dirección*</label>
+        <input type="text" formControlName="direccion" maxlength="150"/>
+        <small class="err" *ngIf="touched('direccion') && hasErr('direccion','required')">
+          Requerido.
+        </small>
+      </div>
+
+      <div class="field md">
+        <label># Autorización*</label>
+        <input type="text" formControlName="numero_autorizacion" maxlength="20" />
+        <small class="err" *ngIf="touched('numero_autorizacion') && hasErr('numero_autorizacion','required')">
+          Requerido.
+        </small>
+      </div>
+
+      <div class="field xs align-bottom">
+        <label class="label-inline">Generar XML</label>
+        <label class="switch">
+          <input type="checkbox" formControlName="generar_xml" />
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Fila 3 -->
+    <div class="row">
+      <div class="field sm">
+        <label># Factura</label>
+        <input type="text" inputmode="numeric" pattern="\d*" formControlName="numero_factura" />
+        <small class="err" *ngIf="touched('numero_factura') && hasErr('numero_factura','pattern')">
+          Solo números (hasta 20 dígitos).
+        </small>
+      </div>
+
+      <div class="field xs2">
+        <label>E. Factura</label>
+        <input type="text" formControlName="estado_factura" maxlength="1" />
+        <small class="err" *ngIf="touched('estado_factura') && hasErr('estado_factura','pattern')">
+          1 letra en mayúscula.
+        </small>
+      </div>
+
+      <div class="field sm">
+        <label># N. Crédito</label>
+        <input type="text" inputmode="numeric" pattern="\d*" formControlName="numero_ncredito" />
+        <small class="err" *ngIf="touched('numero_ncredito') && hasErr('numero_ncredito','pattern')">
+          Solo números (hasta 20 dígitos).
+        </small>
+      </div>
+
+      <div class="field xs2">
+        <label>E. N. Crédito</label>
+        <input type="text" formControlName="estado_ncredito" maxlength="1" />
+        <small class="err" *ngIf="touched('estado_ncredito') && hasErr('estado_ncredito','pattern')">
+          1 letra en mayúscula.
+        </small>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button type="submit" class="btn-primary" [disabled]="saving || form.invalid">
+        {{ saving ? 'Guardando...' : 'Guardar' }}
+      </button>
+      <button type="button" class="btn-secondary" (click)="cancelar()" [disabled]="saving">
+        Cancelar
+      </button>
+    </div>
+
+    <p *ngIf="errorMsg" class="error">{{ errorMsg }}</p>
+  </form>
+</div>

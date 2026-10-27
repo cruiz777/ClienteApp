@@ -1,0 +1,97 @@
+<div class="page-container">
+  <div class="contenido">
+
+    <!-- ===== ENCABEZADO ===== -->
+    <div class="header-section">
+      <mat-icon class="header-icon">assignment</mat-icon>
+      <div>
+        <h2 class="title">Generar ATS</h2>
+        <p class="subtitle">Anexo Transaccional Simplificado — SRI Ecuador</p>
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- ===== FORMULARIO ===== -->
+    <form [formGroup]="atsForm" class="form-section" (ngSubmit)="generarAts()">
+
+      <p class="form-instrucciones">
+        Seleccione el <strong>mes</strong> y el <strong>año</strong> del período fiscal
+        para el cual desea generar el archivo XML del ATS de compras.
+      </p>
+
+      <div class="fields-row">
+
+        <!-- MES -->
+        <mat-form-field appearance="outline" class="field-mes">
+          <mat-label>Mes</mat-label>
+          <mat-select formControlName="mes">
+            <mat-option *ngFor="let m of meses" [value]="m.valor">
+              {{ m.etiqueta }}
+            </mat-option>
+          </mat-select>
+          <mat-icon matPrefix>calendar_month</mat-icon>
+          <mat-error *ngIf="mesControl?.hasError('required')">
+            Seleccione un mes
+          </mat-error>
+        </mat-form-field>
+
+        <!-- AÑO -->
+        <mat-form-field appearance="outline" class="field-anio">
+          <mat-label>Año</mat-label>
+          <input
+            matInput
+            type="number"
+            formControlName="anio"
+            placeholder="Ej: 2024"
+            [min]="anioMinimo"
+            [max]="anioMaximo"
+          />
+          <mat-icon matPrefix>event</mat-icon>
+          <mat-error *ngIf="anioInvalido">{{ errorAnio }}</mat-error>
+        </mat-form-field>
+
+      </div>
+
+      <!-- VISTA PREVIA DEL PERÍODO -->
+      <div class="periodo-preview" *ngIf="atsForm.valid">
+        <mat-icon>check_circle</mat-icon>
+        <span>
+          Se generará el ATS de
+          <strong>{{ mesSeleccionadoEtiqueta }} {{ anioControl?.value }}</strong>
+        </span>
+      </div>
+
+      <!-- BOTÓN -->
+      <div class="actions-row">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          class="btn-generar"
+          [disabled]="loading"
+        >
+          <mat-spinner *ngIf="loading" diameter="22" class="spinner-btn"></mat-spinner>
+          <mat-icon *ngIf="!loading">download</mat-icon>
+          <span *ngIf="!loading">Descargar ATS XML</span>
+          <span *ngIf="loading">Generando...</span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- ===== NOTA INFORMATIVA ===== -->
+    <div class="nota-info">
+      <mat-icon>info</mat-icon>
+      <div>
+        <strong>¿Qué es el ATS?</strong>
+        <p>
+          El Anexo Transaccional Simplificado es un reporte obligatorio que se presenta
+          mensualmente al SRI. Contiene el detalle de compras, ventas y retenciones
+          realizadas en el período seleccionado.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>

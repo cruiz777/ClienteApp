@@ -1,0 +1,44 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Tipo de Cuenta Banco' : 'Nuevo Tipo de Cuenta Banco' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- DESCRIPCIÓN -->
+    <div class="form-group">
+      <label for="desCuentaBanco">Descripción <span class="required">*</span></label>
+      <input
+        id="desCuentaBanco"
+        type="text"
+        formControlName="desCuentaBanco"
+        placeholder="Ej: Cuenta Corriente"
+        maxlength="248"
+      />
+      <div class="error" *ngIf="form.get('desCuentaBanco')?.touched && form.get('desCuentaBanco')?.errors">
+        <span *ngIf="form.get('desCuentaBanco')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('desCuentaBanco')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ESTADO -->
+    <div class="form-group checkboxes-group">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="estado" />
+        <span class="checkbox-custom"></span>
+        Activo
+      </label>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>

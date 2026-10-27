@@ -1,0 +1,20 @@
+<div class="message-box" [ngClass]="data.type || 'info'">
+    <div class="icon-container">
+      <mat-icon *ngIf="data.type === 'success'">check_circle</mat-icon>
+      <mat-icon *ngIf="data.type === 'error'">error</mat-icon>
+      <mat-icon *ngIf="data.type === 'warning'">warning</mat-icon>
+      <mat-icon *ngIf="data.type === 'info'">info</mat-icon>
+    </div>
+  
+    <h2>{{ data.title }}</h2>
+    <p>{{ data.message }}</p>
+  
+    <div class="actions">
+      <button *ngIf="data.showCancel !== false" mat-button (click)="onCancel()">
+        {{ data.cancelText || 'Cancelar' }}
+      </button>
+      <button mat-raised-button class="search-button" (click)="onConfirm()">
+        {{ data.confirmText || 'Aceptar' }}
+      </button>
+    </div>
+  </div>

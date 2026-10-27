@@ -1,0 +1,163 @@
+<div class="permiso-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Solicitud de Permiso</h2>
+
+    <!-- PERSONAL -->
+    <div class="section-box section-header">
+      <h3>Personal</h3>
+
+      <div class="form-grid-1">
+        <mat-form-field appearance="outline">
+          <mat-label>Empleado</mat-label>
+          <input
+            matInput
+            [formControl]="buscarEmpleadoCtrl"
+            [matAutocomplete]="autoEmpleado"
+            placeholder="Busca por nombre o documento"
+          />
+          <mat-autocomplete
+            #autoEmpleado="matAutocomplete"
+            [displayWith]="mostrarEmpleado"
+            (optionSelected)="onSeleccionarEmpleado($event, 'empleado')"
+          >
+            <mat-option *ngFor="let item of empleadosFiltrados" [value]="item">
+              {{ item.documento }} - {{ item.nombreCompleto }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- DATOS GENERALES -->
+    <div class="section-box">
+      <h3>Datos Generales</h3>
+
+      <div class="form-grid-2">
+        <mat-form-field appearance="outline">
+          <mat-label>Motivo</mat-label>
+          <mat-select formControlName="motivo">
+            <mat-option *ngFor="let item of motivos" [value]="item.idMotivoPermiso">
+              {{ item.descripcion }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="date-time-group">
+          <mat-form-field appearance="outline">
+            <mat-label>Desde</mat-label>
+            <input matInput type="date" formControlName="fechaDesde" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora</mat-label>
+            <input matInput type="time" formControlName="horaDesde" />
+          </mat-form-field>
+        </div>
+
+        <div class="date-time-group">
+          <mat-form-field appearance="outline">
+            <mat-label>Hasta</mat-label>
+            <input matInput type="date" formControlName="fechaHasta" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Hora</mat-label>
+            <input matInput type="time" formControlName="horaHasta" />
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Aprueba</mat-label>
+          <input
+            matInput
+            [formControl]="buscarApruebaCtrl"
+            [matAutocomplete]="autoAprueba"
+            placeholder="Busca por nombre o documento"
+          />
+          <mat-autocomplete
+            #autoAprueba="matAutocomplete"
+            [displayWith]="mostrarEmpleado"
+            (optionSelected)="onSeleccionarEmpleado($event, 'aprueba')"
+          >
+            <mat-option *ngFor="let item of aprobadoresFiltrados" [value]="item">
+              {{ item.documento }} - {{ item.nombreCompleto }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Autoriza</mat-label>
+          <input
+            matInput
+            [formControl]="buscarAutorizaCtrl"
+            [matAutocomplete]="autoAutoriza"
+            placeholder="Busca por nombre o documento"
+          />
+          <mat-autocomplete
+            #autoAutoriza="matAutocomplete"
+            [displayWith]="mostrarEmpleado"
+            (optionSelected)="onSeleccionarEmpleado($event, 'autoriza')"
+          >
+            <mat-option *ngFor="let item of autorizadoresFiltrados" [value]="item">
+              {{ item.documento }} - {{ item.nombreCompleto }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Detalle</mat-label>
+          <textarea matInput rows="3" formControlName="detalleGeneral"></textarea>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- VALIDACIÓN -->
+    <div class="section-box">
+      <h3>Validación</h3>
+
+      <div class="form-grid-validation">
+        <div class="validation-left">
+          <mat-form-field appearance="outline">
+            <mat-label>Tiempo</mat-label>
+            <input matInput formControlName="tiempo" placeholder="ej: 4:30" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Horas / Días</mat-label>
+            <mat-select formControlName="horasDias">
+              <mat-option *ngFor="let item of tiposTiempo" [value]="item.idTipoTiempo">
+                {{ item.tiempo }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de Permiso</mat-label>
+            <mat-select formControlName="tipoPermiso">
+              <mat-option *ngFor="let item of tiposPermiso" [value]="item.idTipoPermiso">
+                {{ item.descripcion }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="validation-right">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Detalle</mat-label>
+            <textarea matInput rows="5" formControlName="detalleValidacion"></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" [disabled]="enviando" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" [disabled]="enviando" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

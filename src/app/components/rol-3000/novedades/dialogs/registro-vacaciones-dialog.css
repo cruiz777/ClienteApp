@@ -1,0 +1,14 @@
+.tabla-periodos {
+  width: 100%;
+}
+
+.fila-total {
+  font-weight: 500;
+}
+
+.cargando,
+.sin-datos {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary, #666);
+}

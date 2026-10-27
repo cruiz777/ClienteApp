@@ -1,0 +1,483 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.bonos-container {
+  padding: 15px;
+  background: #f4f6f8;
+  min-height: calc(100vh - 80px);
+  box-sizing: border-box;
+}
+
+.titulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.titulo h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #263238;
+}
+
+.titulo p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #78909c;
+}
+
+.estado-generado {
+  padding: 7px 12px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.card {
+  background: white;
+  border: 1px solid #d9e0e5;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px
+    rgba(0, 0, 0, 0.06);
+}
+
+.filtros {
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.empresa-row {
+  display: grid;
+  grid-template-columns:
+    180px
+    minmax(300px, 1fr)
+    180px;
+  gap: 14px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.campo label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #455a64;
+}
+
+.campo input {
+  height: 36px;
+  border: 1px solid #c8d1d8;
+  border-radius: 4px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.campo input[readonly] {
+  background: #f6f7f8;
+}
+
+.opciones-row {
+  display: grid;
+  grid-template-columns:
+    1fr
+    350px
+    300px;
+  gap: 15px;
+  margin-top: 14px;
+}
+
+fieldset {
+  border: 1px solid #c8d1d8;
+  border-radius: 5px;
+  padding: 10px 14px;
+}
+
+legend {
+  font-size: 12px;
+  font-weight: 700;
+  color: #455a64;
+  padding: 0 6px;
+}
+
+fieldset label {
+  margin-right: 20px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+fieldset input {
+  margin-right: 5px;
+}
+
+.rango {
+  display: flex;
+  gap: 25px;
+}
+
+.rango div {
+  font-size: 12px;
+}
+
+.mensaje {
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  font-size: 13px;
+}
+
+.mensaje.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.mensaje.error {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.mensaje.info {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.grid-container {
+  overflow: hidden;
+}
+
+.grid-title {
+  height: 42px;
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.grid-title div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.grid-title strong {
+  font-size: 13px;
+}
+
+.grid-title span {
+  font-size: 12px;
+  color: #78909c;
+}
+
+.procesando {
+  font-weight: bold;
+}
+
+.bonos-grid {
+  width: 100%;
+  height: 500px;
+}
+
+:host
+::ng-deep
+.ag-theme-alpine
+.celda-editable {
+  background: #fffde7;
+}
+
+.totales {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.totales > div {
+  width: 180px;
+  padding: 10px 14px;
+  background: white;
+  border: 1px solid #d9e0e5;
+  border-radius: 5px;
+  text-align: right;
+}
+
+.totales span {
+  display: block;
+  font-size: 11px;
+  color: #607d8b;
+}
+
+.totales strong {
+  font-size: 16px;
+}
+
+.total-principal {
+  background: #e3f2fd !important;
+  border-color: #90caf9 !important;
+}
+
+.total-principal strong {
+  color: #0d47a1;
+}
+
+.botones {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  min-width: 105px;
+  height: 36px;
+  border: 1px solid #b0bec5;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.btn.primario {
+  background: #3f51b5;
+  color: white;
+  border-color: #3f51b5;
+}
+
+.btn.grabar {
+  background: #2e7d32;
+  color: white;
+  border-color: #2e7d32;
+}
+
+.btn.recalcular {
+  background: #ef6c00;
+  color: white;
+  border-color: #ef6c00;
+}
+
+@media(max-width: 1100px) {
+
+  .empresa-row {
+    grid-template-columns:
+      1fr
+      2fr;
+  }
+
+  .opciones-row {
+    grid-template-columns:
+      1fr;
+  }
+}
+
+@media print {
+
+  .titulo,
+  .filtros,
+  .botones,
+  .mensaje {
+    display: none;
+  }
+
+  .bonos-container {
+    background: white;
+    padding: 0;
+  }
+}
+/* ============================================================
+   BARRA SUPERIOR
+============================================================ */
+
+.barra-superior {
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 15px;
+
+  flex-wrap: wrap;
+
+}
+
+
+.periodo-campo {
+
+  width: 180px;
+
+  flex-shrink: 0;
+
+}
+
+
+/* ============================================================
+   BOTONES SUPERIORES
+============================================================ */
+
+.botones-superiores {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  flex-wrap: wrap;
+
+}
+
+
+/* ============================================================
+   BOTONES
+============================================================ */
+
+.btn {
+
+  min-width: 105px;
+
+  height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #b0bec5;
+
+  background: white;
+
+  border-radius: 4px;
+
+  cursor: pointer;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    opacity .15s ease;
+
+}
+
+
+.btn:hover:not(:disabled) {
+
+  background: #eceff1;
+
+}
+
+
+.btn:disabled {
+
+  opacity: .45;
+
+  cursor: not-allowed;
+
+}
+
+
+/* ============================================================
+   CALCULAR
+============================================================ */
+
+.btn.primario {
+
+  background: #3f51b5;
+
+  color: white;
+
+  border-color: #3f51b5;
+
+}
+
+
+.btn.primario:hover:not(:disabled) {
+
+  background: #303f9f;
+
+  border-color: #303f9f;
+
+}
+
+
+/* ============================================================
+   RECALCULAR
+============================================================ */
+
+.btn.recalcular {
+
+  background: #ef6c00;
+
+  color: white;
+
+  border-color: #ef6c00;
+
+}
+
+
+.btn.recalcular:hover:not(:disabled) {
+
+  background: #e65100;
+
+  border-color: #e65100;
+
+}
+
+
+/* ============================================================
+   GRABAR
+============================================================ */
+
+.btn.grabar {
+
+  background: #2e7d32;
+
+  color: white;
+
+  border-color: #2e7d32;
+
+}
+
+
+.btn.grabar:hover:not(:disabled) {
+
+  background: #1b5e20;
+
+  border-color: #1b5e20;
+
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media(max-width: 1100px) {
+
+  .barra-superior {
+
+    align-items: stretch;
+
+  }
+
+
+  .botones-superiores {
+
+    width: 100%;
+
+  }
+
+}

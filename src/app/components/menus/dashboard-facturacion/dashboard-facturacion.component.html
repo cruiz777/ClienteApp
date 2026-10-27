@@ -1,0 +1,184 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div>
+      <h2>Dashboard</h2>
+      <p>Resumen anual individual e industrial</p>
+    </div>
+
+    <div class="year-selector">
+      <label>Año</label>
+
+      <input
+        type="number"
+        class="year-input"
+        [(ngModel)]="anioSeleccionado"
+        min="2000"
+        max="2100"
+        (keyup.enter)="cargarDashboard()"
+        (blur)="cargarDashboard()"
+      />
+    </div>
+  </div>
+
+  <!-- FACTURACIÓN -->
+  <section class="dashboard-section">
+    <div class="section-title">
+      <h3>Facturación</h3>
+      <span>Año {{ anio }}</span>
+    </div>
+
+    <div *ngIf="loadingFacturacion" class="loading-box">
+      Cargando facturación...
+    </div>
+
+    <div *ngIf="!loadingFacturacion">
+      <div class="cards-grid">
+        <div class="summary-card">
+          <span>Total Facturación</span>
+          <strong>{{ formatearMoneda(totalFacturacion) }}</strong>
+        </div>
+
+        <div class="summary-card">
+          <span>Facturación Individual</span>
+          <strong>{{ formatearMoneda(totalFacturacionIndividual) }}</strong>
+        </div>
+
+        <div class="summary-card">
+          <span>Facturación Industrial</span>
+          <strong>{{ formatearMoneda(totalFacturacionIndustrial) }}</strong>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Facturación por mes - {{ anio }}</h3>
+
+          <div class="legend">
+            <span><i class="dot individual"></i> Individual</span>
+            <span><i class="dot industrial"></i> Industrial</span>
+            <span><i class="dot total"></i> Total</span>
+          </div>
+        </div>
+
+        <div class="chart">
+          <div class="month-group" *ngFor="let item of facturacionMensual">
+            <div class="bars">
+              <div class="bar-wrapper">
+                <div
+                  class="bar individual-bar"
+                  [style.height.%]="getBarHeight(item.individual, facturacionMensual)">
+                </div>
+              </div>
+
+              <div class="bar-wrapper">
+                <div
+                  class="bar industrial-bar"
+                  [style.height.%]="getBarHeight(item.industrial, facturacionMensual)">
+                </div>
+              </div>
+            </div>
+
+            <div class="month-values">
+              <div class="value-row individual-text">
+                I: {{ formatearNumero(item.individual) }}
+              </div>
+
+              <div class="value-row industrial-text">
+                In: {{ formatearNumero(item.industrial) }}
+              </div>
+
+              <div class="value-row total-text">
+                T: {{ formatearNumero(item.total) }}
+              </div>
+            </div>
+
+            <div class="month-name">
+              {{ item.mes }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGOS -->
+  <section class="dashboard-section pagos-section">
+    <div class="section-title">
+      <h3>Pagos</h3>
+      <span>Año {{ anio }}</span>
+    </div>
+
+    <div *ngIf="loadingPagos" class="loading-box">
+      Cargando pagos...
+    </div>
+
+    <div *ngIf="!loadingPagos">
+      <div class="cards-grid">
+        <div class="summary-card">
+          <span>Total Pagos</span>
+          <strong>{{ formatearMoneda(totalPagos) }}</strong>
+        </div>
+
+        <div class="summary-card">
+          <span>Pagos Individual</span>
+          <strong>{{ formatearMoneda(totalPagosIndividual) }}</strong>
+        </div>
+
+        <div class="summary-card">
+          <span>Pagos Industrial</span>
+          <strong>{{ formatearMoneda(totalPagosIndustrial) }}</strong>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Pagos por mes - {{ anio }}</h3>
+
+          <div class="legend">
+            <span><i class="dot individual"></i> Individual</span>
+            <span><i class="dot industrial"></i> Industrial</span>
+            <span><i class="dot total"></i> Total</span>
+          </div>
+        </div>
+
+        <div class="chart">
+          <div class="month-group" *ngFor="let item of pagosMensual">
+            <div class="bars">
+              <div class="bar-wrapper">
+                <div
+                  class="bar individual-bar"
+                  [style.height.%]="getBarHeight(item.individual, pagosMensual)">
+                </div>
+              </div>
+
+              <div class="bar-wrapper">
+                <div
+                  class="bar industrial-bar"
+                  [style.height.%]="getBarHeight(item.industrial, pagosMensual)">
+                </div>
+              </div>
+            </div>
+
+            <div class="month-values">
+              <div class="value-row individual-text">
+                I: {{ formatearNumero(item.individual) }}
+              </div>
+
+              <div class="value-row industrial-text">
+                In: {{ formatearNumero(item.industrial) }}
+              </div>
+
+              <div class="value-row total-text">
+                T: {{ formatearNumero(item.total) }}
+              </div>
+            </div>
+
+            <div class="month-name">
+              {{ item.mes }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

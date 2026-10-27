@@ -1,0 +1,10 @@
+.mini-checkbox {
+  transform: scale(0.70);
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 15px;
+  width: 15px;
+  padding: 0;
+}

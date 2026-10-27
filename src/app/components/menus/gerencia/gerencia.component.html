@@ -1,0 +1,146 @@
+<!-- gerencia.component.html -->
+<div class="gerencia-wrap mat-elevation-z4">
+
+  <!-- HEADER -->
+  <div class="gerencia-header">
+    <div class="title">
+      <mat-icon class="title-icon">insights</mat-icon>
+      <div class="title-text">
+        <h2>Resumen de GTIN</h2>
+        <small>Vista: Total (sin filtros) • Año {{ anio }} • Mes {{ mesLabel }}</small>
+      </div>
+    </div>
+
+    <div class="filters">
+      <!-- Año -->
+      <mat-form-field appearance="outline" class="ff ff-year">
+        <mat-label>Año</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="anio"
+          (change)="onFiltroChange()"
+          min="2000"
+          max="2100"
+        />
+      </mat-form-field>
+
+      <!-- Mes -->
+      <mat-form-field appearance="outline" class="ff ff-month">
+        <mat-label>Mes</mat-label>
+        <mat-select [(ngModel)]="mes" (selectionChange)="onFiltroChange()">
+          <mat-option *ngFor="let m of meses" [value]="m.value">
+            {{ m.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Exportar PDF -->
+      <button
+        class="btn-export"
+        mat-raised-button
+        color="primary"
+        (click)="exportarPdf()"
+        [disabled]="resumenGtinMix.length === 0 || !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.35'"
+        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
+        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''"
+      >
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" *ngIf="!cargando">
+    <ng-container *ngIf="resumenGtinMix.length > 0; else noData">
+      <div
+        class="kpi-card"
+        *ngFor="let item of resumenGtinMix; let i = index"
+        [ngClass]="{
+          'kpi-blue': i % 4 === 0,
+          'kpi-orange': i % 4 === 1,
+          'kpi-green': i % 4 === 2,
+          'kpi-red': i % 4 === 3
+        }"
+      >
+        <div class="kpi-title">
+          <span class="kpi-name">{{ item.gtinTipo }}</span>
+          <span class="kpi-sub">Documentos</span>
+        </div>
+
+        <div class="kpi-metrics">
+          <div class="kpi-metric">
+            <div class="kpi-label">Total</div>
+            <div class="kpi-value">{{ item.cantidadTotal }}</div>
+          </div>
+
+          <div class="kpi-metric">
+            <div class="kpi-label">Año {{ anio }}</div>
+            <div class="kpi-value">{{ item.cantidadAnual }}</div>
+          </div>
+
+          <div class="kpi-metric">
+            <div class="kpi-label">{{ mesLabel }}</div>
+            <div class="kpi-value">{{ item.cantidadMensual }}</div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noData>
+      <div class="empty-state">
+        <mat-icon>info</mat-icon>
+        <div>
+          <div class="empty-title">Sin datos</div>
+          <div class="empty-text">No hay información disponible para el rango seleccionado.</div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- TABLE DETAIL -->
+  <div class="table-card" *ngIf="!cargando" style="visibility: hidden;">
+    <div class="table-header">
+      <div class="table-title">
+        Detalle por tipo — Total / Año / Mes
+      </div>
+    </div>
+
+    <div class="table-scroll" *ngIf="resumenGtinMix.length > 0">
+      <table class="gtin-table">
+        <thead>
+          <tr>
+            <th>GTIN Tipo</th>
+            <th class="num">Total</th>
+            <th class="num">Cantidad Anual</th>
+            <th class="num">Cantidad Mensual</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let item of resumenGtinMix">
+            <td class="mono">{{ item.gtinTipo }}</td>
+            <td class="num">{{ item.cantidadTotal }}</td>
+            <td class="num">{{ item.cantidadAnual }}</td>
+            <td class="num">{{ item.cantidadMensual }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="resumenGtinMix.length === 0" class="table-empty">
+      No hay datos disponibles.
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status">
+    {{ mensaje }}
+  </div>
+
+</div>

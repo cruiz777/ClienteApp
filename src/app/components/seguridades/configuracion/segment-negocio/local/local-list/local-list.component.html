@@ -1,0 +1,61 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Registro de Locales</h2>
+    <button mat-raised-button class="btn-nueva-zona" (click)="abrirCrear()">Nuevo</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por nombre"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <table class="zona-tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>RUC</th>
+        <th>Administrador</th>
+        <th>Dirección</th>
+        <th>Teléfono</th>
+        <th>Empresa</th>
+        <th>Ciudad</th>
+        <th>Tipo Negocio</th>
+        <th>Centro Costos</th>
+        <th>Principal</th>
+        <th>Estado</th>
+        <th>Opción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of localesFiltrados; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ item.nombre }}</td>
+        <td>{{ item.localRuc }}</td>
+        <td>{{ item.administrador }}</td>
+        <td>{{ item.direccion }}</td>
+        <td>{{ item.telefono1 }}</td>
+        <td>{{ item.empresa?.empresaNombre }}</td>
+        <td>{{ item.ciudad?.ciudad }}</td>
+        <td>{{ item.tipoNegocio?.descripcion }}</td>
+        <td>{{ item.centroCostos?.descripcion }}</td>
+        <td>{{ item.principal ? 'Sí' : 'No' }}</td>
+        <td>{{ item.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
+        <td>
+          <button class="icon-btn" (click)="abrirEditar(item.id)">
+            <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

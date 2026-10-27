@@ -1,0 +1,62 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Banco' : 'Nuevo Banco' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- DESCRIPCIÓN PRINCIPAL -->
+    <div class="form-group">
+      <label for="desban">Descripción <span class="required">*</span></label>
+      <input id="desban" type="text" formControlName="desban" placeholder="Ej: Banco del Pichincha" maxlength="248" />
+      <div class="error" *ngIf="form.get('desban')?.touched && form.get('desban')?.errors">
+        <span *ngIf="form.get('desban')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('desban')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- DESCRIPCIÓN 2 -->
+    <div class="form-group">
+      <label for="desban2">Descripción 2</label>
+      <input id="desban2" type="text" formControlName="desban2" placeholder="Ej: BDP" maxlength="248" />
+      <div class="error" *ngIf="form.get('desban2')?.touched && form.get('desban2')?.errors">
+        <span *ngIf="form.get('desban2')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- CÓDIGO CUENTA y CTA CONTABILIDAD -->
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="codcue">Código Cuenta</label>
+        <input id="codcue" type="text" formControlName="codcue" placeholder="Ej: 001" maxlength="50" />
+        <div class="error" *ngIf="form.get('codcue')?.touched && form.get('codcue')?.errors">
+          <span *ngIf="form.get('codcue')?.hasError('maxlength')">Máximo 50 caracteres.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="ctacontabilidad">Cta. Contabilidad</label>
+        <input id="ctacontabilidad" type="text" formControlName="ctacontabilidad" placeholder="Ej: 1101001" maxlength="50" />
+        <div class="error" *ngIf="form.get('ctacontabilidad')?.touched && form.get('ctacontabilidad')?.errors">
+          <span *ngIf="form.get('ctacontabilidad')?.hasError('maxlength')">Máximo 50 caracteres.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CÓDIGO ESPECIAL -->
+    <div class="form-group">
+      <label for="codigoEspeacial">Código Especial</label>
+      <input id="codigoEspeacial" type="text" formControlName="codigoEspeacial" placeholder="Ej: BCE001" maxlength="50" />
+      <div class="error" *ngIf="form.get('codigoEspeacial')?.touched && form.get('codigoEspeacial')?.errors">
+        <span *ngIf="form.get('codigoEspeacial')?.hasError('maxlength')">Máximo 50 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button type="submit" [disabled]="form.invalid" [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>

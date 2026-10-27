@@ -1,0 +1,197 @@
+<div class="vacaciones-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Registro de Vacaciones</h2>
+
+    <div class="form-grid-4">
+      <mat-form-field appearance="outline" class="campo-info">
+        <mat-label>Documento No.</mat-label>
+        <input matInput formControlName="documentoNo" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input matInput type="date" formControlName="fecha" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Empleado</mat-label>
+        <input
+          matInput
+          [formControl]="buscarEmpleadoCtrl"
+          [matAutocomplete]="autoEmpleado"
+          placeholder="Busca por nombre o documento"
+        />
+        <mat-autocomplete
+          #autoEmpleado="matAutocomplete"
+          [displayWith]="mostrarEmpleado"
+          (optionSelected)="onSeleccionarEmpleado($event)"
+        >
+          <mat-option *ngFor="let item of empleadosFiltrados" [value]="item">
+            {{ item.documento }} - {{ item.nombreCompleto }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-info">
+        <mat-label>Fecha Ingreso</mat-label>
+        <input matInput type="date" formControlName="fechaIngreso" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-info">
+        <mat-label>Código Trabajador</mat-label>
+        <input matInput formControlName="codigoTrabajador" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-info">
+        <mat-label>Departamento</mat-label>
+        <input matInput formControlName="departamento" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-info">
+        <mat-label>Cédula</mat-label>
+        <input matInput formControlName="cedula" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2 campo-info">
+        <mat-label>Cargo</mat-label>
+        <input matInput formControlName="cargoEmpleado" readonly />
+      </mat-form-field>
+    </div>
+
+    <div class="form-grid-3 mt-16" style="align-items: center;">
+      <mat-form-field appearance="outline" class="campo-saldo">
+        <mat-label>Días Acumulados</mat-label>
+        <input matInput formControlName="diasAcumulados" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="campo-saldo">
+        <mat-label>Días Tomando</mat-label>
+        <input matInput formControlName="diasTomando" readonly />
+      </mat-form-field>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <mat-form-field appearance="outline" class="campo-saldo" style="flex: 1;">
+          <mat-label>Saldo Días</mat-label>
+          <input matInput formControlName="saldoDias" readonly />
+        </mat-form-field>
+
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="!form.get('empleado')?.value"
+          (click)="verPeriodos()"
+          matTooltip="Ver desglose por período"
+        >
+          ...
+        </button>
+      </div>
+    </div>
+
+    <div class="form-grid-4 mt-16">
+      <mat-form-field appearance="outline">
+        <mat-label>Días Solicitados</mat-label>
+        <input matInput type="number" step="0.25" formControlName="diasSolicitados" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Desde</mat-label>
+        <input matInput type="date" formControlName="fechaDesde" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Hasta</mat-label>
+        <input matInput type="date" formControlName="fechaHasta" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha Retorno</mat-label>
+        <input matInput type="date" formControlName="fechaRetorno" readonly />
+      </mat-form-field>
+    </div>
+
+    <div class="form-grid-2 mt-16">
+      <mat-form-field appearance="outline">
+        <mat-label>Reemplazo</mat-label>
+        <input matInput formControlName="reemplazo" />
+      </mat-form-field>
+
+      <div></div>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Usuario que autoriza</mat-label>
+        <input
+          matInput
+          [formControl]="buscarAutorizaCtrl"
+          [matAutocomplete]="autoAutoriza"
+          placeholder="Busca por nombre o documento"
+        />
+        <mat-autocomplete
+          #autoAutoriza="matAutocomplete"
+          [displayWith]="mostrarEmpleado"
+          (optionSelected)="onSeleccionarAutoriza($event)"
+        >
+          <mat-option *ngFor="let item of autorizadoresFiltrados" [value]="item">
+            {{ item.documento }} - {{ item.nombreCompleto }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo</mat-label>
+        <input matInput formControlName="cargoAutoriza" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Usuario que aprueba</mat-label>
+        <input
+          matInput
+          [formControl]="buscarApruebaCtrl"
+          [matAutocomplete]="autoAprueba"
+          placeholder="Busca por nombre o documento"
+        />
+        <mat-autocomplete
+          #autoAprueba="matAutocomplete"
+          [displayWith]="mostrarEmpleado"
+          (optionSelected)="onSeleccionarAprueba($event)"
+        >
+          <mat-option *ngFor="let item of aprobadoresFiltrados" [value]="item">
+            {{ item.documento }} - {{ item.nombreCompleto }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo</mat-label>
+        <input matInput formControlName="cargoAprueba" />
+      </mat-form-field>
+    </div>
+
+    <div class="mt-16">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Observación</mat-label>
+        <textarea matInput rows="4" formControlName="observacion"></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" [disabled]="enviando" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button
+        mat-stroked-button
+        color="primary"
+        type="button"
+        [disabled]="!idVacacionCreada"
+        (click)="imprimir()"
+        matTooltip="Guarda la solicitud primero para poder imprimirla"
+      >
+        Imprimir
+      </button>
+
+      <button mat-stroked-button type="button" [disabled]="enviando" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

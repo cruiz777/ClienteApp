@@ -1,0 +1,31 @@
+<div class="user-avatar-container" [ngClass]="position" *ngIf="usuario">
+  
+  <!-- Nombre del usuario (solo en footer) -->
+  <span *ngIf="showUserName && position === 'footer'" class="user-name-text">
+    {{ usuario.nombre_usuario }}
+  </span>
+
+  <!-- Avatar clickeable -->
+  <div class="user-avatar-toggle" (click)="togglePanel()">
+    {{ usuario.nombre_usuario[0] | uppercase }}
+  </div>
+
+  <!-- Panel desplegable -->
+  <div class="user-panel" 
+       *ngIf="showPanel"
+       [ngClass]="{'panel-top': position === 'fixed-top', 'panel-footer': position === 'footer'}">
+    <div class="user-header">
+      <div class="user-avatar-large">
+        {{ usuario.nombre_usuario[0] | uppercase }}
+      </div>
+      <div class="user-data">
+        <div class="user-name">{{ usuario.nombre_usuario }}</div>
+        <div class="user-info"><span>Perfil:</span> {{ usuario.perfil }}</div>
+      </div>
+    </div>
+    <button class="logout-button" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      Cerrar sesión
+    </button>
+  </div>
+</div>

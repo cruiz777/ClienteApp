@@ -1,0 +1,340 @@
+.gs1-section {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.carousel-container {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.logo-container {
+  position: absolute;
+  left: 123px;
+  top: 60px;
+}
+
+.gs1-logo {
+  width: 172px;
+  height: 95px;
+}
+
+.product-icons {
+  position: absolute;
+  left: 78px;
+  top: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.codbar-gs1 {
+  width: 288px;
+  height: 51px;
+  cursor: pointer;
+}
+
+.cg3000 {
+  width: 165px;
+  height: 59px;
+  margin-left: 123px;
+}
+
+.rol3000 {
+  width: 180px;
+  height: 54px;
+  margin-left: 111px;
+}
+
+.seguridad {
+  width: 290px;
+  height: 53px;
+}
+
+.user-icon-container {
+  position: absolute;
+  right: 60px;
+  top: 60px;
+}
+
+.user-icon {
+  width: 90px;
+  height: 51px;
+}
+
+/* Responsivos */
+
+@media (max-width: 991px) {
+  .logo-container {
+    left: 60px;
+    top: 40px;
+  }
+
+  .gs1-logo {
+    width: 140px;
+    height: 77px;
+  }
+
+  .product-icons {
+    left: 40px;
+    top: 250px;
+    gap: 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .logo-container {
+    left: 20px;
+    top: 20px;
+  }
+
+  .gs1-logo {
+    width: 100px;
+    height: 55px;
+  }
+
+  .product-icons {
+    left: 20px;
+    top: 200px;
+    gap: 20px;
+  }
+
+  .codbar-gs1,
+  .cg3000,
+  .rol3000,
+  .seguridad {
+    width: 200px;
+    height: auto;
+  }
+
+  .user-icon {
+    width: 60px;
+    height: 34px;
+  }
+
+  .user-icon-container {
+    right: 20px;
+    top: 20px;
+  }
+}
+
+/* =============================
+🎯 PANEL DE USUARIO MODERNO
+============================= */
+
+/* Contenedor de sistemas */
+.sistema-container {
+  position: relative;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+/* Estilo base para iconos de sistemas */
+.sistema-icon {
+  transition: all 0.3s ease;
+  display: block;
+  width: auto; /* Mantén el tamaño original o ajusta según necesites */
+  height: auto;
+}
+
+/* Imagen hover - inicialmente oculta */
+.sistema-icon-hover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  width: 100%;
+  height: 100%;
+}
+
+/* Efectos para sistemas CON permisos */
+.sistema-container.con-permisos:hover .sistema-icon {
+  opacity: 0;
+}
+
+.sistema-container.con-permisos:hover .sistema-icon-hover {
+  opacity: 1;
+}
+
+.sistema-container.con-permisos:hover {
+  transform: scale(1.05);
+}
+
+/* Efectos para sistemas SIN permisos */
+.sistema-container.sin-permisos {
+  cursor: not-allowed !important;
+}
+
+.sistema-container.sin-permisos .sistema-icon {
+  opacity: 0.4 !important;
+  filter: grayscale(50%);
+}
+
+.sistema-container.sin-permisos .sistema-icon-hover {
+  display: none !important;
+}
+
+/* Opcional: Tooltip para sistemas sin permisos */
+.sistema-container.sin-permisos::after {
+  content: "Sin permisos";
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.sistema-container.sin-permisos:hover::after {
+  opacity: 1;
+}
+
+/* Tamaños específicos para cada sistema */
+.sistema-container:nth-child(1) .sistema-icon,
+.sistema-container:nth-child(1) .sistema-icon-hover {
+  width: 288px;
+  height: 51px;
+}
+
+.sistema-container:nth-child(2) .sistema-icon,
+.sistema-container:nth-child(2) .sistema-icon-hover {
+  width: 180px;
+  height: 54px;
+  margin-left: 111px;
+}
+
+.sistema-container:nth-child(3) .sistema-icon,
+.sistema-container:nth-child(3) .sistema-icon-hover {
+  width: 165px;
+  height: 59px;
+  margin-left: 123px;
+}
+
+.sistema-container:nth-child(4) .sistema-icon,
+.sistema-container:nth-child(4) .sistema-icon-hover {
+  width: 180px;
+  height: 54px;
+  margin-left: 111px;
+}
+
+.sistema-container:nth-child(5) .sistema-icon,
+.sistema-container:nth-child(5) .sistema-icon-hover {
+  width: 290px;
+  height: 53px;
+}
+
+@media (max-width: 768px) {
+  .logo-container {
+    left: 30px;
+    top: 30px;
+  }
+
+  .gs1-logo {
+    width: 120px;
+    height: 66px;
+  }
+
+  .product-icons {
+    left: 30px;
+    top: 140px;
+    gap: 20px;
+  }
+
+  .sistema-container:nth-child(1) .sistema-icon,
+  .sistema-container:nth-child(1) .sistema-icon-hover {
+    width: 220px;
+    height: auto;
+  }
+
+  .sistema-container:nth-child(2) .sistema-icon,
+  .sistema-container:nth-child(2) .sistema-icon-hover,
+  .sistema-container:nth-child(3) .sistema-icon,
+  .sistema-container:nth-child(3) .sistema-icon-hover,
+  .sistema-container:nth-child(4) .sistema-icon,
+  .sistema-container:nth-child(4) .sistema-icon-hover {
+    width: 140px;
+    height: auto;
+    margin-left: 80px;
+  }
+
+  .sistema-container:nth-child(5) .sistema-icon,
+  .sistema-container:nth-child(5) .sistema-icon-hover {
+    width: 220px;
+    height: auto;
+  }
+}
+.help-button-container {
+  position: fixed;
+  top: 40px; /* ✅ CAMBIAR de 20px a 40px (alineado con avatar) */
+  right: 120px; /* ✅ CAMBIAR de 100px a 120px */
+  z-index: 1000;
+}
+/* Wrapper para controlar la posición del avatar */
+.avatar-wrapper {
+  position: fixed;
+  top: 40px;
+  right: 30px;  /* ← Ajusta a donde quieras */
+  z-index: 200;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .avatar-wrapper {
+    top: 30px;
+    right: 20px;
+  }
+}
+.btn-help {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #001f4f; /* ✅ CAMBIAR a color corporativo */
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 31, 79, 0.3); /* ✅ CAMBIAR */
+  transition: all 0.3s ease;
+}
+
+.btn-help:hover {
+  transform: translateY(-2px);
+  background: #cd3c0d; /* ✅ CAMBIAR a color secundario */
+  box-shadow: 0 6px 20px rgba(205, 60, 13, 0.4); /* ✅ CAMBIAR */
+}
+
+.btn-help:active {
+  transform: translateY(0);
+}
+
+.btn-help i {
+  font-size: 1.2rem;
+}

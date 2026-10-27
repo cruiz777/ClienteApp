@@ -1,0 +1,100 @@
+<h2 mat-dialog-title>
+  {{ modo === 'nuevo' ? 'Nuevo Grupo de Producto' : 'Editar Grupo de Producto' }}
+</h2>
+
+<form [formGroup]="form" class="formulario">
+  <div class="form-grid">
+    <!-- Columna izquierda -->
+    <div class="col">
+      <mat-form-field appearance="fill">
+        <mat-label>Código</mat-label>
+        <input matInput formControlName="codigo" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Descripción</mat-label>
+        <input matInput formControlName="descripcion" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Segmento</mat-label>
+        <input matInput formControlName="segmento" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Descripción Segmento</mat-label>
+        <input matInput formControlName="desSegmento" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Familia</mat-label>
+        <input matInput formControlName="familia" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Descripción Familia</mat-label>
+        <input matInput formControlName="desFamilia" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Clase</mat-label>
+        <input matInput formControlName="clase" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Descripción Clase</mat-label>
+        <input matInput formControlName="desClase" />
+      </mat-form-field>
+    </div>
+
+    <!-- Columna derecha -->
+    <div class="col">
+      <mat-form-field appearance="fill">
+        <mat-label>Brick</mat-label>
+        <input matInput formControlName="brick" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Descripción Brick</mat-label>
+        <input matInput formControlName="desBrick" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Segmento (Ing)</mat-label>
+        <input matInput formControlName="desSegmentoing" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Familia (Ing)</mat-label>
+        <input matInput formControlName="desFamiliaing" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Clase (Ing)</mat-label>
+        <input matInput formControlName="desClaseing" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Brick (Ing)</mat-label>
+        <input matInput formControlName="desBricking" />
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Brick Includes</mat-label>
+        <textarea matInput formControlName="brickIncludes"></textarea>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>Brick Excludes</mat-label>
+        <textarea matInput formControlName="brickExcludes"></textarea>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <mat-checkbox formControlName="estado">Activo</mat-checkbox>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cancelar()">Cancelar</button>
+    <button mat-flat-button color="primary" (click)="guardar()" [disabled]="form.invalid">Guardar</button>
+  </mat-dialog-actions>
+</form>

@@ -1,0 +1,70 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Impuesto de Renta' : 'Nuevo Impuesto de Renta' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- FRACCIÓN BASE 1 y 2 -->
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="frabas1Ir">Fracción Base 1</label>
+        <input
+          id="frabas1Ir"
+          type="number"
+          formControlName="frabas1Ir"
+          placeholder="Ej: 11722"
+          min="0"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="frabas2Ir">Fracción Base 2</label>
+        <input
+          id="frabas2Ir"
+          type="number"
+          formControlName="frabas2Ir"
+          placeholder="Ej: 14930"
+          min="0"
+        />
+      </div>
+    </div>
+
+    <!-- IMPUESTO BASE y % EXCEDENTE -->
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="impbasIr">Impuesto Base</label>
+        <input
+          id="impbasIr"
+          type="number"
+          formControlName="impbasIr"
+          placeholder="Ej: 0.00"
+          min="0"
+          step="0.01"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="porexdIr">% Excedente</label>
+        <input
+          id="porexdIr"
+          type="number"
+          formControlName="porexdIr"
+          placeholder="Ej: 5"
+          min="0"
+        />
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>

@@ -1,0 +1,71 @@
+<div class="rol-page">
+  <div class="rol-card" [formGroup]="form">
+
+    <!-- HEADER -->
+    <div class="card-header">
+      <h2>Reporte ROL Individual</h2>
+    </div>
+
+    <!-- FORM -->
+    <div class="form-grid">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Periodo Inicial</mat-label>
+        <input matInput type="date" formControlName="periodoInicial" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Periodo Final</mat-label>
+        <input matInput type="date" formControlName="periodoFinal" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Empleado</mat-label>
+        <input matInput formControlName="empleado" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Área Inicial</mat-label>
+        <mat-select formControlName="areaInicial">
+          <mat-option *ngFor="let a of areas" [value]="a">
+            {{ a }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Área Final</mat-label>
+        <mat-select formControlName="areaFinal">
+          <mat-option *ngFor="let a of areas" [value]="a">
+            {{ a }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Opciones</mat-label>
+        <mat-select formControlName="opcion">
+          <mat-option value="resumen">Resumen</mat-option>
+          <mat-option value="detallado">Detallado</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions">
+      <button mat-flat-button color="primary" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button (click)="enviarMail()">
+        Mail
+      </button>
+
+      <button mat-stroked-button (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+
+  </div>
+</div>

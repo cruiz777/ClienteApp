@@ -1,24 +1,35 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { HistorialventaComponent } from './historialventa/historialventa.component';
 import { PagesComponent } from './pages.component';
-import { ProductosComponent } from './productos/productos.component';
-import { ReportesComponent } from './reportes/reportes.component';
-import { UsuariosComponent } from './usuarios/usuarios.component';
-import { VenderComponent } from './vender/vender.component';
 import { ClientesComponent } from './clientes/clientes.component';
+import { ExploradorClientesComponent } from './explorador-clientes/explorador-clientes.component';
+import { NuevoClienteComponent } from './nuevo-cliente/nuevo-cliente.component';
+import { TipoClienteListComponent } from './clientes/tipo-clientes/tipo-cliente-list/tipo-cliente-list.component';
+import { TipoClienteFormComponent } from './clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
+import { GrupoClienteListComponent } from './clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
+import { GrupoClienteFormComponent } from './clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
+import { ProductoDetalleComponent } from './validacion/validacion-verified/validacion-verified.component';
 
 const routes: Routes = [
   {
     path: '', component: PagesComponent, children: [
       {path:'dashboard',component:DashboardComponent},
-      {path:'usuarios',component:UsuariosComponent},
-      {path:'productos',component:ProductosComponent},
-      {path:'vender',component:VenderComponent},
-      {path:'historialventas',component:HistorialventaComponent},
-      {path:'reportes',component:ReportesComponent},
       {path:'clientes',component:ClientesComponent},
+      {path:'nclientes',component:NuevoClienteComponent},
+      {path:'consulta-verified',component:ProductoDetalleComponent},
+      {path:'tipocliente',component:TipoClienteListComponent},
+      {path:'crear',component:TipoClienteFormComponent},
+      {path:'editar/:id',component:TipoClienteFormComponent},
+      {path:'grupocliente',component:GrupoClienteListComponent},
+      {path:'crear',component:GrupoClienteFormComponent},
+      {path:'editar/:id',component:GrupoClienteFormComponent},
+      {path:'explorador',component:ExploradorClientesComponent},
+
+
+
+
+
     ]
   }
   ];

@@ -1,0 +1,151 @@
+.empresa-wrapper {
+  padding: 30px 60px;
+  font-family: 'Inter', sans-serif;
+  background: #fff;
+  color: #002c6c;
+}
+
+.empresa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+
+.empresa-titulo {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.empresa-nombre {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.empresa-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 250px;
+}
+
+.form-group label {
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #002c6c;
+}
+
+.form-group input,
+.form-group select {
+  padding: 5px 10px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 12px;
+  color: #333;
+  outline: none;
+  background: #fff;
+}
+
+.logo-placeholder {
+  width: 120px;
+  height: 120px;
+  border: 1px solid #ccd5e2;
+  text-align: center;
+  font-size: 10px;
+  color: #ccd5e2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-section {
+  margin-top: 30px;
+  justify-content: space-between;
+}
+
+.form-column {
+  width: 45%;
+}
+
+.form-column h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.form-column hr {
+  border: none;
+  height: 2px;
+  background: #002c6c;
+  width: 100px;
+  margin: 0 auto 20px;
+}
+
+.form-actions {
+  margin-top: 40px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.form-actions button {
+  background-color: #eef4f7;
+  border: none;
+  padding: 8px 30px;
+  font-size: 12px;
+  color: #002c6c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.logo-preview {
+  border: 1px solid #ccc;
+  padding: 4px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.preview-img {
+  max-width: 150px;
+  max-height: 80px;
+  object-fit: contain;
+  display: block;
+}
+
+.logo-btn {
+  padding: 4px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  background-color: #eeeeee;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.logo-btn:hover {
+  background-color: #dddddd;
+}
+
+.logo-placeholder {
+  font-style: italic;
+  color: #888;
+}

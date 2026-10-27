@@ -1,0 +1,114 @@
+/* Contenedor del dialog */
+.form-container {
+  padding: 16px 18px;
+  background: #fff;
+}
+
+/* Título */
+.form-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+/* Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr; /* en editar: Id + resto */
+  gap: 12px 14px;
+}
+
+@media (max-width: 780px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Campo */
+.form-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-field input {
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid #d7dbe2;
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+
+.form-field input:focus {
+  border-color: #2b74ff;
+  box-shadow: 0 0 0 3px rgba(43, 116, 255, 0.12);
+}
+
+.form-field input[disabled] {
+  background: #f6f7fb;
+  color: #6b7280;
+}
+
+/* Footer botones */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e6e9ef;
+}
+
+/* Botones */
+.btn {
+  border: 1px solid #d7dbe2;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #f6f8fc;
+}
+
+.btn-primary {
+  border-color: #2b74ff;
+  background: #2b74ff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Mensajes */
+.field-error {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b42318;
+}
+
+/* Reutiliza tu estilo de error del listado */
+.state.error {
+  margin: 8px 0 12px 0;
+  color: #b42318;
+  background: #fff1f0;
+  border: 1px solid #ffd2cf;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}

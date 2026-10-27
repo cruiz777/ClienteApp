@@ -1,0 +1,62 @@
+.contenedor {
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 8px;
+}
+
+h2 {
+  margin-bottom: 16px;
+  color: #003366;
+}
+
+.buscador-contenedor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+mat-form-field {
+  width: 300px;
+}
+
+table {
+  width: 100%;
+}
+
+mat-paginator {
+  margin-top: 16px;
+}
+.new-button {
+  color: #002c6c;
+  align-self: stretch;
+  border-radius: 5px;
+  padding: 5px 30px;
+  gap: 10px;
+  background-color: #eef4f7;
+  border: none;
+  cursor: pointer;
+}
+.buscador-contenedor {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.exportar-izquierda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.buscar-nuevo-derecha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.input-busqueda {
+  width: 250px;
+}

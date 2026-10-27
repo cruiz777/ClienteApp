@@ -1,0 +1,19 @@
+.eliminar-cliente-container { padding: 24px; max-width: 1050px; margin: 0 auto; }
+.encabezado { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 22px; }
+.encabezado h2 { margin: 0 0 7px; font-size: 24px; }
+.encabezado p, .ayuda { color: #657181; margin: 0; }
+.tarjeta { border: 1px solid #e2e7ee; border-radius: 10px; padding: 22px; margin-bottom: 18px; background: #fff; }
+.tarjeta h3 { margin: 0 0 18px; font-size: 17px; }
+.busqueda { width: 100%; max-width: 700px; }
+.detalle { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 15px; }
+.detalle div { background: #f5f7fa; border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.detalle span { color: #667085; font-size: 12px; }
+.detalle strong { color: #202b3a; word-break: break-word; }
+.aviso { border-left: 4px solid #d69d25; padding: 10px 12px; background: #fff8e8; color: #66521b; margin: 18px 0; }
+.acciones { display: flex; justify-content: flex-end; }
+.btn { cursor: pointer; border: 0; border-radius: 7px; padding: 11px 17px; font-weight: 600; }
+.btn:disabled { cursor: not-allowed; opacity: .55; }
+.btn-danger { background: #be2929; color: white; }
+.btn-secondary { background: #e9edf3; color: #26384b; }
+.error { color: #bd2626; }
+@media (max-width: 600px) { .encabezado { flex-direction: column; } .eliminar-cliente-container { padding: 12px; } }

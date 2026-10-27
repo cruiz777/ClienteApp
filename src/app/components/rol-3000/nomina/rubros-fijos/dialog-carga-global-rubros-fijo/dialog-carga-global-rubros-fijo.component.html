@@ -1,0 +1,50 @@
+<form class="carga-global-modal" [formGroup]="form">
+  <div class="carga-global-header">
+    <h2>Carga Global</h2>
+    <p>Ingrese los valores que desea aplicar a los empleados cargados.</p>
+  </div>
+
+  <div class="carga-global-body">
+    <div class="campo-global">
+      <label>VALOR</label>
+      <input
+        type="number"
+        formControlName="valor"
+        autocomplete="off" />
+    </div>
+
+    <div class="campo-global">
+      <label>No. CUOTAS</label>
+      <input
+        type="number"
+        formControlName="numCuotas"
+        autocomplete="off" />
+    </div>
+
+    <div class="campo-global">
+      <label>CUOTAS PAGADAS</label>
+      <input
+        type="number"
+        formControlName="cuotasPagadas"
+        autocomplete="off" />
+    </div>
+  </div>
+
+  <div class="carga-global-info">
+    Si desea conservar los valores actuales de cada empleado, deje el campo vacío.
+  </div>
+
+  <div class="carga-global-actions">
+    <button type="button" class="btn-aceptar" (click)="aceptar()">
+      Aceptar
+    </button>
+
+    <button type="button" class="btn-cancelar" (click)="cancelar()">
+      Cancelar
+    </button>
+
+    <button type="button" class="btn-salir" (click)="salir()">
+      Salir
+    </button>
+  </div>
+</form>

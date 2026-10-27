@@ -1,0 +1,104 @@
+
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h3>{{ isEditMode ? 'Editar Tipo de Cuenta' : 'Nuevo Tipo de Cuenta' }}</h3>
+<form class="form-card" #f="ngForm" (ngSubmit)="onSubmit(f)" novalidate>
+ 
+  <div class="form-grid" [class.edit-mode]="isEditMode" >
+    <div class="form-group">
+      <label for="Tipcue">Tipo Cuenta<span style="color:red">*</span></label>
+      <input
+        id="Tipcue"
+        type="text"
+        name="Tipcue"
+        [(ngModel)]="model.Tipcue"
+        class="in"
+        maxlength="1"
+        required
+        pattern="^[A-Za-z]$"
+        autocapitalize="characters"
+        style="text-transform: uppercase"
+        [ngModelOptions]="{ updateOn: 'blur' }"
+        #tipcue="ngModel"
+        (blur)="validarDuplicadoTipcueOnBlur()"
+        [class.invalid]="tipcue.invalid && tipcue.touched"
+        [readonly]="isEditMode"
+        [attr.title]="isEditMode ? 'Este campo es de solo lectura en modo edición' : null"
+        placeholder="R / C / …"
+      />
+
+      <div class="error" *ngIf="tipcue.errors?.['required'] && tipcue.touched">
+        Campo obligatorio.
+      </div>
+      <div class="error" *ngIf="tipcue.errors?.['pattern'] && tipcue.touched">
+        Debe ser una sola letra (A-Z).
+      </div>
+      <div class="error" *ngIf="tipcue.errors?.['duplicate']">
+        El código ya existe. Ingrese otro valor.
+      </div>
+    </div>
+
+
+
+    <!-- Destip -->
+    <div class="form-group">
+      <label for="Destip"> Descripción Cuenta <span style="color:red">*</span></label>
+      <input
+        id="Destip"
+        type="text"
+        name="Destip"
+        [(ngModel)]="model.Destip"
+        class="in"
+        maxlength="19"
+        required
+        autocapitalize="characters"
+        style="text-transform: uppercase"
+        [ngModelOptions]="{ updateOn: 'blur' }"
+        #destip="ngModel"
+        [class.invalid]="destip.invalid && destip.touched"
+        placeholder="Descripción tipo de cuenta"
+        
+      />
+      <div class="error" *ngIf="destip.invalid && destip.touched">
+         Campo obligatorio.
+      </div>
+    </div>
+
+    <!-- Tranban -->
+    <div class="form-group">
+      <label for="Tranban"> Transf. Bancaria <span style="color:red">*</span></label>
+      <select
+        id="Tranban"  
+        name="Tranban"
+        [(ngModel)]="model.Tranban"
+        class="in"
+        required
+        [ngModelOptions]="{ updateOn: 'blur' }"
+        #tranban="ngModel"
+        [class.invalid]="tranban.invalid && tranban.touched"
+        >
+        <option value="" disabled>Seleccione S/N</option>
+        <option value="S">S</option>
+        <option value="N">N</option>
+      </select>
+      
+      <div class="error" *ngIf="tranban.invalid && tranban.touched">
+         Campo obligatorio.
+      </div>
+    </div>
+
+    
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn-azul" [disabled]="loading" [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
+      {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+    </button>
+    <button type="button" class="btn-ghost" (click)="cerrar()" [disabled]="loading">
+      Cancelar
+    </button>
+  </div>
+
+  <div *ngIf="message" class="state ok">{{ message }}</div>
+  <div *ngIf="error" class="state error">{{ error }}</div>
+</form>
+</div>

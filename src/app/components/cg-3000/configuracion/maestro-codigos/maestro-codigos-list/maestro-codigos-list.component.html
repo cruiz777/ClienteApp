@@ -1,0 +1,111 @@
+<div class="zona-container">
+  <!-- Título -->
+  <div class="zona-header">
+    <h2>Códigos Contables</h2>
+  </div>
+
+  <!-- Toolbar: Buscar (izquierda) + Nuevo Código (derecha) -->
+  <div class="zona-toolbar">
+    <div class="zona-busqueda">
+      <label for="search">Buscar:</label>
+      <div class="input-wrapper">
+        <input id="search" type="text" [(ngModel)]="searchTerm" (input)="buscar()"
+          placeholder="Buscar por nombre , identificacion" />
+        <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+      </div>
+    </div>
+
+    <!-- 🔹 Menú de nueva entidad -->
+    <div class="acciones-header">
+      <button mat-raised-button class="btn-azul" [matMenuTriggerFor]="menuNuevaEntidad">
+        Nuevo Codigo
+      </button>
+
+      <mat-menu #menuNuevaEntidad="matMenu">
+        <button mat-menu-item (click)="abrirCrear('CEDULA')">
+          <mat-icon>badge</mat-icon>
+          <span>CÉDULA</span>
+        </button>
+        <button mat-menu-item (click)="abrirCrear('RUC')">
+          <mat-icon>apartment</mat-icon>
+          <span>RUC</span>
+        </button>
+        <button mat-menu-item (click)="abrirCrear('PASAPORTE')">
+          <mat-icon>flight</mat-icon>
+          <span>PASAPORTE</span>
+        </button>
+      </mat-menu>
+    </div>
+  </div>
+
+  <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 50px;">Codigo Contable</th>
+          <th style="width: 50px;">Identificación</th>
+          <th style="width: 170px;">Razon Social</th>
+          <th style="width: 150px;">Actividad Comercial</th>
+          <!--<th style="width: 120px;">Nombre</th> -->
+          <th style="width: 100px;">Dirección</th>
+          <th style="width: 80px;">No. Teléfono</th>
+          <th style="width: 80px;">No. Celular</th>
+          <th style="width: 60px;">Correo</th>
+          <th style="width: 80px;">Código Persona</th>
+          <th class="col-opcion">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let it of pagedRows; trackBy: trackById">
+
+          <td>{{ it.IdCodContable }}</td>
+          <td>{{ it.Identificacionauxiliar }}</td>
+          <td>{{ it.Razonsocial }}</td>
+          <td>{{ it.ActividadComercial }}</td>
+          <!--<td>{{ it.Nombreauxiliar }}</td> -->
+          <td>{{ it.Direccionauxiliar }}</td>
+          <td>{{ it.Telefonoauxiliar }}</td>
+          <td>{{ it.Celularauxiliar }}</td>
+          <td>{{ it.Emailauxiliar }}</td>
+          <td>{{ it.IdPersona }}</td>
+          <td class="acciones">
+            <button type="button" class="icon-btn" (click)="abrirEditar(it.IdCodContable)" title="Editar">
+              <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+            </button>
+          </td>
+        </tr>
+
+        <tr *ngIf="filtered.length === 0">
+          <td colspan="11" class="empty">No hay resultados.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="paginacion" *ngIf="filtered.length > 0">
+      <div class="paginacion-info">
+        <span>Total: {{ total }}</span>
+        <span class="ml">Página {{ page }} / {{ totalPages }}</span>
+      </div>
+
+      <div class="paginacion-controls">
+        <label>Por página:</label>
+        <select [ngModel]="pageSize" (ngModelChange)="cambiarPageSize($event)">
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="20">20</option>
+          <option [ngValue]="50">50</option>
+          <option [ngValue]="100">100</option>
+        </select>
+
+        <button class="btn-page" (click)="irPrimera()" [disabled]="page === 1">«</button>
+        <button class="btn-page" (click)="irAnterior()" [disabled]="page === 1">‹</button>
+        <button class="btn-page" (click)="irSiguiente()" [disabled]="page >= totalPages">›</button>
+        <button class="btn-page" (click)="irUltima()" [disabled]="page >= totalPages">»</button>
+      </div>
+    </div>
+
+
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Cargando...</div>
+  </ng-template>
+</div>

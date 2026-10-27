@@ -1,0 +1,317 @@
+/* asiento-tributario-dialog.component.css */
+.dialog-grid .row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tax-dialog {
+  &__content {
+    padding-top: 8px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+    margin-top: 8px;
+  }
+
+  &__actions {
+    padding: 12px 24px 20px;
+  }
+}
+
+/* Que el formulario aproveche todo el ancho del diálogo */
+.tax-dialog mat-form-field {
+  width: 100%;
+}
+
+/* Un poco más de estilo al diálogo */
+:host ::ng-deep .mat-mdc-dialog-surface {
+  border-radius: 16px;
+  padding-top: 8px;
+}
+
+/* Responsive: en pantallas pequeñas, 1 sola columna */
+@media (max-width: 768px) {
+  .tax-dialog__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===============================
+   COLOR AZUL PARA EL ÍTEM ACTIVO
+   EN TODOS LOS mat-select
+   =============================== */
+
+/* Panel del select: opción seleccionada / navegada con teclado en azul */
+::ng-deep .mat-mdc-select-panel .mat-mdc-option.mdc-list-item--selected,
+::ng-deep .mat-mdc-select-panel .mat-mdc-option.mdc-list-item--activated {
+  background-color: #1976d2 !important; /* azul */
+  color: #ffffff !important;
+}
+
+/* Hover más notorio */
+::ng-deep .mat-mdc-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background-color: rgba(25, 118, 210, 0.14);
+}
+
+/* Texto de la opción */
+::ng-deep .mat-mdc-select-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 13px;
+}
+
+
+.dialog-title {
+  text-align: center;
+  width: 100%;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dialog-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Dos columnas iguales, estilo como en tu pantalla */
+.row mat-form-field {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+}
+
+
+.dialog-actions {
+  justify-content: center; /* centra los botones */
+  padding: 16px 0 8px;
+}
+
+.dialog-actions button {
+  min-width: 120px;
+  margin: 0 8px;
+}
+
+.dialog-title {
+  text-align: center;
+  width: 100%;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dialog-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Dos columnas iguales, estilo como en tu pantalla */
+.row mat-form-field {
+  flex: 1 1 calc(50% - 8px);
+  min-width: 0;
+}
+
+/* En pantallas pequeñas que se hagan 1 columna */
+@media (max-width: 768px) {
+  .row mat-form-field {
+    flex: 1 1 100%;
+  }
+}
+
+.dialog-actions {
+  justify-content: center; /* centra los botones */
+  padding: 16px 0 8px;
+}
+
+.dialog-actions button {
+  min-width: 120px;
+  margin: 0 8px;
+}
+
+
+/* título centrado */
+.dialog-title {
+  text-align: center;
+  width: 100%;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* layout de filas a 2 columnas */
+.dialog-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+}
+
+.row mat-form-field {
+  flex: 1 1 0;
+}
+
+/* en móviles, 1 columna */
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+  }
+}
+
+/* === ESTILO TIPO "ZONA / TIPO ASIENTO / BENEFICIARIO" === */
+
+.styled-field {
+  width: 100%;
+}
+
+/* fondo celeste suave, bordes redondeados, sin línea material clásica */
+.styled-field .mat-mdc-text-field-wrapper {
+  background-color: #f5f8ff;        /* azul muy claro */
+  border-radius: 999px;             /* efecto pill como en tu imagen */
+  border: 1px solid #dbe3f1;
+  padding-inline: 12px;
+}
+
+/* al enfocar, resaltar un poco el borde */
+.styled-field.mat-mdc-form-field-focus .mat-mdc-text-field-wrapper {
+  border-color: #4f6ddf;
+  box-shadow: 0 0 0 1px rgba(79, 109, 223, 0.15);
+}
+
+/* quitar la línea de ripple inferior del appearance fill */
+.styled-field .mdc-line-ripple {
+  display: none;
+}
+
+/* el label arriba como en tu captura */
+.styled-field .mat-mdc-floating-label {
+  font-size: 12px;
+  top: 20%;
+}
+
+/* texto interno */
+.styled-field .mat-mdc-form-field-infix {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* acciones centradas */
+.dialog-actions {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0 8px;
+}
+
+.dialog-actions button {
+  min-width: 120px;
+  margin: 0 8px;
+}
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+/*menora el tamaño de los botones*/
+
+/* Hace los mat-form-field más bajos (compactos) */
+.compact-field .mat-mdc-text-field-wrapper {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 38px;            /* altura total aprox */
+}
+
+.compact-field .mat-mdc-form-field-flex {
+  height: 38px;                /* alinea contenido verticalmente */
+}
+
+.compact-field .mat-mdc-form-field-infix {
+  padding-top: 4px;
+  padding-bottom: 4px;         /* menos padding vertical */
+}
+
+/* Opcional: letra un poco más pequeña dentro del control */
+.compact-field .mat-mdc-input-element,
+.compact-field .mat-mdc-select-value-text {
+  font-size: 13px;
+}
+
+
+/* Texto amarillo cuando la opción del mat-select está seleccionada */
+.mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text,
+.mat-mdc-option.mdc-list-item--selected.mdc-list-item--activated .mdc-list-item__primary-text {
+  color: #ffeb3b !important;   /* amarillo */
+}
+
+/* (opcional) para que el check también vaya acorde */
+.mat-mdc-option.mdc-list-item--selected .mat-pseudo-checkbox-checked::after {
+  border-color: #ffeb3b !important;
+}
+
+:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text,
+:host ::ng-deep .mat-mdc-option.mdc-list-item--selected.mdc-list-item--activated .mdc-list-item__primary-text {
+  color: #ffeb3b !important;   /* amarillo */
+}
+
+:host ::ng-deep
+.mat-mdc-select-panel
+.mat-mdc-option.mdc-list-item--selected .mat-mdc-option-text,
+:host ::ng-deep
+.mat-mdc-select-panel
+.mat-mdc-option.mat-mdc-option-active .mat-mdc-option-text {
+  color: #ffeb3b !important;
+}
+
+.movimiento-label {
+  color: #d32f2f;        /* rojo */
+  font-weight: 700;      /* negrita */
+  margin-left: 4px;
+}
+
+/* opcional: que todo el título quede en una sola línea y se vea bien */
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+.btn-verde {
+  background:  #32af4f;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  /*width: 200px;
+  height: 500px;*/
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }

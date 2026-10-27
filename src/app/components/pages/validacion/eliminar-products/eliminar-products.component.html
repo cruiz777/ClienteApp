@@ -1,0 +1,206 @@
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <div class="title-section">
+        <h1 class="title">Eliminar Productos Verified</h1>
+
+        <div class="registro-display">
+          <span class="registro-label">N°. Registros:</span>
+          <strong class="registro-value">{{ numeroRegistros }}</strong>
+        </div>
+      </div>
+
+     <div class="header-actions">
+
+  <button
+    class="btn btn-auditoria"
+    type="button"
+    (click)="abrirAuditoriaProductos()">
+
+    <span class="auditoria-icon">☰</span>
+    Auditoría
+
+  </button>
+
+  <button
+    class="btn btn-secondary"
+    type="button"
+    (click)="nuevaBusqueda()">
+
+    Nueva Búsqueda
+
+  </button>
+
+</div>
+    </div>
+  </div>
+
+  <div class="export-info-container" *ngIf="hasSearched">
+    <div class="export-info has-results" *ngIf="hasResults">
+      <strong>Información:</strong>
+      {{ totalItems }} producto(s) encontrados.
+      <small>
+        Seleccione uno o varios productos y presione Eliminar seleccionados.
+      </small>
+    </div>
+
+    <div class="export-info no-results" *ngIf="noResults">
+      <strong>No se encontraron resultados</strong>
+      <small>
+        No se encontraron productos que coincidan con los criterios de búsqueda especificados.
+      </small>
+    </div>
+  </div>
+
+  <div class="form-container"
+    [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-productos-verified.buscar')) ? '1' : '0.3'"
+    [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-productos-verified.buscar')) ? 'auto' : 'none'">
+
+    <div class="search-section-left">
+      <div class="form-group-inline">
+        <label for="searchInput">Buscar por nombre:</label>
+
+        <div class="search-input-container">
+          <input type="text" placeholder="Buscar por nombre..." class="search-input-full" id="searchInput" #searchInput
+            [(ngModel)]="terminoBusquedaNombre" (input)="onBusquedaGeneralChange(searchInput.value)"
+            (keyup.enter)="puedeRealizarBusqueda ? buscarGeneral(searchInput.value) : null" />
+
+          <button class="btn btn-sm btn-primary search-button" type="button" (click)="buscarGeneral(searchInput.value)"
+            [disabled]="!puedeRealizarBusqueda || isLoading">
+            <img src="assets/icons/icon-buscar.png" alt="Buscar" class="button-icon">
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-row-two-columns">
+      <div class="form-group-inline">
+        <label for="ruc">RUC:</label>
+        <input type="text" id="ruc" [(ngModel)]="searchParams.ruc" class="form-control" placeholder="Ingrese RUC"
+          (keyup.enter)="puedeRealizarBusqueda ? buscar() : null">
+      </div>
+
+      <div class="form-group-inline">
+        <label for="prefijo">Prefijo:</label>
+        <input type="text" id="prefijo" [(ngModel)]="searchParams.prefijo" class="form-control"
+          placeholder="Ingrese prefijo" (keyup.enter)="puedeRealizarBusqueda ? buscar() : null">
+      </div>
+    </div>
+
+    <div class="form-row-two-columns">
+      <div class="form-group-inline">
+        <label for="gtinEstado">GTIN Estado:</label>
+        <select id="gtinEstado" [(ngModel)]="searchParams.gtinEstado" class="form-control"
+          (change)="puedeRealizarBusqueda ? buscar() : null">
+          <option value="">Todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="form-group-inline">
+        <label for="prefijoEstado">Prefijo Estado:</label>
+        <select id="prefijoEstado" [(ngModel)]="searchParams.prefijoEstado" class="form-control"
+          (change)="puedeRealizarBusqueda ? buscar() : null">
+          <option value="">Todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row-two-columns">
+      <div class="form-group-inline">
+        <label for="empresaEstado">Empresa Estado:</label>
+        <select id="empresaEstado" [(ngModel)]="searchParams.empresaEstado" class="form-control"
+          (change)="puedeRealizarBusqueda ? buscar() : null">
+          <option value="">Todos</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="form-group-inline">
+        <div class="date-range">
+          <div class="date-range-item">
+            <label for="fechaDesde">Desde:</label>
+            <input type="date" id="fechaDesde" [(ngModel)]="searchParams.fechaDesde" class="form-control date-input"
+              (change)="puedeRealizarBusqueda ? buscar() : null">
+          </div>
+
+          <div class="date-range-item">
+            <label for="fechaHasta">Hasta:</label>
+            <input type="date" id="fechaHasta" [(ngModel)]="searchParams.fechaHasta" class="form-control date-input"
+              (change)="puedeRealizarBusqueda ? buscar() : null">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions-row">
+      <button class="btn btn-primary" type="button" (click)="buscar()" [disabled]="!puedeRealizarBusqueda || isLoading"
+        [title]="!puedeRealizarBusqueda ? 'Ingrese al menos un criterio de búsqueda' : ''">
+        {{ mensajeBotonBuscar }}
+      </button>
+
+      <button class="btn btn-danger" type="button" (click)="eliminarSeleccionados()"
+        [disabled]="!puedeEliminarSeleccionados">
+        {{ textoBotonEliminar }}
+      </button>
+    </div>
+  </div>
+
+  <div class="error-message" *ngIf="errorMessage">
+    <div class="alert alert-danger">
+      <strong>Error:</strong> {{ errorMessage }}
+      <button class="btn btn-sm btn-secondary" type="button" (click)="errorMessage = ''">
+        ×
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-spinner" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>{{ eliminando ? 'Eliminando productos...' : 'Cargando resultados...' }}</p>
+  </div>
+
+  <div class="table-container" *ngIf="hasResults">
+    <div class="results-info">
+      <p>
+        Mostrando {{ startItem }} - {{ endItem }} de {{ totalItems }} resultados
+        (Página {{ currentPage }} de {{ totalPages }})
+      </p>
+
+      <p *ngIf="productosSeleccionados.length > 0" class="selected-info">
+        Seleccionados: {{ productosSeleccionados.length }}
+      </p>
+    </div>
+
+    <ag-grid-angular class="ag-theme-alpine productos-grid" [rowData]="productos" [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef" [animateRows]="true" [rowHeight]="48" [rowSelection]="'multiple'"
+      [suppressRowClickSelection]="true" (gridReady)="onGridReady($event)" (gridSizeChanged)="onGridSizeChanged()"
+      (selectionChanged)="onSelectionChanged($event)">
+    </ag-grid-angular>
+  </div>
+
+  <div class="no-results" *ngIf="noResults">
+    <div class="alert alert-info">
+      <h4>No se encontraron resultados</h4>
+      <p>No se encontraron productos que coincidan con los criterios de búsqueda especificados.</p>
+      <p>Sugerencias:</p>
+      <ul>
+        <li>Verifique que los datos ingresados sean correctos.</li>
+        <li>Intente con criterios de búsqueda menos específicos.</li>
+        <li>Revise los filtros de estado y fechas.</li>
+        <li>Pruebe usar un rango de fechas más amplio.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="pagination-container" *ngIf="hasResults">
+    <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 20, 50, 100]"
+      [pageIndex]="currentPage - 1" (page)="onPageChange($event)" [showFirstLastButtons]="true" [disabled]="isLoading"
+      aria-label="Seleccionar página">
+    </mat-paginator>
+  </div>
+</div>

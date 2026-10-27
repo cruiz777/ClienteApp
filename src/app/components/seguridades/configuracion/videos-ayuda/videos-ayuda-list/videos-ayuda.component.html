@@ -1,0 +1,100 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Gestión de Videos de Ayuda</h2>
+    <button class="btn-nueva-zona" (click)="nuevoVideo()">
+      <i class="bi bi-plus-circle me-2"></i>
+      Nuevo Video
+    </button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="search()"
+        placeholder="Buscar por título, sistema o categoría"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="mt-3">Cargando videos...</p>
+  </div>
+
+  <!-- Tabla de videos -->
+  <table *ngIf="!loading" class="zona-tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Título</th>
+        <th>Sistema</th>
+        <th>Categoría</th>
+        <th>Orden</th>
+        <th>Estado</th>
+        <th>Opciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let video of filteredVideos; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td class="text-left">
+          <i class="bi bi-play-circle-fill me-2 text-primary"></i>
+          {{ video.titulo }}
+        </td>
+        <td>{{ video.nombreSistema }}</td>
+        <td>{{ video.nombreCategoria }}</td>
+        <td>{{ video.orden }}</td>
+        <td>
+          <span
+            class="badge-status"
+            [class.badge-activo]="video.activo"
+            [class.badge-inactivo]="!video.activo">
+            {{ video.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <button
+              class="icon-btn"
+              (click)="editarVideo(video.id)"
+              title="Editar">
+              <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+            </button>
+
+            <!--BOTÓN DE DESACTIVAR/ACTIVAR CON ICONO -->
+            <button
+              class="icon-btn"
+              (click)="cambiarEstado(video)"
+              [title]="video.activo ? 'Desactivar' : 'Activar'">
+              <img
+                src="assets/icons/icon-cancelar.png"
+                alt="Cambiar estado"
+                [style.opacity]="video.activo ? '1' : '0.4'" />
+            </button>
+
+            <button
+              class="icon-btn"
+              (click)="eliminarVideo(video.id, video.titulo)"
+              title="Eliminar">
+              <i class="bi bi-trash text-danger"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+
+      <!-- Empty state -->
+      <tr *ngIf="filteredVideos.length === 0">
+        <td colspan="7" class="text-center empty-row">
+          <i class="bi bi-camera-video-off fs-1"></i>
+          <p class="mt-2">No se encontraron videos</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

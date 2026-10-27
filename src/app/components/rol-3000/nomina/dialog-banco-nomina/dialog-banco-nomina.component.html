@@ -1,0 +1,53 @@
+<h2 mat-dialog-title>Banco / Forma de Pago</h2>
+
+<div mat-dialog-content [formGroup]="form" class="dialog-content">
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Banco origen / formato</mat-label>
+
+    <mat-select formControlName="codBanco">
+      <mat-option
+        *ngFor="let banco of bancos"
+        [value]="banco.codBanco">
+        {{ banco.nombre }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Descripción de pago</mat-label>
+
+    <input
+      matInput
+      formControlName="descripcionPago"
+      autocomplete="off" />
+
+    <mat-error *ngIf="form.get('descripcionPago')?.hasError('required')">
+      La descripción de pago es obligatoria.
+    </mat-error>
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions align="end" class="dialog-actions">
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    (click)="generarArchivo()">
+    Generar Archivo
+  </button>
+
+  <button
+    mat-stroked-button
+    color="primary"
+    type="button"
+    (click)="imprimirReporte()">
+    Imprimir Reporte
+  </button>
+
+  <button
+    mat-stroked-button
+    type="button"
+    (click)="salir()">
+    Salir
+  </button>
+</div>

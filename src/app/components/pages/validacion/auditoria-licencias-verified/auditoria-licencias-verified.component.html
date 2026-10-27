@@ -1,0 +1,96 @@
+<div class="audit-dialog">
+
+    <!-- HEADER -->
+
+    <div class="audit-header">
+
+        <div>
+
+            <h2>
+                Auditoría Licencias Verified
+            </h2>
+
+            <span class="record-count">
+
+                Registros:
+                <strong>
+                    {{ rowData.length }}
+                </strong>
+
+            </span>
+
+        </div>
+
+
+        <div class="header-actions">
+
+            <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="cargarAuditoria()">
+
+                Actualizar
+
+            </button>
+
+
+            <button
+                type="button"
+                class="btn btn-primary"
+                (click)="cerrar()">
+
+                Cerrar
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ERROR -->
+
+    <div
+        *ngIf="errorMessage"
+        class="error-message">
+
+        {{ errorMessage }}
+
+    </div>
+
+
+    <!-- LOADING -->
+
+    <div
+        *ngIf="isLoading"
+        class="loading-container">
+
+        <div class="spinner">
+        </div>
+
+        <span>
+            Consultando auditoría...
+        </span>
+
+    </div>
+
+
+    <!-- GRID -->
+
+    <ag-grid-angular
+
+        *ngIf="!isLoading"
+
+        class="ag-theme-alpine audit-grid"
+
+        [rowData]="rowData"
+
+        [columnDefs]="columnDefs"
+
+        [defaultColDef]="defaultColDef"
+
+        [animateRows]="true">
+
+    </ag-grid-angular>
+
+</div>

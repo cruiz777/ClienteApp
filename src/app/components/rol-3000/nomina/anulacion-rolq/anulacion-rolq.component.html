@@ -1,0 +1,64 @@
+<div class="anulacion-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Anulación de ROL Quincenal</h2>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="fecha-field">
+        <mat-label>Fecha de ROL Quincenal</mat-label>
+
+        <input
+          matInput
+          [matDatepicker]="pickerRol"
+          formControlName="fechaRol"
+          [matDatepickerFilter]="soloFechaQuincena"
+          readonly />
+
+        <mat-datepicker-toggle matSuffix [for]="pickerRol">
+        </mat-datepicker-toggle>
+
+        <mat-datepicker #pickerRol></mat-datepicker>
+
+        <mat-error *ngIf="form.get('fechaRol')?.hasError('required')">
+          La fecha es obligatoria
+        </mat-error>
+
+        <mat-error *ngIf="form.get('fechaRol')?.hasError('fechaInvalida')">
+          Para la primera quincena seleccione el día 15.
+          Para la segunda quincena seleccione el último día del mes.
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="quincena-field">
+        <mat-label>Quincena</mat-label>
+
+        <mat-select formControlName="numeroQuincena">
+          <mat-option [value]="1">Primera quincena</mat-option>
+          <mat-option [value]="2">Segunda quincena</mat-option>
+        </mat-select>
+
+        <mat-error *ngIf="form.get('numeroQuincena')?.hasError('required')">
+          La quincena es obligatoria
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        color="warn"
+        type="button"
+        [disabled]="procesando"
+        (click)="anular()">
+        {{ procesando ? 'Anulando...' : 'Anular' }}
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="procesando"
+        (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

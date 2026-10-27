@@ -1,0 +1,431 @@
+<mat-sidenav-container class="sidenav-container" [ngClass]="{
+  'collapsed': !isExpanded && !isHandset,
+  'mobile': isHandset
+}">
+  <!-- SIDEBAR -->
+  <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
+    [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
+
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <img src="assets/logo/CG-3000.png" alt="Logo">
+    </div>
+
+    <!-- 👇 Una sola suscripción a menuCg$ para TODO el menú -->
+    <ng-container *ngIf="menuCg$ | async as menu">
+
+    <!-- Menú Principal -->
+    <mat-nav-list>
+
+      <!-- Toggle Sidebar -->
+      <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
+        <mat-icon>menu</mat-icon>
+        <span *ngIf="isExpanded" class="menu-text">Menú</span>
+      </mat-list-item>
+
+      <!-- Acordeón -->
+      <mat-accordion [multi]="false">
+        <!-- Transacciones -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-transaccion.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Transacciones</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item
+            [routerLink]="menu.transaccionesGenerales ? '/cg-3000/asientocontable' : null"
+            [class.disabled]="!menu.transaccionesGenerales">
+            <span *ngIf="isExpanded" class="menu-text">Transacciones General</span>
+            <mat-icon *ngIf="!menu.transaccionesGenerales" class="lock-icon">lock</mat-icon>
+          </a>
+          <!-- Subgrupo: Reportes -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Reportes</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <!-- Sin ruta real implementada todavía (apuntan a inicio-cg), sin candado -->
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Cheque Anulado</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Retención Emitida</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Asiento Generado</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Costos</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Asientos Anulados</span>
+            </a>
+          </mat-expansion-panel>
+
+        </mat-expansion-panel>
+        <!-- Cuentas por Pagar-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-cuentas-x-pagar.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Cuentas por Pagar</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Ingreso Documentos -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Ingreso Documentos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item
+              [routerLink]="menu.facturas ? '/cg-3000/ingresodocumentos' : null"
+              [class.disabled]="!menu.facturas">
+              <span *ngIf="isExpanded" class="menu-text">Facturas</span>
+              <mat-icon *ngIf="!menu.facturas" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.liquidacionesCompra ? '/cg-3000/liquidacion-compra-list' : null"
+              [class.disabled]="!menu.liquidacionesCompra">
+              <span *ngIf="isExpanded" class="menu-text">Liquidaciones de compra</span>
+              <mat-icon *ngIf="!menu.liquidacionesCompra" class="lock-icon">lock</mat-icon>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Pagos a proveedores -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Pagos a proveedores</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item
+              [routerLink]="menu.anticiposProveedores ? '/cg-3000/anticipos' : null"
+              [class.disabled]="!menu.anticiposProveedores">
+              <span *ngIf="isExpanded" class="menu-text">Anticipos a proveedores</span>
+              <mat-icon *ngIf="!menu.anticiposProveedores" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.pagosIndividuales ? '/cg-3000/pago-proveedores' : null"
+              [class.disabled]="!menu.pagosIndividuales">
+              <span *ngIf="isExpanded" class="menu-text">Pagos Individuales</span>
+              <mat-icon *ngIf="!menu.pagosIndividuales" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.planificacionPagos ? '/cg-3000/planificacion-pagos' : null"
+              [class.disabled]="!menu.planificacionPagos">
+              <span *ngIf="isExpanded" class="menu-text">Planificacion de pagos</span>
+              <mat-icon *ngIf="!menu.planificacionPagos" class="lock-icon">lock</mat-icon>
+            </a>
+            <!-- Sin ruta real implementada todavía, sin candado -->
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Generar pagos</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Comprobantes y Envío correos</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Transferencias Bancarias</span>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Explorador de Cuentas por Pagar -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Explorador de Cuentas por Pagar</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <!-- Sin ruta real implementada todavía, sin candado -->
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Estado de Cuenta Proveedor</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Cuenta por Pagar por fecha</span>
+            </a>
+            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Cuentas por pagar</span>
+            </a>
+          </mat-expansion-panel>
+
+        </mat-expansion-panel>
+
+        <!-- Balance-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-balanc.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Balance</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Balance -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Balance</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <a mat-list-item
+              [routerLink]="menu.diarioMovimiento ? '/cg-3000/diario' : null"
+              [class.disabled]="!menu.diarioMovimiento">
+              <span *ngIf="isExpanded" class="menu-text">Diario de movimiento</span>
+              <mat-icon *ngIf="!menu.diarioMovimiento" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.balanceComprobacion ? ['/cg-3000', 'balance'] : null"
+              [class.disabled]="!menu.balanceComprobacion">
+              <span *ngIf="isExpanded" class="menu-text">Balance de comprobación</span>
+              <mat-icon *ngIf="!menu.balanceComprobacion" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.mayorCuentas ? ['/cg-3000', 'mayor'] : null"
+              [class.disabled]="!menu.mayorCuentas">
+              <span *ngIf="isExpanded" class="menu-text">Mayor de Cuentas</span>
+              <mat-icon *ngIf="!menu.mayorCuentas" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.mayorCodigos ? ['/cg-3000', 'mayor-codigos'] : null"
+              [class.disabled]="!menu.mayorCodigos">
+              <span *ngIf="isExpanded" class="menu-text">Mayor de Códigos</span>
+              <mat-icon *ngIf="!menu.mayorCodigos" class="lock-icon">lock</mat-icon>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Estados Financieros -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Estados Financieros</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <a mat-list-item
+              [routerLink]="menu.estadoFinanciero ? '/cg-3000/estado-financiero' : null"
+              [class.disabled]="!menu.estadoFinanciero">
+              <span *ngIf="isExpanded" class="menu-text">Estado Financiero</span>
+              <mat-icon *ngIf="!menu.estadoFinanciero" class="lock-icon">lock</mat-icon>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Conciliación -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Conciliación</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item
+              [routerLink]="menu.conciliacionBancaria ? '/cg-3000/conciliacion' : null"
+              [class.disabled]="!menu.conciliacionBancaria">
+              <span *ngIf="isExpanded" class="menu-text">Conciliación Bancaria</span>
+              <mat-icon *ngIf="!menu.conciliacionBancaria" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.reversarConciliacion ? '/cg-3000/reversa-conciliacion' : null"
+              [class.disabled]="!menu.reversarConciliacion">
+              <span *ngIf="isExpanded" class="menu-text">Reversar Conciliación</span>
+              <mat-icon *ngIf="!menu.reversarConciliacion" class="lock-icon">lock</mat-icon>
+            </a>
+          </mat-expansion-panel>
+
+        </mat-expansion-panel>
+
+        <!-- Anexo Transaccional-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-anexo.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Anexo Transaccional</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item
+            [routerLink]="menu.reporteCompras ? '/cg-3000/reporte-compras' : null"
+            [class.disabled]="!menu.reporteCompras">
+            <span *ngIf="isExpanded" class="menu-text">Reporte de Compras</span>
+            <mat-icon *ngIf="!menu.reporteCompras" class="lock-icon">lock</mat-icon>
+          </a>
+          <a mat-list-item
+            [routerLink]="menu.generarAts ? '/cg-3000/generar-ats' : null"
+            [class.disabled]="!menu.generarAts">
+            <span *ngIf="isExpanded" class="menu-text">Generación Anexo Transaccional</span>
+            <mat-icon *ngIf="!menu.generarAts" class="lock-icon">lock</mat-icon>
+          </a>
+        </mat-expansion-panel>
+
+        <!-- Activos Fijos-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-activos.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Activos Fijos</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+           <a mat-list-item
+            [routerLink]="menu.exploradorActivos ? '/cg-3000/activo-fijo' : null"
+            [class.disabled]="!menu.exploradorActivos">
+            <span *ngIf="isExpanded" class="menu-text">Explorador de Activos</span>
+            <mat-icon *ngIf="!menu.exploradorActivos" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <!-- <a mat-list-item routerLink="/cg-3000/inicio-cg">
+            <span *ngIf="isExpanded" class="menu-text">Depreciación de Activos</span>
+          </a>
+         
+          <a mat-list-item routerLink="/cg-3000/inicio-cg">
+            <span *ngIf="isExpanded" class="menu-text">Parámetros de Cuentas de Activos</span>
+          </a> -->
+
+        </mat-expansion-panel>
+        <!-- Configuración-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Bancos -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Bancos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item
+              [routerLink]="menu.bancos ? '/cg-3000/bancos' : null"
+              [class.disabled]="!menu.bancos">
+              <span *ngIf="isExpanded" class="menu-text">Bancos</span>
+              <mat-icon *ngIf="!menu.bancos" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.bancosTerceros ? '/cg-3000/bancosterceros' : null"
+              [class.disabled]="!menu.bancosTerceros">
+              <span *ngIf="isExpanded" class="menu-text">Bancos Terceros</span>
+              <mat-icon *ngIf="!menu.bancosTerceros" class="lock-icon">lock</mat-icon>
+            </a>
+          </mat-expansion-panel>
+
+          <a mat-list-item
+            [routerLink]="menu.comprobantesSri ? '/cg-3000/tipocomprobantesri' : null"
+            [class.disabled]="!menu.comprobantesSri">
+            <span *ngIf="isExpanded" class="menu-text">Comprobantes SRI</span>
+            <mat-icon *ngIf="!menu.comprobantesSri" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.codigosContables ? '/cg-3000/codigoscontables' : null"
+            [class.disabled]="!menu.codigosContables">
+            <span *ngIf="isExpanded" class="menu-text">Codigos Contables</span>
+            <mat-icon *ngIf="!menu.codigosContables" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.fechasControl ? '/cg-3000/fechascontrol' : null"
+            [class.disabled]="!menu.fechasControl">
+            <span *ngIf="isExpanded" class="menu-text">Fechas de Control</span>
+            <mat-icon *ngIf="!menu.fechasControl" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.planCuentas ? '/cg-3000/plancuentas' : null"
+            [class.disabled]="!menu.planCuentas">
+            <span *ngIf="isExpanded" class="menu-text">Plan de Cuentas</span>
+            <mat-icon *ngIf="!menu.planCuentas" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.numeroCheques ? '/cg-3000/numeroCheques' : null"
+            [class.disabled]="!menu.numeroCheques">
+            <span *ngIf="isExpanded" class="menu-text">Numeración Cheques</span>
+            <mat-icon *ngIf="!menu.numeroCheques" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.tipoDocumento ? '/cg-3000/tipoasiento' : null"
+            [class.disabled]="!menu.tipoDocumento">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Documento</span>
+            <mat-icon *ngIf="!menu.tipoDocumento" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.tipoCuenta ? '/cg-3000/tipocuenta' : null"
+            [class.disabled]="!menu.tipoCuenta">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Cuentas</span>
+            <mat-icon *ngIf="!menu.tipoCuenta" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <a mat-list-item
+            [routerLink]="menu.tipoRetencion ? '/cg-3000/tiporetencion' : null"
+            [class.disabled]="!menu.tipoRetencion">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Retenciones</span>
+            <mat-icon *ngIf="!menu.tipoRetencion" class="lock-icon">lock</mat-icon>
+          </a>
+
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <img src="assets/icons/icon-cierre.png" class="menu-icon">
+                <span *ngIf="isExpanded" class="menu-text">Cierres</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item
+              [routerLink]="menu.cierreMensual ? '/cg-3000/cierre-mensual' : null"
+              [class.disabled]="!menu.cierreMensual">
+              <span *ngIf="isExpanded" class="menu-text">Cierre Mensual</span>
+              <mat-icon *ngIf="!menu.cierreMensual" class="lock-icon">lock</mat-icon>
+            </a>
+            <a mat-list-item
+              [routerLink]="menu.cierreAnual ? '/cg-3000/cierre-anual' : null"
+              [class.disabled]="!menu.cierreAnual">
+              <span *ngIf="isExpanded" class="menu-text">Cierre Anual</span>
+              <mat-icon *ngIf="!menu.cierreAnual" class="lock-icon">lock</mat-icon>
+            </a>
+          </mat-expansion-panel>
+
+      </mat-accordion>
+
+      <!-- Salir -->
+      <mat-list-item routerLink="/inicio" class="salir-item">
+        <div class="menu-item">
+          <img src="assets/icons/icon-salir.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
+        </div>
+      </mat-list-item>
+
+    </mat-nav-list>
+
+    </ng-container>
+
+  </mat-sidenav>
+
+  <!-- FOODER -->
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
+    <router-outlet></router-outlet>
+    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+
+      </div>
+      <div class="footer-right">
+        <app-user-avatar position="footer" [showUserName]="false"></app-user-avatar>
+        <span class="user-name-footer">{{ usuarioActual?.nombre_usuario }}</span>      
+      </div>
+
+    </footer>
+  </mat-sidenav-content>

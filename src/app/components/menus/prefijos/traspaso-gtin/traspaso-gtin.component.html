@@ -1,0 +1,207 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'Transferir'" (click)="cambiarTab('Transferir')">Transferir</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado'))"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado')) ? '1' : '0.3'"
+          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado')) ? 'auto' : 'none'"
+          [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado')) ? 'Sin permisos' : ''"
+          matInput
+  >Listado</button>
+</div>
+
+<!-- TAB TRANSFERIR -->
+<div class="contenido-tablas">
+  <!-- TAB TRANSFERIR -->
+  <ng-container *ngIf="activeTab === 'Transferir'">
+    <form [formGroup]="formUV" class="contenido-tablas">
+      <h2>Transferencia de Gtin</h2>
+
+      <div class="form-transferencia">
+        <div class="form-grid">
+          <!-- Campo ORIGEN -->
+          <mat-form-field appearance="outline" class="campo-largo">
+            <mat-label>Cliente</mat-label>
+            <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
+              placeholder="Buscar cliente..." 
+              [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+              [style.cursor]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'text' : 'not-allowed'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+              [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+              matInput
+              />
+            <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+                {{ cliente.nomcli }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Campo DESTINO -->
+          <mat-form-field appearance="outline" class="campo-largo">
+            <mat-label>Destino</mat-label>
+            <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
+              placeholder="Buscar cliente..." 
+              [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+              [style.cursor]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'text' : 'not-allowed'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+              [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+              matInput
+              />
+            <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteDestino($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesDestinoFiltrados" [value]="cliente">
+                {{ cliente.nomcli }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Prefijo -->
+          <div class="form-grid">
+            <!-- Campo Prefijo -->
+            <mat-form-field appearance="outline" class="form-campo">
+              <mat-label>Prefijo</mat-label>
+              <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+                <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+                  {{ prefijo.codpre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Campo Mostrar -->
+            <div class="form-campo form-mostrar">
+              <label>Mostrar:</label>
+              <input type="number" formControlName="mostrar" min="1" step="1" (blur)="generarFilas()"
+                style="width: 40px;" />
+            </div>
+
+            <!-- Textarea -->
+            <mat-form-field appearance="outline" class="form-campo" style="visibility: hidden;">
+              <textarea matInput formControlName="textoPegado" placeholder="Pegar GTIN UV"
+                (blur)="pegarPrimeraColumna()"
+                [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+                [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+                [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+                [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+                matInput
+                ></textarea>
+            </mat-form-field>
+          </div>
+
+        </div>
+
+
+        <div class="form-actions form-actions-horizontal alineado-derecha">
+          <button type="button" (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
+            (click)="seleccionarBoton('buscar')"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+            [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+            matInput
+            >Buscar</button>
+          <button type="button" (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+            (click)="seleccionarBoton('nueva')"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+            [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+            matInput
+            >Nueva Búsqueda</button>
+          <button type="button" [disabled]="!botonAsignarActivo" [class.activo]="botonActivo === 'transferir'"
+            (click)="ontransferir()"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+            [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+            matInput
+            >
+            Asignar
+          </button>
+
+
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="contenedor-grid">
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px;" [rowData]="transferir"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [domLayout]="'normal'"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+      </div>
+
+
+
+    </form>
+  </ng-container>
+
+
+
+  <!-- TAB LISTADO -->
+  <ng-container *ngIf="activeTab === 'Listado'">
+
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Listado de Gtin Transferidos</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar:</label>
+            <input matInput placeholder="Buscar prefijo…" [(ngModel)]="filtroBusqueda" (keyup)="aplicarFiltro()" />
+
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button [matMenuTriggerFor]="menuExportar"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar'))"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar')) ? '1' : '0.3'"
+          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar')) ? 'auto' : 'none'"
+          [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar')) ? 'Sin permisos' : ''"
+          matInput
+        >Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <mat-table [dataSource]="dataSource" class="mat-elevation-z1">
+
+      <ng-container matColumnDef="numero">
+        <mat-header-cell *matHeaderCellDef class="col-numero">#</mat-header-cell>
+        <mat-cell *matCellDef="let row; let i = index" class="col-numero">
+          {{ i + 1 }}
+        </mat-cell>
+      </ng-container>
+
+
+      <ng-container matColumnDef="codbar">
+        <mat-header-cell *matHeaderCellDef class="col-uv">UV</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="col-uv">{{ row.codbar }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="despro">
+        <mat-header-cell *matHeaderCellDef class="col-despro">Descripción</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="col-despro">{{ row.Despro }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="referencia">
+        <mat-header-cell *matHeaderCellDef class="col-referencia">Observación</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="col-referencia">{{ row.Referencia }}</mat-cell>
+      </ng-container>
+
+
+      <mat-header-row *matHeaderRowDef="columnasTabla"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columnasTabla;"></mat-row>
+
+    </mat-table>
+
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
+
+  </ng-container>

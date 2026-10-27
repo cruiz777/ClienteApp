@@ -1,0 +1,214 @@
+<div class="modal-header">
+  <h2 mat-dialog-title>
+    <i class="bi bi-camera-video me-2"></i>
+    {{ isEditMode ? 'Editar Video' : 'Nuevo Video' }}
+  </h2>
+  <button mat-icon-button (click)="onCancel()" class="close-button">
+    <i class="bi bi-x-lg"></i>
+  </button>
+</div>
+
+<mat-dialog-content class="modal-content-custom">
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="mt-3">Cargando datos...</p>
+  </div>
+
+  <!-- Formulario -->
+  <form [formGroup]="videoForm" *ngIf="!loading">
+    <div class="form-container">
+
+      <!-- 🆕 PESTAÑAS: YouTube vs Local -->
+      <div class="form-group" *ngIf="!isEditMode">
+        <label>Tipo de Video <span class="required">*</span></label>
+        <div class="tabs-container">
+          <button
+            type="button"
+            class="tab-button"
+            [class.active]="tipoVideo === 'youtube'"
+            (click)="onTipoVideoChange('youtube')">
+            <i class="bi bi-youtube me-2"></i>
+            YouTube
+          </button>
+          <button
+            type="button"
+            class="tab-button"
+            [class.active]="tipoVideo === 'local'"
+            (click)="onTipoVideoChange('local')">
+            <i class="bi bi-camera-video me-2"></i>
+            Archivo Local
+          </button>
+        </div>
+      </div>
+
+      <!-- Título -->
+      <div class="form-group">
+        <label for="titulo">
+          Título del Video <span class="required">*</span>
+        </label>
+        <input
+          id="titulo"
+          type="text"
+          formControlName="titulo"
+          placeholder="Ej: Tutorial de creación de GTIN"
+          maxlength="200"
+        />
+        <div class="error-message" *ngIf="titulo?.invalid && titulo?.touched">
+          <span *ngIf="titulo?.errors?.['required']">El título es requerido</span>
+          <span *ngIf="titulo?.errors?.['maxlength']">Máximo 200 caracteres</span>
+        </div>
+      </div>
+
+      <!-- 🆕 CONTENIDO CONDICIONAL SEGÚN EL TIPO -->
+
+      <!-- OPCIÓN A: URL de YouTube -->
+      <div *ngIf="tipoVideo === 'youtube'">
+        <div class="form-group">
+          <label for="urlVideo">
+            URL de YouTube <span class="required">*</span>
+          </label>
+          <input
+            id="urlVideo"
+            type="text"
+            formControlName="urlVideo"
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          <div class="error-message" *ngIf="urlVideo?.invalid && urlVideo?.touched">
+            <span *ngIf="urlVideo?.errors?.['required']">La URL es requerida</span>
+            <span *ngIf="urlVideo?.errors?.['invalidYoutubeUrl']">Ingresa una URL válida de YouTube</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPCIÓN B: Archivo Local -->
+      <div *ngIf="tipoVideo === 'local'">
+        
+        <div class="form-group" *ngIf="isEditMode">
+          <label>Video Actual</label>
+          <div class="current-file-info">
+            <i class="bi bi-file-earmark-play me-2"></i>
+            <span>{{ videoForm.get('urlVideo')?.value }}</span>
+          </div>
+          <small class="help-text">Selecciona un nuevo archivo para reemplazarlo</small>
+        </div>
+
+        <div class="form-group">
+          <label for="videoFile">
+              {{ isEditMode ? 'Nuevo Archivo (opcional)' : 'Archivo de Video' }} <span class="required" *ngIf="!isEditMode">*</span>
+          </label>
+          <div class="file-input-container">
+            <input
+              id="videoFile"
+              type="file"
+              accept="video/mp4"
+              (change)="onFileSelected($event)"
+              #fileInput
+              style="display: none;"
+            />
+            <button
+              type="button"
+              class="btn-select-file"
+              (click)="fileInput.click()"
+              [disabled]="isUploading">
+              <i class="bi bi-upload me-2"></i>
+              {{ selectedFile ? 'Cambiar archivo' : (isEditMode ? 'Reemplazar video' : 'Seleccionar archivo MP4') }}
+            </button>
+            <span class="file-name" *ngIf="selectedFile">
+              {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
+            </span>
+          </div>
+          <small class="help-text">Formato: MP4. Tamaño máximo: 60MB</small>
+
+          <!-- Preview del video -->
+          <div class="video-preview" *ngIf="previewUrl">
+            <video [src]="previewUrl" controls style="width: 100%; max-height: 300px; margin-top: 10px;"></video>
+            <button
+              type="button"
+              class="btn-clear-file"
+              (click)="clearFile()"
+              [disabled]="isUploading">
+              <i class="bi bi-x-circle me-1"></i>
+              Quitar video
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sistema -->
+      <div class="form-group">
+        <label for="idSistema">
+          Sistema <span class="required">*</span>
+        </label>
+        <select id="idSistema" formControlName="idSistema">
+          <option [value]="null" disabled>Selecciona un sistema</option>
+          <option *ngFor="let sistema of sistemas" [value]="sistema.id_sistema">
+            {{ sistema.nombre }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="idSistema?.invalid && idSistema?.touched">
+          <span *ngIf="idSistema?.errors?.['required']">El sistema es requerido</span>
+        </div>
+      </div>
+
+      <!-- Categoría -->
+      <div class="form-group">
+        <label for="idCategoria">
+          Categoría <span class="required">*</span>
+        </label>
+        <select id="idCategoria" formControlName="idCategoria">
+          <option [value]="null" disabled>Selecciona una categoría</option>
+          <option *ngFor="let categoria of categorias" [value]="categoria.id">
+            {{ categoria.nombre }}
+          </option>
+        </select>
+        <div class="error-message" *ngIf="idCategoria?.invalid && idCategoria?.touched">
+          <span *ngIf="idCategoria?.errors?.['required']">La categoría es requerida</span>
+        </div>
+      </div>
+
+      <!-- Orden -->
+      <div class="form-group">
+        <label for="orden">
+          Orden de Visualización <span class="required">*</span>
+        </label>
+        <input
+          id="orden"
+          type="number"
+          formControlName="orden"
+          min="1"
+          placeholder="1"
+        />
+        <div class="error-message" *ngIf="orden?.invalid && orden?.touched">
+          <span *ngIf="orden?.errors?.['required']">El orden es requerido</span>
+          <span *ngIf="orden?.errors?.['min']">El orden debe ser mayor a 0</span>
+        </div>
+      </div>
+
+      <!-- Estado -->
+      <div class="form-group-checkbox">
+        <label>
+          <input type="checkbox" formControlName="activo" />
+          <span class="checkbox-label">Video activo</span>
+        </label>
+        <small class="help-text">Los videos inactivos no se mostrarán en la ayuda</small>
+      </div>
+
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" class="btn-cancelar">
+    <i class="bi bi-x-circle me-2"></i>
+    Cancelar
+  </button>
+  <button
+    mat-button
+    (click)="onSubmit()"
+    class="btn-guardar"
+    [disabled]="isFormInvalid() || loading || isUploading">
+    <i class="bi bi-check-circle me-2"></i>
+    {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+  </button>
+</mat-dialog-actions>

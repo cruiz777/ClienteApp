@@ -1,0 +1,110 @@
+<div class="form-container">
+  <h3 class="form-title">
+    {{ modo === 'crear' ? 'Nueva Autorización de Caja' : 'Editar Autorización de Caja' }}
+  </h3>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <div class="form-grid">
+
+      <!-- Id (solo lectura) -->
+      <div class="form-field">
+        <label>Id</label>
+        <input type="text" formControlName="id_autorizacion_caja"  />
+      </div>
+
+      <!-- Caja -->
+      <div class="form-field">
+        <label>Caja *</label>
+        <input type="text" formControlName="caja" placeholder="Ej: 999" />
+      </div>
+
+      <!-- N° Autorización -->
+      <div class="form-field">
+        <label>N° Autorización *</label>
+        <input type="text" formControlName="numero_autorizacion" placeholder="Ej: 1104131870" />
+      </div>
+
+      <!-- Tipo Documento -->
+      <div class="form-field">
+        <label>Tipo Documento (Id) *</label>
+        <select formControlName="id_tipo_documento">
+          <option [ngValue]="null">-- Seleccione --</option>
+          <option [ngValue]="1">1 - Factura</option>
+          <option [ngValue]="2">2 - Nota de Crédito</option>
+          <option [ngValue]="2">3 - Retención</option>
+          <option [ngValue]="2">4 - Liquidación</option>
+        </select>
+      </div>
+
+      <!-- Establecimiento -->
+      <div class="form-field">
+        <label>Establecimiento *</label>
+        <input type="text" formControlName="num_establecimiento" placeholder="Ej: 001" />
+      </div>
+
+      <!-- Dirección -->
+      <div class="form-field">
+        <label>Dirección *</label>
+        <input type="text" formControlName="direccion" placeholder="Dirección" />
+      </div>
+
+      <!-- RUC -->
+      <div class="form-field">
+        <label>RUC *</label>
+        <input type="text" formControlName="ruc" placeholder="Ej: 1791237056001" />
+      </div>
+
+      <!-- Empresa -->
+      <div class="form-field">
+        <label>Empresa *</label>
+        <input type="text" formControlName="nombre_comercial" placeholder="Ej: GS1 ECUADOR" />
+      </div>
+
+      <!-- Generar XML -->
+      <div class="form-field">
+        <label>Generar XML *</label>
+        <select formControlName="generar_xml">
+          <option [ngValue]="true">Sí</option>
+          <option [ngValue]="false">No</option>
+        </select>
+      </div>
+
+      <!-- Número -->
+      <div class="form-field">
+        <label>Número</label>
+        <input type="text" formControlName="numero" placeholder="Ej: 75" />
+      </div>
+
+      <!-- Estado -->
+      <div class="form-field">
+        <label>Estado</label>
+        <input type="text" formControlName="estado" placeholder="Ej: A" />
+      </div>
+
+      <!-- Sucursal -->
+      <div class="form-field">
+        <label>Sucursal</label>
+        <input type="text" formControlName="sucursal" placeholder="Sucursal" />
+      </div>
+
+      <!-- Producción -->
+      <div class="form-field">
+        <label>Producción</label>
+        <select formControlName="produccion">
+          <option [ngValue]="1">1</option>
+          <option [ngValue]="0">2</option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn" (click)="cerrar()">Salir</button>
+      <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+        {{ modo === 'crear' ? 'Crear' : 'Actualizar' }}
+      </button>
+    </div>
+
+  </form>
+</div>

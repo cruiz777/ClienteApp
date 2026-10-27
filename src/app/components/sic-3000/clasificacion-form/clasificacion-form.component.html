@@ -1,0 +1,46 @@
+<!-- src/app/components/sic-3000/clasificacion-form/clasificacion-form.component.html -->
+
+<h2 mat-dialog-title>{{ titulo }}</h2>
+
+<div mat-dialog-content class="cf-container">
+  <form [formGroup]="form" class="cf-grid">
+
+    <!-- Descripción (ancho completo) -->
+    <div class="cf-field cf-full">
+      <label class="cf-label">
+        Descripción<span class="cf-required">*</span>
+      </label>
+
+      <mat-form-field appearance="outline" class="cf-mat-field">
+        <input matInput formControlName="descripcion" />
+        <mat-error *ngIf="form.get('descripcion')?.hasError('required')">
+          La descripción es obligatoria
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <!-- Código Cuenta -->
+    <div class="cf-field">
+      <label class="cf-label">Código Cuenta</label>
+
+      <mat-form-field appearance="outline" class="cf-mat-field">
+        <input matInput formControlName="codigoCuenta" />
+      </mat-form-field>
+    </div>
+
+    <!-- Estado -->
+    <div class="cf-field cf-estado">
+      <mat-checkbox formControlName="estado">
+        Activo
+      </mat-checkbox>
+    </div>
+
+  </form>
+</div>
+
+<div mat-dialog-actions align="end" class="cf-actions">
+  <button mat-button (click)="cancelar()" [disabled]="guardando">Cancelar</button>
+  <button mat-raised-button class="btn-azul" (click)="guardar()" [disabled]="guardando">
+    {{ guardando ? 'Guardando...' : 'Guardar' }}
+  </button>
+</div>

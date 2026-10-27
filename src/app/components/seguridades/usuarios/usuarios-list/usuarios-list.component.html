@@ -1,0 +1,85 @@
+<div class="contenedor-principal">
+
+  <div class="contenido-tablas">
+
+    <div class="encabezado-acciones">
+      <h2 style="margin-right: auto;">Tabla de Usuarios</h2>
+
+      <div class="form-actions form-actions-horizontal alineado-derecha">
+        <input type="text" placeholder="🔍 Buscar por nombre o correo" [(ngModel)]="filtroUsuario"
+          class="input-filtro" />
+        <button mat-stroked-button (click)="onNuevoUsuario()"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.nuevo'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.nuevo')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.nuevo')) ? 'auto' : 'none'"
+                        matInput
+        >
+          Nuevo Usuario
+        </button>
+      </div>
+    </div>
+
+    <div class="tabla-scrollable">
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th class="col-reducida">Fecha Creacion</th>
+            <th>Usuario</th>
+            <th>Correo</th>
+            <th>Perfil</th>
+            <th>Departamento</th>
+            <th class="col-reducida">Estado</th>
+            <th class="col-reducida">Fecha Caducidad</th>
+            <th class="col-reducida">Caja</th>
+            <th class="col-reducida">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuariosFiltrados" [class.fila-activa]="usuario.id_usuario === usuarioSeleccionado"
+            (click)="seleccionarUsuario(usuario.id_usuario)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ usuario.id_usuario }}</td>
+            <td>{{ usuario.fecha_creacion | date: 'yyyy-MM-dd' }}</td>
+            <td>{{ usuario.nombre_usuario }}</td>
+            <td>{{ usuario.correo }}</td>
+            <td>{{ usuario.nombre_perfil || 'N/A' }}</td>
+            <td>{{ usuario.nombre_departamento || 'N/A' }}</td>
+            <td>
+              <span [style.color]="!usuario.estado ? 'red' : 'green'">
+                {{ usuario.estado ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>{{ usuario.fecha_caducidad ? (usuario.fecha_caducidad | date: 'yyyy-MM-dd') : '—' }}</td>
+             <td>
+              <button (click)="cajaUsuario(usuario); $event.stopPropagation()" title="Usuario Caja"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar')) ? 'auto' : 'none'"
+                        matInput
+              >
+                <img src="assets/icons/caja.png" width="20" />
+              </button>
+              <!-- <button (click)="eliminarUsuario(usuario.id_usuario); $event.stopPropagation()" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="20" />
+              </button> -->
+            </td>
+            <td>
+              <button (click)="editarUsuario(usuario); $event.stopPropagation()" title="Editar"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar')) ? 'auto' : 'none'"
+                        matInput
+              >
+                <img src="assets/icons/icon-modificar-3.png" width="20" />
+              </button>
+              <!-- <button (click)="eliminarUsuario(usuario.id_usuario); $event.stopPropagation()" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="20" />
+              </button> -->
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

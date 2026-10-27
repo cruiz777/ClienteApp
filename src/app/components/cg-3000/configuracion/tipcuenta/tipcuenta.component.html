@@ -1,0 +1,63 @@
+<div class="zona-container">
+
+  <div class="zona-header">
+    <h2>Registro de Tipo de Cuenta</h2>
+    
+       <button mat-raised-button class="btn-azul" (click)="abrirCrear()">Nuevo</button>
+
+  </div>
+    
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"   
+        name="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por Descripción"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+    
+  </div>
+
+  <div *ngIf="loading" class="state info">Cargando…</div>
+  <div *ngIf="error" class="state error">{{ error }}</div>
+
+  <table class="zona-tabla" *ngIf="!loading">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>Id</th>
+        <th>Tipo Cuenta</th>
+        <th>Descripción</th>
+        <th>Transf. Bancaria</th>
+        <th class="col-opcion">Opción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- ✅ usa la vista filtrada -->
+      <tr *ngFor="let item of listaView; let i = index; trackBy: trackById">
+        <td>{{ i + 1 }}</td>
+        <td>{{ item.IdTipoCuenta }}</td>
+        <td>{{ item.Tipcue }}</td>
+        <td>{{ item.Destip }}</td>
+        <td>{{ item.Tranban }}</td>
+
+        <td class="acciones">
+          <button class="icon-btn"  (click)="abrirEditar(item.IdTipoCuenta)" title="Editar">
+            <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+          </button>
+        </td>
+      </tr>
+
+      <tr *ngIf="(listaView?.length ?? 0) === 0">
+        <td colspan="6" class="empty">No hay registros para mostrar.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+

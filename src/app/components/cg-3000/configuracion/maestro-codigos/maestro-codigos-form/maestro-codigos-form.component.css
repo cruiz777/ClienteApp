@@ -1,0 +1,470 @@
+.form-container {
+
+  width: 100%;
+  max-width: 1200px;     /* más ancho en desktop */
+ /* max-height: 90vh;*/    /*nuevo */
+  padding: 24px;         /* más “aire” interno */
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  /*overflow: hidden;       /* importante para redondeo del header */
+  padding: 0;
+  /*
+  max-height: 85vh;        
+  overflow-y: auto;        
+  overflow-x: hidden;
+  */
+   /* Para que header arriba y body abajo funcionen bien */
+  display: flex;
+  flex-direction: column;
+
+  /* Nada se debe ver por fuera (controles “por detrás” del header) */
+  overflow: hidden;
+  
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: #f44336;
+}
+
+
+input,
+select {
+ /* padding: 10px 12px;*/
+  padding: 6px 10px; 
+  border-radius: 6px;
+  border: 1px solid #ccd5e2;
+  background-color: #eef4f7;
+  /*font-size: 14px;*/
+  font-size: 13px; 
+   height: 34px; 
+}
+
+
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #002c6c;
+  background-color: #fff;
+}
+
+.error {
+  color: #f44336;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 25px;
+}
+
+.primary-button {
+  background-color: #002c6c;
+  color: white;
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.primary-button:hover {
+  background-color: #001f4d;
+}
+
+.cancel-button {
+  background-color: #f5f5f5;
+  color: #333;
+  padding: 8px 24px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+
+/* Contenedor de acciones fijo al fondo cuando haces scroll */
+.form-actions {
+  position: sticky;         /* se “pega” al fondo del contenedor scrolleable */
+  bottom: 0;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+          /* sobre inputs al hacer scroll  z-index: 1;       */
+}
+
+/*  colores de los fondos de texti */
+
+/* Fondo general de inputs en modo edición */
+.form-container.edit-mode input,
+.form-container.edit-mode select,
+.form-container.edit-mode textarea {
+  background-color: #fff7d6;      /* amarillo suave */
+  border-color: #e5b400;
+  color: #333;
+}
+
+/* Foco en modo edición */
+.form-container.edit-mode input:focus,
+.form-container.edit-mode select:focus,
+.form-container.edit-mode textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229, 180, 0, 0.25);
+  border-color: #d4a100;
+}
+
+/* Estilo visual para campos sólo lectura (cuando estás editando) */  
+.form-container.edit-mode input[readonly],
+.form-container.edit-mode textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.9;
+  background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  border-color: #f3f3f7;
+  background-color: #eae6e6;
+}
+
+/* (Opcional) si sólo quieres colorear los readonly en edit-mode, usa esto en lugar del bloque general:
+.form-container.edit-mode input:read-only,
+.form-container.edit-mode select:read-only,
+.form-container.edit-mode textarea:read-only {
+  background-color: #fff7d6;
+  border-color: #e5b400;
+}
+*/
+
+/* 1) Más ancho del card */
+.form-container.wide {
+  max-width: 1200px;   /* puedes subir a 1600 si lo necesitas */
+}
+
+/* 2) Fila de 4 columnas para celular/teléfono/email/plazo */
+.row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;                 /* espacio entre columnas */
+}
+
+/* Responsive: en pantallas chicas baja a 2 columnas */
+@media (max-width: 992px) {
+  .row-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+  .row-4 { grid-template-columns: 1fr; }
+}
+
+/* Fila: Razón social (ancha) + Estado (a la derecha) */
+.row-razon {
+  display: grid;
+  grid-template-columns: 1fr auto;  /* razón social ocupa todo; estado se ajusta */
+  gap: 16px;
+  align-items: end;                  /* alinea con la base de los inputs */
+  margin-bottom: 6px;
+}
+
+/* Input al 100% del espacio */
+.row-razon .form-razon input {
+  width: 100%;
+}
+
+/* Presentación compacta del checkbox */
+.row-razon .form-estado-inline label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;                        /* sin salto extra */
+  white-space: nowrap;              /* evita que “Activo” salte de línea */
+}
+
+/* Responsive: si el ancho es pequeño, que bajen en 2 filas */
+@media (max-width: 576px) {
+  .row-razon { grid-template-columns: 1fr; }
+  .row-razon .form-estado-inline { justify-self: start; }
+}
+
+
+/* Reduce el tamaño de letra del listado de personas */
+:host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option {
+  font-size: 8px;
+  line-height: 1.2;
+}
+
+/* ===== Autocomplete Angular Material (MDC) ===== */
+.mat-mdc-autocomplete-panel .mat-mdc-option {
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.mat-mdc-autocomplete-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+}
+
+/* ===== Fallback para Material "legacy" (por si aplica) ===== */
+.mat-autocomplete-panel .mat-option {
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+}
+
+::ng-deep .mat-autocomplete-panel .mat-option {
+  font-size: 11px;
+  line-height: 1.1;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+/* Campo Tipo Identificación en rojo y más grande */
+input[formcontrolname="tipoidentificacion"],
+.mat-input-element[formcontrolname="tipoidentificacion"] {
+  background-color: #ffe5e5 !important;   /* fondo rojo claro */
+  border: 1px solid #e53935 !important;   /* borde rojo */
+  color: #b71c1c !important;              /* texto rojo */
+  font-size: 16px !important;             /* letra más grande */
+  font-weight: 700;                       /* negrita */
+}
+
+/* Por si está deshabilitado (que es tu caso) */
+input[formcontrolname="tipoidentificacion"]:disabled,
+.mat-input-element[formcontrolname="tipoidentificacion"]:disabled {
+  background-color: #ffe5e5 !important;
+  -webkit-text-fill-color: #b71c1c !important; /* Safari/Chrome */
+  opacity: 1 !important;                       /* que no se vea gris */
+}
+
+/* busque da personas*/
+/* ===== Persona: input ===== */
+.persona-field .mat-mdc-input-element {
+  font-size: 13px;         /* letra más pequeña en el input */
+  line-height: 1.3;
+}
+
+/* Fondo del input (por si sigue saliendo gris) */
+.persona-field .mat-mdc-text-field-wrapper {
+  background-color: #b63030;  /* blanco #ffffff*/
+}
+
+/* Placeholder también más pequeño */
+.persona-field .mat-mdc-form-field-infix {
+  font-size: 13px;
+}
+
+/* ===== Persona: opciones del autocomplete ===== */
+/* OJO: usamos panelClass="persona-panel" en el mat-autocomplete */
+::ng-deep .persona-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 13px;   /* letra más pequeña en las opciones */
+}
+
+/* Si quieres que el fondo de las opciones sea blanco */
+::ng-deep .persona-panel .mat-mdc-option {
+  background-color: #ffffff;
+}
+
+/*cabecera*/
+
+.form-container {
+  max-height: 90vh;        /* o lo que uses */
+  overflow-y: auto;        /* que el scroll sea del contenedor */
+}
+
+/* cabecera fija */
+.form-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #ffffff;   /* mismo fondo del formulario */
+  padding: 16px 24px 8px 24px;   /* padding interno del header */
+  /*padding: 16px 0 8px 0;*/
+   border-bottom: 1px solid #e5e7eb;
+}
+
+/* opcional: que el título no se pegue tanto al borde */
+.form-header h2 {
+  margin: 0;
+  /*nuevo*/
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  text-align: center;
+}
+
+/* El contenedor general debe poder scrollear */
+.form-container.wide {
+  max-height: 100vh;          /* o la altura que uses para el dialog */
+  overflow-y: auto;
+  position: relative;
+}
+
+.form-body {
+  flex: 1;                       /* ocupa todo el alto restante */
+  padding: 0 24px 24px 24px;     /* antes estaba en .form-container */
+  
+  /*overflow-y: auto;    */          /* el scroll ahora es del cuerpo */
+  /*overflow-x: hidden;*/
+  padding-bottom: 32px; /* para que los últimos controles no queden tapados por los botones */
+}
+
+/* control del texto buscar*/
+
+/*new */
+/* Campo Buscar Persona más compacto (menos alto) */
+:host ::ng-deep .persona-search-dense .mat-mdc-text-field-wrapper {
+  min-height: 34px;              /* altura total del control */
+  height: 34px;
+}
+
+:host ::ng-deep .persona-search-dense .mat-mdc-form-field-flex {
+  height: 34px;
+  align-items: center;
+}
+
+:host ::ng-deep .persona-search-dense .mat-mdc-form-field-infix {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  min-height: 0;
+}
+
+/* Tamaño de letra del input */
+:host ::ng-deep .persona-search-dense .mat-mdc-input-element {
+  font-size: 13px;
+  padding: 0 10px;
+}
+
+/* Opciones del autocomplete más pequeñas */
+:host ::ng-deep .persona-options-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+/* fondo del texto*/
+/* Fondo verde suave para el campo "Buscar Persona" */
+:host ::ng-deep .persona-search-dense .mat-mdc-form-field-infix {
+  background-color: #e6f8ec;   /* verde bajito */
+  border-radius: 4px;
+}
+
+/* Por si el input es transparente, también pintamos el input en sí */
+:host ::ng-deep .persona-search-dense .mat-mdc-input-element {
+  background-color: #e6f8ec;
+}
+
+/* Fondo plomo para el campo "Buscar Persona" */
+:host ::ng-deep .persona-search-dense .mat-mdc-form-field-infix {
+  background-color: #eef4f7;   /* plomo suave como el resto de inputs */
+  border-radius: 4px;
+}
+
+/* Por si el input es transparente, también pintamos el input en sí */
+:host ::ng-deep .persona-search-dense .mat-mdc-input-element {
+  background-color: #eef4f7;
+}
+
+:host ::ng-deep .persona-search-field .mat-mdc-text-field-wrapper {
+  background-color: #f5f7fa;   /* plomo muy suave para el contorno */
+}
+
+/* cabecera*/
+.page-container {
+  /* si tienes algo como padding: 24px 32px; bájale el top */
+  padding: 5px 32px 24px;   /* antes 24 / 32 / 24 */
+}
+
+/* título del listado */
+.page-container .title,
+.page-container h2 {
+  margin: 4px 0 12px 0;      /* sin margen arriba, poco abajo */
+}
+
+.row-3 .form-group {
+  margin-bottom: 6px;        /* antes 20px */
+}
+
+/* El mat-form-field también sin margen extra */
+:host ::ng-deep .persona-search-field.mat-mdc-form-field {
+  margin-bottom: 4px;        /* antes el default ~16px */
+}
+
+/* Un pequeño margen al último bloque de filas
+   para que no “choque” visualmente con los botones */
+.form-body form > .row-4:last-of-type {
+  margin-bottom: 4px;
+}
+
+.form-body form > .row-4:first-of-type .form-group {
+  margin-bottom: 8px;   /* antes 20px */
+}
+
+.row-tipo-id {
+  /* sobrescribe el repeat(4,1fr) de .row-4 */
+  grid-template-columns: 0.6fr 1.2fr 1fr;  /* ajusta las proporciones a tu gusto */
+}
+
+/* opcional: si quieres todavía un poco más corta la CEDULA */
+.row-tipo-id .form-group:first-child input {
+  /* que no se estire tanto dentro de su columna */
+  max-width: 220px;
+}
+
+.readonly-date {
+  pointer-events: none;        /* no abre el calendario ni permite cambios */
+  background-color: #eae6e6;   /* similar a tus readonly */
+  cursor: not-allowed;
+}
