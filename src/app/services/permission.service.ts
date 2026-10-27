@@ -99,6 +99,7 @@ export class PermissionsService {
     '/codbar/validacion/editar-licenses': 'codbar.validacion.inactivar-licencias-verified',
     '/codbar/validacion/eliminar-productos': 'codbar.validacion.eliminar-productos-verified',
     '/codbar/validacion/eliminar-bloque': 'codbar.validacion.borrar-en-bloque',
+    '/codbar/validacion/eliminar-cliente': 'codbar.validacion.eliminar-cliente',
     // Reportes
     '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-clientes',
     '/codbar/reportes/gerencia': 'codbar.reportes.reporte-gerencia-clientes',
@@ -347,6 +348,16 @@ export class PermissionsService {
   // VERIFICACIÓN MEJORADA DE RUTAS
   private verificarAccesoRuta(rutaAngular: string, permisos: string[]): boolean {
     const rutaNormalizada = this.normalizarRuta(rutaAngular);
+
+    // Excepción TEMPORAL solo en desarrollo para la pantalla de eliminar cliente.
+    // No cambia la validación de permisos de las demás rutas.
+    if (
+      !environment.production &&
+      rutaNormalizada === '/codbar/validacion/eliminar-cliente'
+    ) {
+      return true;
+    }
+
     console.log(`🔍 Verificando acceso a ruta: ${rutaNormalizada}`);
 
     const permisoRequerido = this.MAPEO_RUTAS[rutaNormalizada];
@@ -466,7 +477,8 @@ export class PermissionsService {
             validacionProductos: permisos.includes('codbar.validacion.validacion-productos-verified'),
             inactivarLicencias: permisos.includes('codbar.validacion.inactivar-licencias-verified'),
             eliminarProductos: permisos.includes('codbar.validacion.eliminar-productos-verified'),
-            borrarEnBloque: permisos.includes('codbar.validacion.borrar-en-bloque')
+            borrarEnBloque: permisos.includes('codbar.validacion.borrar-en-bloque'),
+            eliminarCliente: permisos.includes('codbar.validacion.eliminar-cliente')
           },
           reportes: {
             modulo: permisos.includes('codbar.reportes') || permisos.includes('codbar'),

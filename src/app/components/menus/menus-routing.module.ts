@@ -34,6 +34,7 @@ import { GerenciaEmpresasComponent } from './gerencia-empresas/gerencia-empresas
 import { Gs1ScannerComponent } from './gs1-scanner/gs1-scanner.component';
 import { DashboardFacturacionComponent } from './dashboard-facturacion/dashboard-facturacion.component';
 import { EliminarProductosBloqueComponent } from './eliminar-productos-bloque/eliminar-productos-bloque.component';
+import { EliminarClienteComponent } from './eliminar-cliente/eliminar-cliente.component';
 const routes: Routes = [
   {
     path: '', 
@@ -179,6 +180,11 @@ const routes: Routes = [
             path: 'eliminar-bloque', 
             component: EliminarProductosBloqueComponent,
             canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
+          ,
+          { 
+            path: 'eliminar-cliente', 
+            component: EliminarClienteComponent
           }
         ]
       },

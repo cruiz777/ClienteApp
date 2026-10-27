@@ -1165,29 +1165,14 @@ export class EliminarProductosBloqueComponent
     }
 
 
-    const detalle =
-      seleccionados
-
-        .map(
-          item =>
-            `${item.codbar} - ${item.descripcion ?? ''}`
-        )
-
-        .join(
-          '\n'
-        );
-
-
     const confirmar =
       await this.confirmar(
 
         'Confirmar eliminación',
 
-        `Está a punto de eliminar ${codigos.length} producto(s).\n\n` +
+        `¿Está seguro de eliminar ${codigos.length} producto(s) seleccionado(s)?\n\n` +
 
-        detalle +
-
-        '\n\nSe eliminarán primero los registros de CODIGOS14, luego PRODUCTO_DATOS_ADICIONALES y finalmente PRODUCTO.'
+        'Se eliminarán primero los registros de CODIGOS14, luego PRODUCTO_DATOS_ADICIONALES y finalmente PRODUCTO.'
 
       );
 
