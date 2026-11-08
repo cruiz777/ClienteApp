@@ -29,6 +29,7 @@ export const environment = {
       maintenanceRolUrl: 'https://system.gs1ec.net/api/maintenance-rol/api',
       employeesUrl: 'https://system.gs1ec.net/api/employees/api',
     nominaEspecialUrl: 'https://system.gs1ec.net/api/nomina-especial/api',
-    nominaUrl: 'https://system.gs1ec.net/api/nomina/api'
+    nominaUrl: 'https://system.gs1ec.net/api/nomina/api',
+    novedadeslUrl: 'https://system.gs1ec.net/api/nomina/api',
 
 };
