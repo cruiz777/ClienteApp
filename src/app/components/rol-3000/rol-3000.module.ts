@@ -1,3 +1,6 @@
+import { ReversaLiquidacionComponent } from './especial/reversa-liquidacion/reversa-liquidacion.component';
+import { ReimpresionesLiquidacionComponent } from './especial/reimpresiones-liquidacion/reimpresiones-liquidacion.component';
+import { LiquidacionVacacionesComponent } from './especial/liquidacion-vacaciones/liquidacion-vacaciones.component';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -441,6 +444,9 @@ import { EditarVacacionDialogComponent } from './novedades/registro-vacaciones/e
     BonosComponent,
     JubilacionPatronalReporteComponent,
     LiquidacionEmpleadoComponent,
+    ReversaLiquidacionComponent,
+    ReimpresionesLiquidacionComponent,
+    LiquidacionVacacionesComponent,
     // DIÁLOGOS
     PeriodosNominaDialogComponent,
     RolIndividualDialogComponent,

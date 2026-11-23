@@ -94,6 +94,7 @@ export interface LiquidacionDetalleResponse {
 // ============================================================
 
 export interface LiquidacionCalculoResponse {
+  revision: string;
 
   idEmpleado: number;
 

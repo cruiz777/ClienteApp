@@ -435,3 +435,6 @@
   }
 
 }
+.enlace-deshabilitado { pointer-events: none; opacity: .5; }
+.fecha-emision { display: flex; align-items: center; gap: 10px; margin-top: 16px; font-size: 13px; }
+.fecha-emision input { padding: 6px 10px; border: 1px solid #ccd4dd; border-radius: 4px; }

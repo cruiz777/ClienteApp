@@ -1,3 +1,4 @@
+import { DocumentosLiquidacionService } from 'src/app/services/rol/documentos-liquidacion.service';
 import {
   Component,
   Injectable,
@@ -352,6 +353,14 @@ export class LiquidacionEmpleadoComponent
   // ============================================================
 
   form!: FormGroup;
+  guardado = false;
+  idGuardado: number | null = null;
+  numeroGuardado: number | null = null;
+  guardando = false;
+  fechaEmision = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Guayaquil', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  private solicitudCalculo: CalcularLiquidacionRequest | null = null;
+  private operacionGuardado = '';
+  private versionResultado = 0;
 
 
   // ============================================================
@@ -524,8 +533,7 @@ export class LiquidacionEmpleadoComponent
         type:
           'numericColumn',
 
-        editable:
-          true,
+        editable: () => !this.guardado && !this.cargando,
 
         cellEditor:
           'agTextCellEditor',
@@ -569,8 +577,7 @@ export class LiquidacionEmpleadoComponent
         type:
           'numericColumn',
 
-        editable:
-          true,
+        editable: () => !this.guardado && !this.cargando,
 
         cellEditor:
           'agTextCellEditor',
@@ -758,8 +765,7 @@ export class LiquidacionEmpleadoComponent
         type:
           'numericColumn',
 
-        editable:
-          true,
+        editable: () => !this.guardado && !this.cargando,
 
         cellEditor:
           'agTextCellEditor',
@@ -803,8 +809,7 @@ export class LiquidacionEmpleadoComponent
         type:
           'numericColumn',
 
-        editable:
-          true,
+        editable: () => !this.guardado && !this.cargando,
 
         cellEditor:
           'agTextCellEditor',
@@ -924,6 +929,7 @@ export class LiquidacionEmpleadoComponent
     private fb:
       FormBuilder,
 
+    private documentos: DocumentosLiquidacionService,
     private liquidacionService:
       LiquidacionEmpleadoService,
 
@@ -947,6 +953,7 @@ export class LiquidacionEmpleadoComponent
     this.configurarBusquedaEmpleado();
 
     this.configurarCambioFechaSalida();
+    this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => { if (!this.guardado) this.limpiarResultado(); });
 
     this.cargarEmpleadosBusqueda(
       ''
@@ -1637,6 +1644,7 @@ export class LiquidacionEmpleadoComponent
   // ============================================================
 
   calcular(): void {
+    if (this.guardado || this.cargando) return;
 
     if (
       this.validandoNomina ||
@@ -1794,7 +1802,8 @@ export class LiquidacionEmpleadoComponent
 
 
     this.limpiarResultado();
-
+    this.solicitudCalculo = { ...request };
+    const version = this.versionResultado;
 
     this.liquidacionService
       .calcular(
@@ -1829,6 +1838,8 @@ export class LiquidacionEmpleadoComponent
           }
 
 
+          if (version !== this.versionResultado) return;
+          this.operacionGuardado = crypto.randomUUID();
           this.resultado =
             resp.data;
 
@@ -1947,6 +1958,7 @@ export class LiquidacionEmpleadoComponent
   // ============================================================
 
   insertarIngreso(): void {
+    if (this.guardado || this.cargando) return;
 
     if (
       !this.resultado
@@ -2007,6 +2019,7 @@ export class LiquidacionEmpleadoComponent
   // ============================================================
 
   insertarEgreso(): void {
+    if (this.guardado || this.cargando) return;
 
     if (
       !this.resultado
@@ -2070,6 +2083,7 @@ export class LiquidacionEmpleadoComponent
     item:
       LiquidacionDetalleGrid
   ): void {
+    if (this.guardado || this.cargando) return;
 
     if (
       !item
@@ -2098,6 +2112,7 @@ export class LiquidacionEmpleadoComponent
     item:
       LiquidacionDetalleGrid
   ): void {
+    if (this.guardado || this.cargando) return;
 
     if (
       !item
@@ -2130,7 +2145,7 @@ export class LiquidacionEmpleadoComponent
   ): HTMLElement | string {
 
     if (
-      !params.data
+      !params.data || this.guardado || this.cargando
     ) {
 
       return '';
@@ -2287,8 +2302,8 @@ export class LiquidacionEmpleadoComponent
   ): boolean {
 
     return (
-      item?.esManual === true ||
-      item?.origen === 'MANUAL'
+      !this.guardado && !this.cargando && (item?.esManual === true ||
+      item?.origen === 'MANUAL')
     );
   }
 
@@ -2463,6 +2478,8 @@ export class LiquidacionEmpleadoComponent
   // ============================================================
 
   private limpiarResultado(): void {
+    this.versionResultado++;
+    this.guardado = false; this.idGuardado = null; this.numeroGuardado = null; this.solicitudCalculo = null; this.operacionGuardado = '';
 
     this.resultado =
       null;
@@ -2482,6 +2499,8 @@ export class LiquidacionEmpleadoComponent
   // ============================================================
 
   limpiar(): void {
+    if (this.guardando) return;
+    this.form.enable({ emitEvent: false });
 
     this.empleadoSeleccionado =
       null;
@@ -2775,4 +2794,22 @@ export class LiquidacionEmpleadoComponent
     ) / 100;
   }
 
+
+  guardarFiniquito(): void {
+    if (!this.resultado || !this.solicitudCalculo || this.guardado || this.cargando) return;
+    const detalles = [...this.ingresos, ...this.egresos].map(d => ({ idIngresoDesc: d.idIngresoDesc, codigo: d.codigo, tipoRubro: d.tipoRubro, descripcion: d.descripcion, cantidad: Number(d.cantidad), valor: Number(d.valor), origen: d.origen }));
+    if (detalles.some(d => !d.descripcion?.trim() || !Number.isFinite(d.valor) || !Number.isFinite(d.cantidad) || d.valor < 0 || d.cantidad < 0)) { this.mostrarMensaje('Revise los rubros y sus valores antes de guardar.'); return; }
+    this.cargando = this.guardando = true;
+    this.documentos.guardar(this.solicitudCalculo, this.resultado.revision, this.operacionGuardado, this.fechaEmision, detalles).pipe(takeUntil(this.destroy$)).subscribe({
+      next: d => { this.cargando = this.guardando = false; this.guardado = true; this.idGuardado = d.idLiquidacion; this.numeroGuardado = d.numeroLiquidacion; this.resultado = d.resultado; this.separarRubros(d.resultado.detalles); this.form.disable({ emitEvent: false }); this.mostrarMensaje('Liquidación ' + d.numeroLiquidacion + ' guardada correctamente.'); },
+      error: e => { this.cargando = this.guardando = false; this.mostrarMensaje(e.error?.message || 'No se pudo guardar. Puede reintentar sin duplicar la operación.'); }
+    });
+  }
+  imprimirFiniquito(): void {
+    if (!this.idGuardado || this.cargando) return;
+    this.documentos.pdf(false, this.idGuardado).pipe(takeUntil(this.destroy$)).subscribe({
+      next: blob => { const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'Liquidacion_empleado_' + this.numeroGuardado + '.pdf'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); },
+      error: () => this.mostrarMensaje('No se pudo descargar la liquidación.')
+    });
+  }
 }

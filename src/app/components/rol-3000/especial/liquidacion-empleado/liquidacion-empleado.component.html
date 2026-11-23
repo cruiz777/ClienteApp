@@ -32,7 +32,7 @@
          EMPLEADO
     ======================================================== -->
 
-    <mat-card>
+    <mat-card [attr.inert]="cargando ? '' : null">
 
       <mat-card-header>
 
@@ -328,6 +328,7 @@
              BOTONES
         ==================================================== -->
 
+        <label class="fecha-emision">Fecha de emisión <input type="date" [(ngModel)]="fechaEmision" [ngModelOptions]="{standalone:true}" [disabled]="guardado || cargando"></label>
         <div class="acciones">
 
           <button
@@ -337,7 +338,7 @@
             [disabled]="
               cargando ||
               cargandoEmpleado ||
-              validandoNomina
+              validandoNomina || guardado
             "
             (click)="calcular()">
 
@@ -353,6 +354,7 @@
           <button
             mat-stroked-button
             type="button"
+            [disabled]="guardando"
             (click)="limpiar()">
 
             <mat-icon>
@@ -383,7 +385,7 @@
         diameter="40">
       </mat-spinner>
 
-      Calculando liquidación...
+      {{ guardando ? 'Guardando liquidación...' : 'Calculando liquidación...' }}
 
     </div>
 
@@ -519,6 +521,7 @@
               color="primary"
               type="button"
               class="btn-insertar"
+              [disabled]="guardado || cargando"
               (click)="insertarIngreso()">
 
               <mat-icon>
@@ -598,6 +601,7 @@
               color="primary"
               type="button"
               class="btn-insertar"
+              [disabled]="guardado || cargando"
               (click)="insertarEgreso()">
 
               <mat-icon>
@@ -729,6 +733,12 @@
     </ng-container>
 
 
+    <div class="acciones" *ngIf="resultado">
+      <span *ngIf="guardado">Liquidación N.º {{ numeroGuardado }} guardada</span>
+      <button mat-flat-button color="primary" type="button" [disabled]="guardado || cargando" (click)="guardarFiniquito()"><mat-icon>save</mat-icon>Guardar</button>
+      <button mat-stroked-button type="button" [disabled]="!guardado || cargando" (click)="imprimirFiniquito()"><mat-icon>print</mat-icon>Imprimir</button>
+      <a mat-stroked-button routerLink="/rol-3000/reimpresion-liquidacion" [class.enlace-deshabilitado]="guardando">Reimpresiones</a>
+    </div>
   </form>
 
 </div>

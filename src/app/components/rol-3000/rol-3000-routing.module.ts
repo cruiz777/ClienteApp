@@ -1,3 +1,6 @@
+import { ReversaLiquidacionComponent } from './especial/reversa-liquidacion/reversa-liquidacion.component';
+import { ReimpresionesLiquidacionComponent } from './especial/reimpresiones-liquidacion/reimpresiones-liquidacion.component';
+import { LiquidacionVacacionesComponent } from './especial/liquidacion-vacaciones/liquidacion-vacaciones.component';
 import { NgModule } from '@angular/core';
 import {
   RouterModule,
@@ -1066,6 +1069,14 @@ const routes: Routes = [
        {
         path: 'liquidacion-empleado',
         component: LiquidacionEmpleadoComponent
+      },
+      { path: 'reversa-liquidacion', component: ReversaLiquidacionComponent },
+      { path: 'reimpresion-liquidacion', component: ReimpresionesLiquidacionComponent, data: { vacaciones: false } },
+      { path: 'reimpresion-vacaciones', component: ReimpresionesLiquidacionComponent, data: { vacaciones: true } },
+
+      {
+        path: 'liquidacion-vacaciones',
+        component: LiquidacionVacacionesComponent
       },
 
       // ======================================================
